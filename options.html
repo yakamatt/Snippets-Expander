@@ -20,11 +20,22 @@
         <textarea id="new-content" placeholder="Texte de remplacement... (utilisez {date}, {time}, {cursor}, et Entrée pour les sauts de ligne)"></textarea>
         <div class="two-col">
           <input type="text" id="new-description" placeholder="Description (optionnel)" />
-          <input type="text" id="new-folder" list="folder-list" placeholder="Dossier (optionnel)" />
-          <datalist id="folder-list"></datalist>
+          <div class="folder-select-wrap">
+            <select id="new-folder-select">
+              <option value="">Sans dossier</option>
+              <option value="__new__">➕ Nouveau dossier...</option>
+            </select>
+            <input type="text" id="new-folder-input" placeholder="Nom du nouveau dossier" hidden />
+          </div>
         </div>
         <button type="submit">Ajouter</button>
       </form>
+    </section>
+
+    <section class="card">
+      <h2>Dossiers</h2>
+      <p class="hint">Organisez vos snippets par thème. Cliquez sur ✏️ pour renommer, sur ✕ pour dissocier un dossier (les snippets ne sont pas supprimés).</p>
+      <div id="folder-chips" class="folder-chips"></div>
     </section>
 
     <section class="card">
@@ -38,7 +49,7 @@
       <p class="hint">Cliquez directement dans une cellule pour modifier un snippet local (enregistrement automatique). 🔒 = donnée synchronisée, non modifiable ici.</p>
       <table id="snippets-table">
         <thead>
-          <tr><th>Déclencheur</th><th>Contenu</th><th>Description</th><th>Dossier</th><th></th></tr>
+          <tr><th>Déclencheur</th><th>Contenu</th><th>Description</th><th></th></tr>
         </thead>
         <tbody id="snippets-body"></tbody>
       </table>

@@ -68,7 +68,27 @@ button.del:hover { background: #fecaca; }
 .hint { color: #6b7280; font-size: 12.5px; line-height: 1.5; }
 code { background: #f1f1f5; padding: 1px 5px; border-radius: 4px; }
 
-.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.folder-select-wrap { display: flex; flex-direction: column; gap: 6px; }
+
+.folder-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.folder-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 10px; border-radius: 16px; font-size: 12.5px; font-weight: 600;
+}
+.folder-chip .chip-count { opacity: 0.7; font-weight: 400; }
+.folder-chip button {
+  background: none; border: none; padding: 0 2px; font-size: 12px; cursor: pointer; color: inherit; opacity: 0.6;
+}
+.folder-chip button:hover { opacity: 1; background: none; }
+.folder-chip.empty-state { background: #f3f4f6; color: #9ca3af; font-weight: 400; }
+
+tr.folder-group-header td {
+  font-weight: 700; font-size: 12.5px; padding: 8px 10px; cursor: pointer;
+  border-bottom: 2px solid #eee; user-select: none;
+}
+tr.folder-group-header .chevron { display: inline-block; transition: transform 0.15s; margin-right: 6px; }
+tr.folder-group-header.collapsed .chevron { transform: rotate(-90deg); }
+tr.folder-group-hidden { display: none; }
 
 .filters { display: flex; gap: 8px; }
 .filters select { width: auto; }
@@ -92,6 +112,7 @@ button.dup { background: #e5e7eb; color: #1f2430; padding: 5px 10px; font-size: 
 .link-btn:hover { background: none; text-decoration: underline; }
 
 #advanced-panel { margin-top: 14px; display: flex; flex-direction: column; gap: 18px; }
+#advanced-panel[hidden] { display: none; }
 .advanced-block { border-top: 1px solid #eee; padding-top: 14px; }
 .advanced-block h3 { margin: 0 0 6px; font-size: 14px; }
 .danger-block { background: #fff5f5; border: 1px solid #fecaca; border-radius: 8px; padding: 14px 16px; }
@@ -104,6 +125,7 @@ button.dup { background: #e5e7eb; color: #1f2430; padding: 5px 10px; font-size: 
   background: #fef3c7; color: #92400e; border-radius: 8px; padding: 10px 14px;
   font-size: 13px; margin-top: 12px; display: flex; justify-content: space-between; align-items: center; gap: 10px;
 }
+.update-banner[hidden] { display: none; }
 .update-banner a { color: #92400e; font-weight: 600; }
 
 #version-footer { text-align: center; color: #9ca3af; font-size: 12px; padding: 10px 0 30px; }

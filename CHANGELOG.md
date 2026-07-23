@@ -1,5 +1,12 @@
 # Changelog — Snippet Expander
 
+## v1.1.1 — 2026-07-23
+- Correctif : la section "Paramètres avancés" restait visible par défaut (le CSS `display:flex` écrasait l'attribut `hidden`) — elle est maintenant bien repliée au chargement
+- Gestion des dossiers repensée graphiquement : chips colorés (couleur déterministe par nom), compteur de snippets par dossier, renommage et dissociation directement depuis les chips
+- Le tableau des snippets est désormais groupé par dossier avec des en-têtes de groupe repliables (clic pour plier/déplier)
+- La création d'un snippet utilise un menu déroulant de dossiers existants (+ option "Nouveau dossier") au lieu d'un champ texte libre
+- Un seul zip fourni par livraison (le zip protégé par mot de passe n'est généré que sur demande, pour contourner un blocage Gmail)
+
 ## v1.1.0 — 2026-07-23
 - Fusion intelligente lors de la synchro : les snippets locaux ne sont plus jamais effacés par une récupération Google Sheets (fusion par déclencheur, priorité configurable)
 - Édition inline directement dans le tableau des snippets (enregistrement automatique au blur)

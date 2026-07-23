@@ -1,18 +1,21 @@
-const BUILD_DATE = '2026-07-23';
+const BUILD_DATE = '2026-07-23'; // v1.1.1
 
 let snippets = [];
+const collapsedFolders = new Set();
 
 const bodyEl = document.getElementById('snippets-body');
 const countEl = document.getElementById('count');
 const searchEl = document.getElementById('search');
 const folderFilterEl = document.getElementById('folder-filter');
-const folderListEl = document.getElementById('folder-list');
+const folderChipsEl = document.getElementById('folder-chips');
+const newFolderSelect = document.getElementById('new-folder-select');
+const newFolderInput = document.getElementById('new-folder-input');
 
 function load() {
   chrome.storage.local.get(['snippets', 'lastSync', 'updateCheck'], (res) => {
     snippets = res.snippets || [];
     render();
-    renderVersionFooter(res.lastSync, res.updateCheck);
+    renderVersionFooter(res.lastSync);
     renderUpdateBanner(res.updateCheck);
   });
   chrome.storage.sync.get(['syncSettings'], (res) => {
@@ -31,17 +34,15 @@ function save(cb) {
 }
 
 function getFolders() {
-  return Array.from(new Set(snippets.map(s => s.folder).filter(Boolean))).sort();
+  return Array.from(new Set(snippets.map(s => s.folder).filter(Boolean))).sort((a, b) => a.localeCompare(b));
 }
 
-function renderFolderOptions() {
-  const folders = getFolders();
-  const currentFilter = folderFilterEl.value;
-  folderFilterEl.innerHTML = '<option value="">Tous les dossiers</option>' +
-    folders.map(f => `<option value="${escapeHtml(f)}">${escapeHtml(f)}</option>`).join('');
-  folderFilterEl.value = folders.includes(currentFilter) ? currentFilter : '';
-
-  folderListEl.innerHTML = folders.map(f => `<option value="${escapeHtml(f)}"></option>`).join('');
+// Couleur pastel déterministe à partir du nom du dossier
+function folderColor(name) {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  const hue = Math.abs(hash) % 360;
+  return { bg: `hsl(${hue}, 70%, 93%)`, text: `hsl(${hue}, 55%, 32%)` };
 }
 
 function escapeHtml(str) {
@@ -50,9 +51,89 @@ function escapeHtml(str) {
   return div.innerHTML;
 }
 
+// ---------- Dossiers : chips + selects ----------
+
+function renderFolderChips() {
+  const folders = getFolders();
+  folderChipsEl.innerHTML = '';
+
+  if (!folders.length) {
+    const empty = document.createElement('span');
+    empty.className = 'folder-chip empty-state';
+    empty.textContent = 'Aucun dossier pour l\'instant';
+    folderChipsEl.appendChild(empty);
+    return;
+  }
+
+  folders.forEach(folder => {
+    const count = snippets.filter(s => s.folder === folder).length;
+    const color = folderColor(folder);
+    const chip = document.createElement('span');
+    chip.className = 'folder-chip';
+    chip.style.background = color.bg;
+    chip.style.color = color.text;
+
+    const label = document.createElement('span');
+    label.textContent = folder;
+    chip.appendChild(label);
+
+    const countSpan = document.createElement('span');
+    countSpan.className = 'chip-count';
+    countSpan.textContent = `(${count})`;
+    chip.appendChild(countSpan);
+
+    const renameBtn = document.createElement('button');
+    renameBtn.textContent = '✏️';
+    renameBtn.title = 'Renommer le dossier';
+    renameBtn.addEventListener('click', () => {
+      const newName = prompt(`Renommer le dossier "${folder}" en :`, folder);
+      if (!newName || newName.trim() === '' || newName.trim() === folder) return;
+      snippets.forEach(s => { if (s.folder === folder) s.folder = newName.trim(); });
+      save(render);
+    });
+    chip.appendChild(renameBtn);
+
+    const removeBtn = document.createElement('button');
+    removeBtn.textContent = '✕';
+    removeBtn.title = 'Dissocier ce dossier (les snippets ne sont pas supprimés)';
+    removeBtn.addEventListener('click', () => {
+      if (!confirm(`Retirer le dossier "${folder}" ? Les ${count} snippet(s) concerné(s) seront déplacés vers "Sans dossier".`)) return;
+      snippets.forEach(s => { if (s.folder === folder) s.folder = ''; });
+      save(render);
+    });
+    chip.appendChild(removeBtn);
+
+    folderChipsEl.appendChild(chip);
+  });
+}
+
+function renderFolderSelects() {
+  const folders = getFolders();
+  const currentFilter = folderFilterEl.value;
+  folderFilterEl.innerHTML = '<option value="">Tous les dossiers</option>' +
+    folders.map(f => `<option value="${escapeHtml(f)}">${escapeHtml(f)}</option>`).join('');
+  folderFilterEl.value = folders.includes(currentFilter) ? currentFilter : '';
+
+  const currentNewSelectValue = newFolderSelect.value;
+  newFolderSelect.innerHTML = '<option value="">Sans dossier</option>' +
+    folders.map(f => `<option value="${escapeHtml(f)}">${escapeHtml(f)}</option>`).join('') +
+    '<option value="__new__">➕ Nouveau dossier...</option>';
+  if (folders.includes(currentNewSelectValue)) newFolderSelect.value = currentNewSelectValue;
+}
+
+newFolderSelect.addEventListener('change', () => {
+  newFolderInput.hidden = newFolderSelect.value !== '__new__';
+  if (!newFolderInput.hidden) newFolderInput.focus();
+});
+
+// ---------- Tableau groupé par dossier ----------
+
 function render() {
   const filter = (searchEl.value || '').toLowerCase();
   const folderFilter = folderFilterEl.value;
+
+  renderFolderChips();
+  renderFolderSelects();
 
   const rows = snippets.filter(s => {
     if (folderFilter && s.folder !== folderFilter) return false;
@@ -63,76 +144,100 @@ function render() {
   });
 
   countEl.textContent = snippets.length;
-  renderFolderOptions();
   bodyEl.innerHTML = '';
 
-  rows.forEach((s) => {
-    const isLocked = s.origin === 'synced';
-    const tr = document.createElement('tr');
+  const folders = getFolders();
+  const groupOrder = ['', ...folders]; // "Sans dossier" en premier
 
-    const triggerTd = document.createElement('td');
-    triggerTd.className = 'trigger' + (isLocked ? ' locked' : '');
-    triggerTd.textContent = (isLocked ? '🔒 ' : '') + s.trigger;
-    if (!isLocked) makeEditable(triggerTd, s, 'trigger');
+  groupOrder.forEach(folderName => {
+    const groupRows = rows.filter(s => (s.folder || '') === folderName);
+    if (!groupRows.length) return;
 
-    const contentTd = document.createElement('td');
-    contentTd.className = 'content' + (isLocked ? ' locked' : '');
-    contentTd.textContent = s.content;
-    if (isLocked) {
-      const note = document.createElement('span');
-      note.className = 'locked-note';
-      note.textContent = 'Donnée importée, modifiez la source sur Google Sheets pour la mettre à jour.';
-      contentTd.appendChild(document.createElement('br'));
-      contentTd.appendChild(note);
-    } else {
-      makeEditable(contentTd, s, 'content', true);
-    }
+    const headerTr = document.createElement('tr');
+    headerTr.className = 'folder-group-header';
+    const isCollapsed = collapsedFolders.has(folderName);
+    if (isCollapsed) headerTr.classList.add('collapsed');
+    const color = folderName ? folderColor(folderName) : { bg: '#f3f4f6', text: '#6b7280' };
+    headerTr.style.background = color.bg;
+    headerTr.style.color = color.text;
 
-    const descTd = document.createElement('td');
-    descTd.className = 'desc';
-    descTd.textContent = s.description || '';
-    makeEditable(descTd, s, 'description');
-
-    const folderTd = document.createElement('td');
-    folderTd.className = 'folder';
-    folderTd.textContent = s.folder || '';
-    makeEditable(folderTd, s, 'folder');
-
-    const actionTd = document.createElement('td');
-    actionTd.className = 'action-cell';
-    const originBadge = document.createElement('span');
-    originBadge.className = 'origin-badge ' + (isLocked ? 'origin-synced' : 'origin-local');
-    originBadge.textContent = isLocked ? 'synced' : 'local';
-    actionTd.appendChild(originBadge);
-    actionTd.appendChild(document.createTextNode(' '));
-
-    if (isLocked) {
-      const dupBtn = document.createElement('button');
-      dupBtn.className = 'dup';
-      dupBtn.textContent = 'Dupliquer en local';
-      dupBtn.addEventListener('click', () => {
-        const copy = { ...s, origin: 'local', trigger: s.trigger + '-copie' };
-        snippets.push(copy);
-        save(render);
-      });
-      actionTd.appendChild(dupBtn);
-    }
-
-    const delBtn = document.createElement('button');
-    delBtn.className = 'del';
-    delBtn.textContent = 'Supprimer';
-    delBtn.addEventListener('click', () => {
-      snippets = snippets.filter(x => x !== s);
-      save(render);
+    const headerTd = document.createElement('td');
+    headerTd.colSpan = 4;
+    headerTd.innerHTML = `<span class="chevron">▾</span>${escapeHtml(folderName || 'Sans dossier')} (${groupRows.length})`;
+    headerTr.appendChild(headerTd);
+    headerTr.addEventListener('click', () => {
+      if (collapsedFolders.has(folderName)) collapsedFolders.delete(folderName);
+      else collapsedFolders.add(folderName);
+      render();
     });
-    actionTd.appendChild(delBtn);
+    bodyEl.appendChild(headerTr);
 
-    tr.append(triggerTd, contentTd, descTd, folderTd, actionTd);
-    bodyEl.appendChild(tr);
+    if (isCollapsed) return;
+
+    groupRows.forEach(s => renderSnippetRow(s));
   });
 }
 
-// Rend une cellule éditable avec sauvegarde automatique au blur
+function renderSnippetRow(s) {
+  const isLocked = s.origin === 'synced';
+  const tr = document.createElement('tr');
+
+  const triggerTd = document.createElement('td');
+  triggerTd.className = 'trigger' + (isLocked ? ' locked' : '');
+  triggerTd.textContent = (isLocked ? '🔒 ' : '') + s.trigger;
+  if (!isLocked) makeEditable(triggerTd, s, 'trigger');
+
+  const contentTd = document.createElement('td');
+  contentTd.className = 'content' + (isLocked ? ' locked' : '');
+  contentTd.textContent = s.content;
+  if (isLocked) {
+    const note = document.createElement('span');
+    note.className = 'locked-note';
+    note.textContent = 'Donnée importée, modifiez la source sur Google Sheets pour la mettre à jour.';
+    contentTd.appendChild(document.createElement('br'));
+    contentTd.appendChild(note);
+  } else {
+    makeEditable(contentTd, s, 'content', true);
+  }
+
+  const descTd = document.createElement('td');
+  descTd.className = 'desc';
+  descTd.textContent = s.description || '';
+  makeEditable(descTd, s, 'description');
+
+  const actionTd = document.createElement('td');
+  actionTd.className = 'action-cell';
+  const originBadge = document.createElement('span');
+  originBadge.className = 'origin-badge ' + (isLocked ? 'origin-synced' : 'origin-local');
+  originBadge.textContent = isLocked ? 'synced' : 'local';
+  actionTd.appendChild(originBadge);
+  actionTd.appendChild(document.createTextNode(' '));
+
+  if (isLocked) {
+    const dupBtn = document.createElement('button');
+    dupBtn.className = 'dup';
+    dupBtn.textContent = 'Dupliquer en local';
+    dupBtn.addEventListener('click', () => {
+      const copy = { ...s, origin: 'local', trigger: s.trigger + '-copie' };
+      snippets.push(copy);
+      save(render);
+    });
+    actionTd.appendChild(dupBtn);
+  }
+
+  const delBtn = document.createElement('button');
+  delBtn.className = 'del';
+  delBtn.textContent = 'Supprimer';
+  delBtn.addEventListener('click', () => {
+    snippets = snippets.filter(x => x !== s);
+    save(render);
+  });
+  actionTd.appendChild(delBtn);
+
+  tr.append(triggerTd, contentTd, descTd, actionTd);
+  bodyEl.appendChild(tr);
+}
+
 function makeEditable(td, snippet, field, multiline) {
   td.setAttribute('contenteditable', 'true');
   td.addEventListener('blur', () => {
@@ -140,7 +245,7 @@ function makeEditable(td, snippet, field, multiline) {
     if (snippet[field] === newValue) return;
     if (field === 'trigger' && !newValue) { td.textContent = snippet.trigger; return; }
     snippet[field] = newValue;
-    save(() => renderFolderOptions());
+    save();
   });
   td.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && !multiline) { e.preventDefault(); td.blur(); }
@@ -155,7 +260,8 @@ document.getElementById('add-form').addEventListener('submit', (e) => {
   const trigger = document.getElementById('new-trigger').value.trim();
   const content = document.getElementById('new-content').value;
   const description = document.getElementById('new-description').value.trim();
-  const folder = document.getElementById('new-folder').value.trim();
+  let folder = newFolderSelect.value;
+  if (folder === '__new__') folder = newFolderInput.value.trim();
   if (!trigger || !content) return;
 
   snippets = snippets.filter(s => !(s.trigger === trigger && s.origin !== 'synced'));
@@ -163,6 +269,7 @@ document.getElementById('add-form').addEventListener('submit', (e) => {
   save(() => {
     render();
     e.target.reset();
+    newFolderInput.hidden = true;
   });
 });
 
@@ -344,7 +451,7 @@ function renderUpdateBanner(updateCheck) {
   }
 }
 
-function renderVersionFooter(lastSync, updateCheck) {
+function renderVersionFooter(lastSync) {
   const version = chrome.runtime.getManifest().version;
   const footer = document.getElementById('version-footer');
   const syncTxt = lastSync ? `Dernière synchro : ${new Date(lastSync).toLocaleString()}` : 'Aucune synchro effectuée';
