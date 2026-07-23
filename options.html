@@ -9,7 +9,10 @@
   <header>
     <h1>⚡ Snippet Expander</h1>
     <p class="subtitle">Vos snippets, gérés localement et partageables via Google Sheets ou fichier CSV.</p>
-    <div id="update-banner" class="update-banner" hidden></div>
+    <div id="update-banner" class="update-banner" hidden>
+      <span id="update-banner-text"></span>
+      <button id="update-banner-btn" class="update-btn">⬇️ Télécharger la mise à jour</button>
+    </div>
   </header>
 
   <main>
@@ -69,32 +72,32 @@
     </section>
 
     <section class="card">
-      <h2>Partage &amp; synchro via Google Sheets (gratuit)</h2>
-      <p class="hint">
-        1. Créez un Google Sheet avec un onglet "Snippets" (colonnes trigger / content / description / folder).<br />
-        2. Déployez le script fourni (voir README) comme "Web App".<br />
-        3. Collez l'URL ci-dessous. La récupération fusionne avec vos snippets locaux — rien n'est perdu.
-      </p>
-      <input type="text" id="webapp-url" placeholder="https://script.google.com/macros/s/AKfycb.../exec" />
-      <div class="row-between">
-        <label for="autosync">Synchro automatique (récupération)</label>
-        <select id="autosync">
-          <option value="0">Désactivée</option>
-          <option value="15">Toutes les 15 min</option>
-          <option value="30">Toutes les 30 min</option>
-          <option value="60">Toutes les heures</option>
-        </select>
-      </div>
-      <div class="button-row">
-        <button id="save-settings">💾 Enregistrer</button>
-        <button id="pull-btn">⬇️ Récupérer depuis Google Sheets</button>
-      </div>
-      <p class="hint" id="sync-status"></p>
-    </section>
-
-    <section class="card">
       <button id="toggle-advanced" class="link-btn">⚙️ Paramètres avancés ▾</button>
       <div id="advanced-panel" hidden>
+
+        <div class="advanced-block">
+          <h3>Partage &amp; synchro via Google Sheets (gratuit)</h3>
+          <p class="hint">
+            1. Créez un Google Sheet avec un onglet "Snippets" (colonnes trigger / content / description / folder).<br />
+            2. Déployez le script fourni (voir README) comme "Web App".<br />
+            3. Collez l'URL ci-dessous. La récupération fusionne avec vos snippets locaux — rien n'est perdu.
+          </p>
+          <input type="text" id="webapp-url" placeholder="https://script.google.com/macros/s/AKfycb.../exec" />
+          <div class="row-between">
+            <label for="autosync">Synchro automatique (récupération)</label>
+            <select id="autosync">
+              <option value="0">Désactivée</option>
+              <option value="15">Toutes les 15 min</option>
+              <option value="30">Toutes les 30 min</option>
+              <option value="60">Toutes les heures</option>
+            </select>
+          </div>
+          <div class="button-row">
+            <button id="save-settings">💾 Enregistrer</button>
+            <button id="pull-btn">⬇️ Récupérer depuis Google Sheets</button>
+          </div>
+          <p class="hint" id="sync-status"></p>
+        </div>
 
         <div class="advanced-block">
           <h3>Temporisation avant expansion</h3>
@@ -107,17 +110,15 @@
           </div>
         </div>
 
-        <div class="advanced-block">
-          <h3>Priorité de synchronisation</h3>
+        <div class="advanced-block danger-block">
+          <h3>⚠️ Zone à risque</h3>
+
           <p class="hint">En cas de doublon de déclencheur entre un snippet local et un snippet Google Sheets, qui gagne ?</p>
           <select id="sync-priority">
             <option value="remote">Google Sheets a la priorité (par défaut)</option>
             <option value="local">Mes snippets locaux ont la priorité</option>
           </select>
-        </div>
 
-        <div class="advanced-block danger-block">
-          <h3>⚠️ Zone à risque</h3>
           <p class="hint">Envoie tous vos snippets locaux vers le Google Sheet partagé et <strong>écrase entièrement</strong> son contenu actuel (y compris les modifications d'autres personnes).</p>
           <button id="push-btn" class="danger-btn">🚨 Envoyer vers Google Sheets (écrase les données)</button>
         </div>
@@ -136,6 +137,7 @@
           <div class="button-row">
             <button id="save-github">💾 Enregistrer</button>
             <button id="check-update-btn">🔍 Vérifier une mise à jour maintenant</button>
+            <button id="download-update-btn" hidden>⬇️ Télécharger la mise à jour</button>
           </div>
           <p class="hint" id="update-status"></p>
         </div>

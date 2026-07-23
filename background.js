@@ -2,6 +2,7 @@
 
 const SYNC_ALARM = 'snippet-sync';
 const UPDATE_ALARM = 'snippet-update-check';
+const DEFAULT_GITHUB_URL = 'https://raw.githubusercontent.com/yakamatt/Snippets-Expander/main';
 
 chrome.runtime.onInstalled.addListener(() => {
   chrome.storage.local.get(['snippets'], (res) => {
@@ -13,7 +14,7 @@ chrome.runtime.onInstalled.addListener(() => {
       autoSyncMinutes: 0,
       expansionDelayMs: 1000,
       syncPriority: 'remote', // 'remote' = Google Sheets écrase les doublons locaux | 'local' = les snippets locaux sont conservés
-      githubRepoUrl: '',
+      githubRepoUrl: DEFAULT_GITHUB_URL,
       autoCheckUpdates: false
     };
     chrome.storage.sync.set({ syncSettings: { ...defaults, ...(res.syncSettings || {}) } });

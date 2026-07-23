@@ -127,5 +127,7 @@ button.dup { background: #e5e7eb; color: #1f2430; padding: 5px 10px; font-size: 
 }
 .update-banner[hidden] { display: none; }
 .update-banner a { color: #92400e; font-weight: 600; }
+.update-btn { background: #92400e; color: #fff; white-space: nowrap; }
+.update-btn:hover { background: #78350f; }
 
 #version-footer { text-align: center; color: #9ca3af; font-size: 12px; padding: 10px 0 30px; }

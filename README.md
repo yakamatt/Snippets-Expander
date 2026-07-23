@@ -83,8 +83,8 @@ git push -u origin main
 3. L'extension compare le numéro de version de `manifest.json` sur GitHub avec la version installée
 
 ⚠️ **Limite technique importante** : une extension chargée en mode développeur ("non empaquetée") ne peut pas se ré-écrire elle-même — Chrome ne l'autorise pas, pour des raisons de sécurité. La vérification GitHub **notifie** donc qu'une nouvelle version existe (badge rouge sur l'icône + notification), mais la mise à jour reste manuelle :
-1. Téléchargez la nouvelle version (zip ou `git pull` si vous avez cloné le dépôt)
-2. Remplacez les fichiers dans le **même dossier** que celui chargé dans Chrome (ne créez pas un nouveau dossier)
+1. Cliquez sur le bouton **"⬇️ Télécharger la mise à jour"** (dans la bannière en haut de la page Options, ou dans "Paramètres avancés > Mise à jour de l'extension") — le zip du dépôt se télécharge automatiquement
+2. Décompressez-le et remplacez les fichiers dans le **même dossier** que celui chargé dans Chrome (ne créez pas un nouveau dossier)
 3. Allez sur `chrome://extensions`, cliquez sur l'icône **Actualiser** ⟳ de l'extension
 
 Comme `chrome.storage` est lié à l'identifiant de l'extension (dérivé du chemin du dossier), **vos snippets et paramètres sont automatiquement conservés** tant que vous réutilisez le même dossier — aucune perte de données.
