@@ -1,0 +1,109 @@
+* { box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: #f5f6fa;
+  color: #1f2430;
+  margin: 0;
+  padding: 24px 40px 60px;
+}
+header h1 { margin-bottom: 4px; font-size: 24px; }
+.subtitle { color: #6b7280; margin-top: 0; }
+
+main { max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+
+.card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px 24px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+.card h2 { margin-top: 0; font-size: 16px; }
+
+form#add-form { display: flex; flex-direction: column; gap: 10px; }
+input[type=text], textarea, select {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid #d7dae0;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+}
+textarea { min-height: 70px; resize: vertical; }
+
+button {
+  background: #4f46e5;
+  color: white;
+  border: none;
+  padding: 9px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  font-weight: 500;
+}
+button:hover { background: #4338ca; }
+button.secondary { background: #e5e7eb; color: #1f2430; }
+
+.button-row { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
+.file-btn {
+  background: #e5e7eb;
+  color: #1f2430;
+  padding: 9px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+}
+
+.row-between { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 10px; }
+
+table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #eee; font-size: 13px; vertical-align: top; }
+th { color: #6b7280; font-weight: 600; }
+td.trigger { font-family: monospace; font-weight: 600; color: #4f46e5; white-space: nowrap; }
+td.content { max-width: 400px; white-space: pre-wrap; word-break: break-word; }
+button.del { background: #fee2e2; color: #b91c1c; padding: 5px 10px; font-size: 12px; }
+button.del:hover { background: #fecaca; }
+
+.hint { color: #6b7280; font-size: 12.5px; line-height: 1.5; }
+code { background: #f1f1f5; padding: 1px 5px; border-radius: 4px; }
+
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+.filters { display: flex; gap: 8px; }
+.filters select { width: auto; }
+
+td[contenteditable="true"] { cursor: text; outline: none; }
+td[contenteditable="true"]:focus { background: #eef2ff; box-shadow: inset 0 0 0 1px #4f46e5; border-radius: 4px; }
+td.content { white-space: pre-wrap; }
+td.locked { color: #6b7280; background: #fafafa; }
+.lock-icon { margin-right: 4px; }
+.locked-note { display: block; font-size: 11px; color: #9ca3af; font-style: italic; margin-top: 4px; }
+.origin-badge {
+  font-size: 10.5px; padding: 2px 7px; border-radius: 10px; font-weight: 600;
+}
+.origin-local { background: #dcfce7; color: #166534; }
+.origin-synced { background: #e0e7ff; color: #3730a3; }
+.folder-badge { font-size: 11px; color: #6b7280; }
+button.dup { background: #e5e7eb; color: #1f2430; padding: 5px 10px; font-size: 12px; margin-right: 4px; }
+.action-cell { white-space: nowrap; }
+
+.link-btn { background: none; color: #4f46e5; padding: 4px 0; font-weight: 600; }
+.link-btn:hover { background: none; text-decoration: underline; }
+
+#advanced-panel { margin-top: 14px; display: flex; flex-direction: column; gap: 18px; }
+.advanced-block { border-top: 1px solid #eee; padding-top: 14px; }
+.advanced-block h3 { margin: 0 0 6px; font-size: 14px; }
+.danger-block { background: #fff5f5; border: 1px solid #fecaca; border-radius: 8px; padding: 14px 16px; }
+.danger-btn { background: #dc2626; }
+.danger-btn:hover { background: #b91c1c; }
+.inline-input { display: flex; align-items: center; gap: 6px; }
+.inline-input input { width: 90px; }
+
+.update-banner {
+  background: #fef3c7; color: #92400e; border-radius: 8px; padding: 10px 14px;
+  font-size: 13px; margin-top: 12px; display: flex; justify-content: space-between; align-items: center; gap: 10px;
+}
+.update-banner a { color: #92400e; font-weight: 600; }
+
+#version-footer { text-align: center; color: #9ca3af; font-size: 12px; padding: 10px 0 30px; }

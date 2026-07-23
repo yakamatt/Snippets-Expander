@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<title>Snippet Expander — Options</title>
+<link rel="stylesheet" href="options.css" />
+</head>
+<body>
+  <header>
+    <h1>⚡ Snippet Expander</h1>
+    <p class="subtitle">Vos snippets, gérés localement et partageables via Google Sheets ou fichier CSV.</p>
+    <div id="update-banner" class="update-banner" hidden></div>
+  </header>
+
+  <main>
+    <section class="card">
+      <h2>Ajouter un snippet</h2>
+      <form id="add-form">
+        <input type="text" id="new-trigger" placeholder="Déclencheur (ex: ;sig)" required />
+        <textarea id="new-content" placeholder="Texte de remplacement... (utilisez {date}, {time}, {cursor}, et Entrée pour les sauts de ligne)"></textarea>
+        <div class="two-col">
+          <input type="text" id="new-description" placeholder="Description (optionnel)" />
+          <input type="text" id="new-folder" list="folder-list" placeholder="Dossier (optionnel)" />
+          <datalist id="folder-list"></datalist>
+        </div>
+        <button type="submit">Ajouter</button>
+      </form>
+    </section>
+
+    <section class="card">
+      <div class="row-between">
+        <h2>Mes snippets (<span id="count">0</span>)</h2>
+        <div class="filters">
+          <select id="folder-filter"><option value="">Tous les dossiers</option></select>
+          <input type="text" id="search" placeholder="Rechercher..." />
+        </div>
+      </div>
+      <p class="hint">Cliquez directement dans une cellule pour modifier un snippet local (enregistrement automatique). 🔒 = donnée synchronisée, non modifiable ici.</p>
+      <table id="snippets-table">
+        <thead>
+          <tr><th>Déclencheur</th><th>Contenu</th><th>Description</th><th>Dossier</th><th></th></tr>
+        </thead>
+        <tbody id="snippets-body"></tbody>
+      </table>
+    </section>
+
+    <section class="card">
+      <h2>Import / Export (Excel / CSV)</h2>
+      <p class="hint">Le format CSV s'ouvre et s'édite directement dans Excel. Colonnes : <code>trigger,content,description,folder</code></p>
+      <div class="button-row">
+        <button id="export-csv">⬇️ Exporter en CSV</button>
+        <label class="file-btn">
+          ⬆️ Importer un CSV
+          <input type="file" id="import-csv" accept=".csv" hidden />
+        </label>
+      </div>
+      <p class="hint" id="import-status"></p>
+    </section>
+
+    <section class="card">
+      <h2>Partage &amp; synchro via Google Sheets (gratuit)</h2>
+      <p class="hint">
+        1. Créez un Google Sheet avec un onglet "Snippets" (colonnes trigger / content / description / folder).<br />
+        2. Déployez le script fourni (voir README) comme "Web App".<br />
+        3. Collez l'URL ci-dessous. La récupération fusionne avec vos snippets locaux — rien n'est perdu.
+      </p>
+      <input type="text" id="webapp-url" placeholder="https://script.google.com/macros/s/AKfycb.../exec" />
+      <div class="row-between">
+        <label for="autosync">Synchro automatique (récupération)</label>
+        <select id="autosync">
+          <option value="0">Désactivée</option>
+          <option value="15">Toutes les 15 min</option>
+          <option value="30">Toutes les 30 min</option>
+          <option value="60">Toutes les heures</option>
+        </select>
+      </div>
+      <div class="button-row">
+        <button id="save-settings">💾 Enregistrer</button>
+        <button id="pull-btn">⬇️ Récupérer depuis Google Sheets</button>
+      </div>
+      <p class="hint" id="sync-status"></p>
+    </section>
+
+    <section class="card">
+      <button id="toggle-advanced" class="link-btn">⚙️ Paramètres avancés ▾</button>
+      <div id="advanced-panel" hidden>
+
+        <div class="advanced-block">
+          <h3>Temporisation avant expansion</h3>
+          <p class="hint">Délai d'attente après la fin de la frappe du déclencheur avant remplacement, pour éviter une expansion prématurée si vous continuez à taper.</p>
+          <div class="row-between">
+            <label for="expansion-delay">Délai</label>
+            <div class="inline-input">
+              <input type="number" id="expansion-delay" min="0" max="5000" step="100" value="1000" /> ms
+            </div>
+          </div>
+        </div>
+
+        <div class="advanced-block">
+          <h3>Priorité de synchronisation</h3>
+          <p class="hint">En cas de doublon de déclencheur entre un snippet local et un snippet Google Sheets, qui gagne ?</p>
+          <select id="sync-priority">
+            <option value="remote">Google Sheets a la priorité (par défaut)</option>
+            <option value="local">Mes snippets locaux ont la priorité</option>
+          </select>
+        </div>
+
+        <div class="advanced-block danger-block">
+          <h3>⚠️ Zone à risque</h3>
+          <p class="hint">Envoie tous vos snippets locaux vers le Google Sheet partagé et <strong>écrase entièrement</strong> son contenu actuel (y compris les modifications d'autres personnes).</p>
+          <button id="push-btn" class="danger-btn">🚨 Envoyer vers Google Sheets (écrase les données)</button>
+        </div>
+
+        <div class="advanced-block">
+          <h3>Mise à jour de l'extension</h3>
+          <p class="hint">
+            Aucune donnée locale n'est perdue lors d'une mise à jour tant que vous remplacez les fichiers dans le <em>même dossier</em> puis cliquez sur "Actualiser" dans <code>chrome://extensions</code>.
+          </p>
+          <label>URL du dépôt GitHub (raw), ex : https://raw.githubusercontent.com/utilisateur/repo/main</label>
+          <input type="text" id="github-url" placeholder="https://raw.githubusercontent.com/utilisateur/repo/main" />
+          <div class="row-between">
+            <label for="auto-check-updates">Vérifier automatiquement les mises à jour (2x/jour)</label>
+            <input type="checkbox" id="auto-check-updates" />
+          </div>
+          <div class="button-row">
+            <button id="save-github">💾 Enregistrer</button>
+            <button id="check-update-btn">🔍 Vérifier une mise à jour maintenant</button>
+          </div>
+          <p class="hint" id="update-status"></p>
+        </div>
+      </div>
+    </section>
+
+    <footer id="version-footer"></footer>
+  </main>
+
+  <script src="options.js"></script>
+</body>
+</html>
