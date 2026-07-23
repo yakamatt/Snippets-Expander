@@ -1,4 +1,5 @@
-const BUILD_DATE = '2026-07-23'; // v1.1.1
+const BUILD_DATE = '2026-07-23'; // v1.1.2
+const DEFAULT_GITHUB_URL = 'https://raw.githubusercontent.com/yakamatt/Snippets-Expander/main';
 
 let snippets = [];
 const collapsedFolders = new Set();
@@ -24,7 +25,7 @@ function load() {
     document.getElementById('autosync').value = String(s.autoSyncMinutes || 0);
     document.getElementById('expansion-delay').value = s.expansionDelayMs ?? 1000;
     document.getElementById('sync-priority').value = s.syncPriority || 'remote';
-    document.getElementById('github-url').value = s.githubRepoUrl || '';
+    document.getElementById('github-url').value = s.githubRepoUrl || DEFAULT_GITHUB_URL;
     document.getElementById('auto-check-updates').checked = !!s.autoCheckUpdates;
   });
 }
@@ -420,16 +421,43 @@ document.getElementById('save-github').addEventListener('click', () => {
 document.getElementById('check-update-btn').addEventListener('click', () => {
   document.getElementById('update-status').textContent = '⏳ Vérification en cours...';
   chrome.runtime.sendMessage({ type: 'CHECK_FOR_UPDATES' }, (resp) => {
+    const downloadBtn = document.getElementById('download-update-btn');
     if (resp && resp.ok) {
       document.getElementById('update-status').textContent = resp.isNewer
         ? `⬆️ Nouvelle version disponible : ${resp.remoteVersion} (actuelle : ${resp.localVersion})`
         : `✅ Vous êtes à jour (v${resp.localVersion}).`;
+      downloadBtn.hidden = !resp.isNewer;
       chrome.storage.local.get(['updateCheck'], (r) => renderUpdateBanner(r.updateCheck));
     } else {
+      downloadBtn.hidden = true;
       document.getElementById('update-status').textContent = '❌ Erreur : ' + (resp && resp.error);
     }
   });
 });
+
+// Construit l'URL de téléchargement du zip à partir de l'URL raw GitHub configurée
+// (https://raw.githubusercontent.com/USER/REPO/BRANCH -> zip via codeload.github.com)
+function getRepoZipUrl() {
+  const raw = document.getElementById('github-url').value.trim();
+  const m = raw.match(/raw\.githubusercontent\.com\/([^/]+)\/([^/]+)\/([^/]+)/);
+  if (!m) return null;
+  const [, user, repo, branch] = m;
+  return `https://codeload.github.com/${user}/${repo}/zip/refs/heads/${branch}`;
+}
+
+function triggerUpdateDownload() {
+  const zipUrl = getRepoZipUrl();
+  if (!zipUrl) {
+    document.getElementById('update-status').textContent = '❌ URL du dépôt GitHub invalide, impossible de générer le lien de téléchargement.';
+    return;
+  }
+  window.open(zipUrl, '_blank');
+  document.getElementById('update-status').textContent =
+    '⬇️ Téléchargement lancé. Décompressez le zip, remplacez les fichiers dans le dossier de l\'extension, puis cliquez sur "Actualiser" dans chrome://extensions.';
+}
+
+document.getElementById('download-update-btn').addEventListener('click', triggerUpdateDownload);
+document.getElementById('update-banner-btn').addEventListener('click', triggerUpdateDownload);
 
 function updateSyncSettings(patch, cb) {
   chrome.storage.sync.get(['syncSettings'], (res) => {
@@ -443,11 +471,15 @@ function updateSyncSettings(patch, cb) {
 
 function renderUpdateBanner(updateCheck) {
   const banner = document.getElementById('update-banner');
+  const downloadBtn = document.getElementById('download-update-btn');
   if (updateCheck && updateCheck.isNewer) {
     banner.hidden = false;
-    banner.innerHTML = `<span>⬆️ Nouvelle version disponible : <strong>${escapeHtml(updateCheck.remoteVersion)}</strong> (actuelle : ${escapeHtml(updateCheck.localVersion)})</span>`;
+    document.getElementById('update-banner-text').innerHTML =
+      `⬆️ Nouvelle version disponible : <strong>${escapeHtml(updateCheck.remoteVersion)}</strong> (actuelle : ${escapeHtml(updateCheck.localVersion)})`;
+    downloadBtn.hidden = false;
   } else {
     banner.hidden = true;
+    downloadBtn.hidden = true;
   }
 }
 

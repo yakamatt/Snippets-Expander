@@ -1,5 +1,8 @@
 # Changelog — Snippet Expander
 
+## v1.1.2 — 2026-07-23
+- Bouton "⬇️ Télécharger la mise à jour" ajouté (bannière + Paramètres avancés) quand une nouvelle version est détectée sur GitHub : télécharge directement le zip du dépôt (via codeload.github.com) pour appliquer la mise à jour manuelle
+
 ## v1.1.1 — 2026-07-23
 - Correctif : la section "Paramètres avancés" restait visible par défaut (le CSS `display:flex` écrasait l'attribut `hidden`) — elle est maintenant bien repliée au chargement
 - Gestion des dossiers repensée graphiquement : chips colorés (couleur déterministe par nom), compteur de snippets par dossier, renommage et dissociation directement depuis les chips
