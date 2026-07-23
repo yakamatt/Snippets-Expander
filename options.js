@@ -1,4 +1,4 @@
-const BUILD_DATE = '2026-07-23'; // v1.1.2
+const BUILD_DATE = '2026-07-23'; // v1.1.3
 const DEFAULT_GITHUB_URL = 'https://raw.githubusercontent.com/yakamatt/Snippets-Expander/main';
 
 let snippets = [];
@@ -23,7 +23,7 @@ function load() {
     const s = res.syncSettings || {};
     document.getElementById('webapp-url').value = s.webAppUrl || '';
     document.getElementById('autosync').value = String(s.autoSyncMinutes || 0);
-    document.getElementById('expansion-delay').value = s.expansionDelayMs ?? 1000;
+    document.getElementById('expansion-delay').value = s.expansionDelayMs ?? 500;
     document.getElementById('sync-priority').value = s.syncPriority || 'remote';
     document.getElementById('github-url').value = s.githubRepoUrl || DEFAULT_GITHUB_URL;
     document.getElementById('auto-check-updates').checked = !!s.autoCheckUpdates;
@@ -356,11 +356,19 @@ document.getElementById('import-csv').addEventListener('change', (e) => {
 // --- Synchro Google Sheets ---
 
 document.getElementById('save-settings').addEventListener('click', () => {
-  updateSyncSettings({
-    webAppUrl: document.getElementById('webapp-url').value.trim(),
-    autoSyncMinutes: parseInt(document.getElementById('autosync').value, 10)
-  }, () => {
-    document.getElementById('sync-status').textContent = '✅ Paramètres enregistrés.';
+  const webAppUrl = document.getElementById('webapp-url').value.trim();
+  const autosyncEl = document.getElementById('autosync');
+  chrome.storage.sync.get(['syncSettings'], (res) => {
+    const wasEmpty = !(res.syncSettings || {}).webAppUrl;
+    let autoSyncMinutes = parseInt(autosyncEl.value, 10);
+    // Première configuration de l'URL Google Sheets : active la synchro auto toutes les heures par défaut
+    if (webAppUrl && wasEmpty && autoSyncMinutes === 0) {
+      autoSyncMinutes = 60;
+      autosyncEl.value = '60';
+    }
+    updateSyncSettings({ webAppUrl, autoSyncMinutes }, () => {
+      document.getElementById('sync-status').textContent = '✅ Paramètres enregistrés.';
+    });
   });
 });
 

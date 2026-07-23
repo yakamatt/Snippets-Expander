@@ -1,5 +1,10 @@
 # Changelog — Snippet Expander
 
+## v1.1.3 — 2026-07-23
+- "Vérifier automatiquement les mises à jour" est désormais coché par défaut (nouvelles installations)
+- Temporisation avant expansion : 500 ms par défaut (au lieu de 1000 ms)
+- Synchro automatique : la première fois que vous renseignez l'URL Google Sheets et enregistrez, l'intervalle passe automatiquement à "Toutes les heures" au lieu de "Désactivée"
+
 ## v1.1.2 — 2026-07-23
 - Bouton "⬇️ Télécharger la mise à jour" ajouté (bannière + Paramètres avancés) quand une nouvelle version est détectée sur GitHub : télécharge directement le zip du dépôt (via codeload.github.com) pour appliquer la mise à jour manuelle
 
