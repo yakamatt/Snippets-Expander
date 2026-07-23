@@ -12,10 +12,10 @@ chrome.runtime.onInstalled.addListener(() => {
     const defaults = {
       webAppUrl: '',
       autoSyncMinutes: 0,
-      expansionDelayMs: 1000,
+      expansionDelayMs: 500,
       syncPriority: 'remote', // 'remote' = Google Sheets écrase les doublons locaux | 'local' = les snippets locaux sont conservés
       githubRepoUrl: DEFAULT_GITHUB_URL,
-      autoCheckUpdates: false
+      autoCheckUpdates: true
     };
     chrome.storage.sync.set({ syncSettings: { ...defaults, ...(res.syncSettings || {}) } });
   });
