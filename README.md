@@ -17,10 +17,9 @@ Remplace automatiquement un texte court (ex: `;sig`) par un texte prédéfini, d
 - Un snippet a un **déclencheur** (ex: `;sig`, `/adresse`), un **contenu** et un **dossier** optionnel.
 - Tapez le déclencheur dans n'importe quel champ (Gmail, formulaires web, réseaux sociaux, contenteditable...) : après une courte temporisation (1 seconde par défaut, réglable), il se remplace par le contenu — les sauts de ligne et retours à la ligne sont respectés.
 - Placeholders disponibles : `{date}`, `{time}`, `{cursor}` (repositionne le curseur après expansion).
-- **Édition directe** : cliquez dans n'importe quelle cellule du tableau des snippets pour la modifier ; l'enregistrement est automatique dès que vous cliquez ailleurs (blur). Toute modification (hors dossier "Local", voir plus bas) est immédiatement renvoyée vers Google Sheets.
-- **Dossiers** : choisissez un dossier lors de la création d'un snippet, ou changez-le à tout moment via l'icône 📁 à côté de "Dupliquer en local"/"Supprimer" sur chaque ligne — elle se transforme temporairement en sélecteur de dossier (avec option "Nouveau dossier..."), qui redevient une icône une fois le choix fait. Utilisez le filtre en haut de la liste pour n'afficher qu'un dossier. Chaque en-tête de groupe de dossier propose trois icônes alignées à droite : **+** (ajouter rapidement un snippet dans ce dossier), **✏️** (renommer) et **🗑️** (supprimer le dossier — les snippets ne sont pas supprimés, ils repassent en "Sans dossier").
-- **Dossier "Local"** : réservé, toujours proposé dans les listes de dossiers. Les snippets qu'il contient restent uniquement sur cet appareil et ne sont **jamais** envoyés à Google Sheets, quoi qu'il arrive. Tous les autres dossiers (y compris "Sans dossier") sont synchronisés.
-- **Interrupteur Synced/Local** : chaque ligne affiche un interrupteur à bascule au lieu d'une simple étiquette. Le passer sur "Local" **duplique** le snippet dans le dossier "Local" (l'original synchronisé n'est pas modifié) ; le passer sur "Synced" **sort** ce snippet du dossier "Local" pour l'ajouter à la synchro Google Sheets. Une confirmation détaille l'action avant de la valider.
+- **Édition directe** : cliquez dans n'importe quelle cellule du tableau des snippets pour la modifier ; l'enregistrement est automatique dès que vous cliquez ailleurs (blur). Toute modification d'un snippet **partagé** (voir plus bas) est immédiatement renvoyée vers Google Sheets.
+- **Dossiers** : choisissez un dossier lors de la création d'un snippet, ou changez-le à tout moment via l'icône 📁 à côté de "Dupliquer en local"/"Supprimer" sur chaque ligne — elle se transforme temporairement en sélecteur de dossier (avec option "Nouveau dossier..."), qui redevient une icône une fois le choix fait. Utilisez le filtre en haut de la liste pour n'afficher qu'un dossier. Chaque en-tête de groupe de dossier propose trois icônes alignées à droite : **+** (ajouter rapidement un snippet dans ce dossier), **✏️** (renommer) et **🗑️** (supprimer le dossier — les snippets ne sont pas supprimés, ils repassent en "Sans dossier"). Les dossiers n'ont plus d'incidence sur la synchro : c'est l'interrupteur Shared/Local (voir ci-dessous) qui la détermine, snippet par snippet.
+- **Interrupteur Shared/Local** : chaque snippet a sa propre propriété "partagé", indépendante de son dossier, réglée par un interrupteur à bascule sur chaque ligne. Sur "Shared", le snippet est envoyé immédiatement à Google Sheets et visible/modifiable par toute l'équipe ; sur "Local", il est retiré du Sheet partagé et reste uniquement sur cet appareil. Le changement se fait **sur place** (aucune copie créée), après une confirmation qui rappelle la conséquence. Une case à cocher "Local uniquement" en haut de la liste permet de n'afficher que ces snippets-là.
 - **Déclencheurs uniques** : à la création d'un snippet, si le déclencheur existe déjà côté synchronisé (Google Sheets), une confirmation s'affiche : votre version locale sera prioritaire et s'affichera à la place de la version en ligne pour ce déclencheur (voir aussi "Priorité de synchronisation" plus bas).
 
 ## 3. Import / Export Excel (XLSX)
@@ -51,11 +50,11 @@ Dans la page Options > Paramètres avancés :
 
 ### d. Fusion des données (important)
 Contrairement à la v1.0, **la récupération ne supprime plus jamais vos snippets créés localement**. Au moment de la récupération :
-- vos snippets locaux sont conservés (sauf ceux du dossier "Local", jamais concernés par la synchro)
+- vos snippets locaux sont conservés (sauf ceux marqués "Local" via l'interrupteur, jamais concernés par la synchro)
 - les snippets provenant du Sheet sont ajoutés/mis à jour, marqués 🔒 ; ils restent **modifiables directement** dans le tableau, comme n'importe quel snippet. Pour une copie indépendante qui ne sera plus jamais écrasée par une future récupération, utilisez plutôt "Dupliquer en local"
 - en cas de déclencheur identique entre un snippet local et un snippet synchronisé, la **priorité de synchronisation** (réglable dans Paramètres avancés) décide qui l'emporte : Google Sheets par défaut, ou vos snippets locaux si vous le préférez
 
-**Synchro automatique après modification** : toute modification d'un snippet (ajout, édition, changement de dossier, suppression) envoie **immédiatement** vers Google Sheets, sans délai ni confirmation. Seuls les snippets du dossier **"Local"** en sont exclus — tout le reste est synchronisé.
+**Synchro automatique après modification** : toute modification d'un snippet **partagé** (ajout, édition, changement de dossier, suppression) envoie **immédiatement** vers Google Sheets, sans délai ni confirmation. Seuls les snippets marqués **"Local"** en sont exclus — tout le reste est synchronisé.
 
 Le bouton d'envoi manuel **"🚨 Envoyer vers Google Sheets"** (Paramètres avancés > Zone à risque) reste disponible pour forcer une resynchro complète immédiate, mais n'est plus nécessaire en usage normal.
 
@@ -65,7 +64,7 @@ Accessibles via le bouton "⚙️ Paramètres avancés" en bas de la page Option
 - **Import / Export XLSX** : voir section 3
 - **Temporisation avant expansion** : délai (ms) après la fin de la frappe avant remplacement (évite qu'un mot plus long contenant un déclencheur ne s'expanse par erreur)
 - **Priorité de synchronisation** : Google Sheets ou snippets locaux en cas de doublon
-- **Envoi vers Google Sheets** : bouton à risque, confirmation obligatoire (resynchro manuelle complète, hors dossier "Local")
+- **Envoi vers Google Sheets** : bouton à risque, confirmation obligatoire (resynchro manuelle complète des snippets partagés)
 - **Mise à jour de l'extension** : voir section suivante
 
 ## 6. Mettre l'extension sur GitHub
