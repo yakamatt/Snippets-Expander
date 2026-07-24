@@ -1,4 +1,4 @@
-const BUILD_DATE = '2026-07-24'; // v1.4.4
+const BUILD_DATE = '2026-07-24'; // v1.5.0
 const DEFAULT_GITHUB_URL = 'https://raw.githubusercontent.com/yakamatt/Snippets-Expander/main';
 const DEFAULT_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbwlew8sAl_APmmZS5bpedGnSf6Ukn0Tvs3S93BGGwt6pwUMzg1uwfOWq91zEhTUVJG9/exec';
 // Dossier réservé : jamais envoyé à Google Sheets. Tous les autres dossiers sont synchronisés.
@@ -297,22 +297,52 @@ function renderSnippetRow(s) {
 
   const actionTd = document.createElement('td');
   actionTd.className = 'action-cell';
-  const originBadge = document.createElement('span');
-  originBadge.className = 'origin-badge ' + (isLocked ? 'origin-synced' : 'origin-local');
-  originBadge.textContent = isLocked ? 'synced' : 'local';
-  actionTd.appendChild(originBadge);
-  actionTd.appendChild(document.createTextNode(' '));
 
-  const syncIndicator = document.createElement('span');
-  syncIndicator.className = 'sync-indicator';
-  if (isLocal) {
-    syncIndicator.textContent = '🔒 non synchronisé';
-    syncIndicator.title = 'Dossier "Local" : jamais envoyé à Google Sheets.';
-  } else {
-    syncIndicator.textContent = '☁ sync auto';
-    syncIndicator.title = 'Toute modification est synchronisée immédiatement vers Google Sheets, pour tous les utilisateurs.';
-  }
-  actionTd.appendChild(syncIndicator);
+  // Interrupteur Synced/Local : remplace l'ancien tag statique + l'indicateur de synchro par un
+  // seul contrôle. Son état reflète le dossier (Local = jamais synchronisé, tout le reste = envoyé
+  // immédiatement à Google Sheets), pas la provenance d'origine — c'est le dossier qui gouverne
+  // réellement la synchro dans cette extension (voir background.js pushToSheet).
+  const syncToggleWrap = document.createElement('label');
+  syncToggleWrap.className = 'sync-toggle';
+  const syncToggleInput = document.createElement('input');
+  syncToggleInput.type = 'checkbox';
+  syncToggleInput.checked = !isLocal;
+  const syncToggleText = document.createElement('span');
+  syncToggleText.className = 'sync-toggle-label';
+  syncToggleText.textContent = isLocal ? 'Local' : 'Synced';
+  syncToggleWrap.title = isLocal
+    ? 'Dossier "Local" : jamais envoyé à Google Sheets.'
+    : 'Synchronisé : envoyé immédiatement à Google Sheets, pour tous les utilisateurs.';
+
+  syncToggleInput.addEventListener('change', () => {
+    if (syncToggleInput.checked) {
+      // Local → Synced : ne crée pas de copie, sort simplement ce snippet du dossier "Local"
+      const confirmed = confirm(
+        '⚠️ Ce snippet ne sera plus privé : il va rejoindre la liste des snippets synchronisés ' +
+        'et sera envoyé immédiatement à Google Sheets, visible et modifiable par toute l\'équipe.\n\n' +
+        'Continuer ?'
+      );
+      if (!confirmed) { syncToggleInput.checked = false; return; }
+      s.folder = '';
+      save(render);
+    } else {
+      // Synced → Local : ne modifie pas l'original, crée une copie indépendante dans "Local"
+      const confirmed = confirm(
+        '⚠️ Ce snippet va être dupliqué dans le dossier "Local".\n\n' +
+        'La copie restera uniquement sur cet appareil et ne sera jamais envoyée à Google Sheets. ' +
+        'Ce snippet-ci (synchronisé) n\'est pas modifié.\n\n' +
+        'Continuer ?'
+      );
+      if (!confirmed) { syncToggleInput.checked = true; return; }
+      const copy = { ...s, origin: 'local', folder: LOCAL_FOLDER_NAME, trigger: s.trigger + '-local' };
+      snippets.push(copy);
+      save(render);
+    }
+  });
+
+  syncToggleWrap.appendChild(syncToggleInput);
+  syncToggleWrap.appendChild(syncToggleText);
+  actionTd.appendChild(syncToggleWrap);
 
   // Icône dédiée pour changer de dossier : au clic, se transforme en sélecteur (réutilise la
   // même liste que le formulaire d'ajout), pour ne jamais avoir un <select> toujours visible
