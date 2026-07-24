@@ -1,5 +1,10 @@
 # Changelog — Snippet Expander
 
+## v1.4.0 — 2026-07-24
+- **Changement de dossier par glisser-déposer**, à la place du menu déroulant par ligne : une poignée ⠿ dédiée est seule "draggable" (jamais les cellules éditables), pour ne jamais perturber l'édition directe du déclencheur/contenu. On peut lâcher sur l'en-tête d'un dossier ou directement sur une autre ligne de ce dossier
+- **Colonne "Contenu" nettement élargie** : `table-layout: fixed` avec largeurs fixes pour Déclencheur/Actions, le reste revenant au Contenu
+- Corrige un bug de rendu découvert au passage : `display:flex` posé directement sur le `<td colspan="3">` de l'en-tête de groupe cassait le calcul de largeur de `table-layout:fixed` (Chrome le réduisait à la largeur de la 1re colonne au lieu de sommer les 3 colonnes couvertes) — le flex est maintenant posé sur un wrapper interne, le `<td>` reste un élément de tableau normal
+
 ## v1.3.3 — 2026-07-24
 - **Corrige l'import automatique à l'installation**, qui n'affichait jamais les snippets importés au premier lancement de la page Options : `chrome.runtime.openOptionsPage()` était appelé sans attendre la fin de `pullFromSheet()` (fetch réseau), donc la page se chargeait et lisait le storage avant que l'import ne soit terminé. Toute la séquence d'installation (réglages par défaut, import, ouverture des paramètres) est maintenant strictement enchaînée avec `await`
 - Supprime une condition de course annexe : l'initialisation de `snippets: []` et l'écriture de `pullFromSheet()` visaient la même clé de storage depuis deux chaînes asynchrones indépendantes, sans garantie d'ordre
