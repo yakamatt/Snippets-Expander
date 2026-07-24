@@ -1,4 +1,4 @@
-const BUILD_DATE = '2026-07-24'; // v1.6.0
+const BUILD_DATE = '2026-07-24'; // v1.7.0
 const DEFAULT_GITHUB_URL = 'https://raw.githubusercontent.com/yakamatt/Snippets-Expander/main';
 const DEFAULT_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbwlew8sAl_APmmZS5bpedGnSf6Ukn0Tvs3S93BGGwt6pwUMzg1uwfOWq91zEhTUVJG9/exec';
 
@@ -293,6 +293,15 @@ function render() {
   });
 }
 
+// Copie indépendante d'un snippet, marquée "privé" (shared:false) : n'affecte jamais l'original.
+// Utilisée à la fois par le passage Partagé → Privé de l'interrupteur et par le bouton
+// "Dupliquer en privé" des snippets synchronisés.
+function duplicateAsPrivate(s) {
+  const copy = { ...s, origin: 'local', shared: false, trigger: s.trigger + '-privé' };
+  snippets.push(copy);
+  save(render);
+}
+
 function renderSnippetRow(s) {
   const isLocked = s.origin === 'synced';
   const shared = isShared(s);
@@ -311,11 +320,9 @@ function renderSnippetRow(s) {
   const actionTd = document.createElement('td');
   actionTd.className = 'action-cell';
 
-  // Interrupteur Shared/Local : chaque snippet porte sa propre propriété `shared`, indépendante
-  // de son dossier. À l'activation il est envoyé immédiatement à Google Sheets et visible par
-  // toute l'équipe ; à la désactivation il en est retiré (voir background.js pushToSheet) et ne
-  // reste que sur cet appareil. Pas de copie créée dans un sens ou dans l'autre : le snippet
-  // change simplement d'état sur place.
+  // Interrupteur Partagé/Privé : Privé → Partagé modifie ce snippet sur place (il rejoint la
+  // synchro Google Sheets) ; Partagé → Privé ne touche pas à l'original, il crée une copie privée
+  // indépendante (voir duplicateAsPrivate, aussi utilisée par le bouton "Dupliquer en privé").
   const syncToggleWrap = document.createElement('label');
   syncToggleWrap.className = 'sync-toggle';
   const syncToggleInput = document.createElement('input');
@@ -323,13 +330,14 @@ function renderSnippetRow(s) {
   syncToggleInput.checked = shared;
   const syncToggleText = document.createElement('span');
   syncToggleText.className = 'sync-toggle-label';
-  syncToggleText.textContent = shared ? 'Shared' : 'Local';
+  syncToggleText.textContent = shared ? 'Partagé' : 'Privé';
   syncToggleWrap.title = shared
     ? 'Partagé : envoyé immédiatement à Google Sheets, visible et modifiable par toute l\'équipe.'
-    : 'Local : jamais envoyé à Google Sheets, reste uniquement sur cet appareil.';
+    : 'Privé : jamais envoyé à Google Sheets, reste uniquement sur cet appareil.';
 
   syncToggleInput.addEventListener('change', () => {
     if (syncToggleInput.checked) {
+      // Privé → Partagé : modifie ce snippet sur place, pas de copie
       const confirmed = confirm(
         '⚠️ Ce snippet ne sera plus privé : il va être envoyé immédiatement à Google Sheets, ' +
         'visible et modifiable par toute l\'équipe.\n\n' +
@@ -339,14 +347,14 @@ function renderSnippetRow(s) {
       s.shared = true;
       save(render);
     } else {
+      // Partagé → Privé : ne modifie pas l'original, crée une copie indépendante marquée "privé"
       const confirmed = confirm(
-        '⚠️ Ce snippet va être retiré du Google Sheet partagé : il ne sera plus visible ni ' +
-        'modifiable par le reste de l\'équipe, et restera uniquement sur cet appareil.\n\n' +
+        '⚠️ Ce snippet va être dupliqué en version privée : la copie restera uniquement sur cet ' +
+        'appareil et ne sera jamais envoyée à Google Sheets. Ce snippet-ci (partagé) n\'est pas modifié.\n\n' +
         'Continuer ?'
       );
       if (!confirmed) { syncToggleInput.checked = true; return; }
-      s.shared = false;
-      save(render);
+      duplicateAsPrivate(s);
     }
   });
 
@@ -384,12 +392,8 @@ function renderSnippetRow(s) {
   if (isLocked) {
     const dupBtn = document.createElement('button');
     dupBtn.className = 'dup';
-    dupBtn.textContent = 'Dupliquer en local';
-    dupBtn.addEventListener('click', () => {
-      const copy = { ...s, origin: 'local', trigger: s.trigger + '-copie' };
-      snippets.push(copy);
-      save(render);
-    });
+    dupBtn.textContent = 'Dupliquer en privé';
+    dupBtn.addEventListener('click', () => duplicateAsPrivate(s));
     actionTd.appendChild(dupBtn);
   }
 
