@@ -1,6 +1,6 @@
-const BUILD_DATE = '2026-07-24'; // v1.2.2
+const BUILD_DATE = '2026-07-24'; // v1.2.3
 const DEFAULT_GITHUB_URL = 'https://raw.githubusercontent.com/yakamatt/Snippets-Expander/main';
-const DEFAULT_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbwD5Qroaap9pF7nHdJG45FuonkRWocCPtEOIwNBnWSktBhfed9Eare74eXCPFPkl4G6/exec';
+const DEFAULT_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbwlew8sAl_APmmZS5bpedGnSf6Ukn0Tvs3S93BGGwt6pwUMzg1uwfOWq91zEhTUVJG9/exec';
 
 let snippets = [];
 const collapsedFolders = new Set();
