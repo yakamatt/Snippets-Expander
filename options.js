@@ -1,8 +1,12 @@
-const BUILD_DATE = '2026-07-24'; // v1.5.0
+const BUILD_DATE = '2026-07-24'; // v1.6.0
 const DEFAULT_GITHUB_URL = 'https://raw.githubusercontent.com/yakamatt/Snippets-Expander/main';
 const DEFAULT_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbwlew8sAl_APmmZS5bpedGnSf6Ukn0Tvs3S93BGGwt6pwUMzg1uwfOWq91zEhTUVJG9/exec';
-// Dossier réservé : jamais envoyé à Google Sheets. Tous les autres dossiers sont synchronisés.
-const LOCAL_FOLDER_NAME = 'Local';
+
+// Un snippet est synchronisé sauf si sa propriété `shared` vaut explicitement false (undefined =
+// partagé, pour rester compatible avec les snippets créés avant l'ajout de ce champ).
+function isShared(s) {
+  return s.shared !== false;
+}
 
 let snippets = [];
 const collapsedFolders = new Set();
@@ -11,12 +15,26 @@ const bodyEl = document.getElementById('snippets-body');
 const countEl = document.getElementById('count');
 const searchEl = document.getElementById('search');
 const folderFilterEl = document.getElementById('folder-filter');
+const localOnlyFilterEl = document.getElementById('local-only-filter');
 const newFolderSelect = document.getElementById('new-folder-select');
 const newFolderInput = document.getElementById('new-folder-input');
 
 function load() {
   chrome.storage.local.get(['snippets', 'lastSync', 'updateCheck', 'pinBannerDismissed'], (res) => {
     snippets = res.snippets || [];
+    // Migration : les versions précédentes rangeaient les snippets non partagés dans un dossier
+    // réservé "Local" plutôt que via une propriété dédiée. On convertit une fois pour toutes vers
+    // la propriété `shared`, et on vide ce dossier qui n'a plus de sens particulier.
+    let migrated = false;
+    snippets.forEach(s => {
+      if (typeof s.shared !== 'boolean') {
+        const wasLocalFolder = String(s.folder || '').trim().toLowerCase() === 'local';
+        s.shared = !wasLocalFolder;
+        if (wasLocalFolder) s.folder = '';
+        migrated = true;
+      }
+    });
+    if (migrated) chrome.storage.local.set({ snippets });
     render();
     renderVersionFooter(res.lastSync);
     renderUpdateBanner(res.updateCheck);
@@ -80,8 +98,8 @@ function save(cb) {
 }
 
 // Toute modification (ajout, édition, suppression, changement de dossier...) synchronise
-// immédiatement vers Google Sheets, sans délai. Les snippets du dossier "Local" restent exclus
-// de l'envoi (voir background.js pushToSheet).
+// immédiatement vers Google Sheets, sans délai. Les snippets dont la propriété `shared` vaut
+// false restent exclus de l'envoi (voir background.js pushToSheet).
 // Le statut est écrit à la fois dans le panneau avancé (#sync-status) et dans une ligne toujours
 // visible sous "Mes snippets" (#live-sync-status) : sans ça, un échec de synchro (ex: URL absente,
 // erreur réseau) restait invisible pour qui n'ouvre jamais "Paramètres avancés", et donnait
@@ -118,12 +136,7 @@ function syncNow() {
 
 function getFolders() {
   const used = snippets.map(s => s.folder).filter(Boolean);
-  // "Local" est toujours proposé, même si aucun snippet ne l'utilise encore
-  return Array.from(new Set([...used, LOCAL_FOLDER_NAME])).sort((a, b) => a.localeCompare(b));
-}
-
-function isLocalFolder(name) {
-  return String(name || '').trim().toLowerCase() === LOCAL_FOLDER_NAME.toLowerCase();
+  return Array.from(new Set(used)).sort((a, b) => a.localeCompare(b));
 }
 
 // Couleur pastel déterministe à partir du nom du dossier, piochée dans une palette de teintes
@@ -151,11 +164,11 @@ function escapeHtml(str) {
 
 // ---------- Dossiers : selects ----------
 
-// Remplit un <select> avec "Sans dossier" + la liste des dossiers ("Local" marqué 🔒) + "Nouveau dossier"
+// Remplit un <select> avec "Sans dossier" + la liste des dossiers + "Nouveau dossier"
 function populateFolderOptions(selectEl, selectedValue) {
   const folders = getFolders();
   selectEl.innerHTML = '<option value="">Sans dossier</option>' +
-    folders.map(f => `<option value="${escapeHtml(f)}">${escapeHtml(isLocalFolder(f) ? f + ' 🔒' : f)}</option>`).join('') +
+    folders.map(f => `<option value="${escapeHtml(f)}">${escapeHtml(f)}</option>`).join('') +
     '<option value="__new__">➕ Nouveau dossier...</option>';
   selectEl.value = (selectedValue && folders.includes(selectedValue)) ? selectedValue : '';
 }
@@ -164,7 +177,7 @@ function renderFolderSelects() {
   const folders = getFolders();
   const currentFilter = folderFilterEl.value;
   folderFilterEl.innerHTML = '<option value="">Tous les dossiers</option>' +
-    folders.map(f => `<option value="${escapeHtml(f)}">${escapeHtml(isLocalFolder(f) ? f + ' 🔒' : f)}</option>`).join('');
+    folders.map(f => `<option value="${escapeHtml(f)}">${escapeHtml(f)}</option>`).join('');
   folderFilterEl.value = folders.includes(currentFilter) ? currentFilter : '';
 
   const currentNewSelectValue = newFolderSelect.value;
@@ -181,10 +194,12 @@ newFolderSelect.addEventListener('change', () => {
 function render() {
   const filter = (searchEl.value || '').toLowerCase();
   const folderFilter = folderFilterEl.value;
+  const localOnly = localOnlyFilterEl.checked;
 
   renderFolderSelects();
 
   const rows = snippets.filter(s => {
+    if (localOnly && isShared(s)) return false;
     if (folderFilter && s.folder !== folderFilter) return false;
     if (!filter) return true;
     return s.trigger.toLowerCase().includes(filter) ||
@@ -201,12 +216,11 @@ function render() {
     const groupRows = rows.filter(s => (s.folder || '') === folderName);
     if (!groupRows.length) return;
 
-    const isLocal = isLocalFolder(folderName);
     const headerTr = document.createElement('tr');
     headerTr.className = 'folder-group-header';
     const isCollapsed = collapsedFolders.has(folderName);
     if (isCollapsed) headerTr.classList.add('collapsed');
-    const color = folderName && !isLocal
+    const color = folderName
       ? folderColor(folderName)
       : (isDarkMode() ? { bg: '#2a241a', text: '#a79a85' } : { bg: '#efe8db', text: '#77694f' });
     headerTr.style.background = color.bg;
@@ -223,8 +237,7 @@ function render() {
 
     const label = document.createElement('span');
     label.className = 'folder-group-label';
-    const suffix = isLocal ? ' 🔒 non synchronisé' : '';
-    label.innerHTML = `<span class="chevron">▾</span>${escapeHtml(folderName || 'Sans dossier')} (${groupRows.length})${suffix}`;
+    label.innerHTML = `<span class="chevron">▾</span>${escapeHtml(folderName || 'Sans dossier')} (${groupRows.length})`;
     headerRow.appendChild(label);
 
     const actions = document.createElement('span');
@@ -282,7 +295,7 @@ function render() {
 
 function renderSnippetRow(s) {
   const isLocked = s.origin === 'synced';
-  const isLocal = isLocalFolder(s.folder);
+  const shared = isShared(s);
   const tr = document.createElement('tr');
 
   const triggerTd = document.createElement('td');
@@ -298,44 +311,41 @@ function renderSnippetRow(s) {
   const actionTd = document.createElement('td');
   actionTd.className = 'action-cell';
 
-  // Interrupteur Synced/Local : remplace l'ancien tag statique + l'indicateur de synchro par un
-  // seul contrôle. Son état reflète le dossier (Local = jamais synchronisé, tout le reste = envoyé
-  // immédiatement à Google Sheets), pas la provenance d'origine — c'est le dossier qui gouverne
-  // réellement la synchro dans cette extension (voir background.js pushToSheet).
+  // Interrupteur Shared/Local : chaque snippet porte sa propre propriété `shared`, indépendante
+  // de son dossier. À l'activation il est envoyé immédiatement à Google Sheets et visible par
+  // toute l'équipe ; à la désactivation il en est retiré (voir background.js pushToSheet) et ne
+  // reste que sur cet appareil. Pas de copie créée dans un sens ou dans l'autre : le snippet
+  // change simplement d'état sur place.
   const syncToggleWrap = document.createElement('label');
   syncToggleWrap.className = 'sync-toggle';
   const syncToggleInput = document.createElement('input');
   syncToggleInput.type = 'checkbox';
-  syncToggleInput.checked = !isLocal;
+  syncToggleInput.checked = shared;
   const syncToggleText = document.createElement('span');
   syncToggleText.className = 'sync-toggle-label';
-  syncToggleText.textContent = isLocal ? 'Local' : 'Synced';
-  syncToggleWrap.title = isLocal
-    ? 'Dossier "Local" : jamais envoyé à Google Sheets.'
-    : 'Synchronisé : envoyé immédiatement à Google Sheets, pour tous les utilisateurs.';
+  syncToggleText.textContent = shared ? 'Shared' : 'Local';
+  syncToggleWrap.title = shared
+    ? 'Partagé : envoyé immédiatement à Google Sheets, visible et modifiable par toute l\'équipe.'
+    : 'Local : jamais envoyé à Google Sheets, reste uniquement sur cet appareil.';
 
   syncToggleInput.addEventListener('change', () => {
     if (syncToggleInput.checked) {
-      // Local → Synced : ne crée pas de copie, sort simplement ce snippet du dossier "Local"
       const confirmed = confirm(
-        '⚠️ Ce snippet ne sera plus privé : il va rejoindre la liste des snippets synchronisés ' +
-        'et sera envoyé immédiatement à Google Sheets, visible et modifiable par toute l\'équipe.\n\n' +
+        '⚠️ Ce snippet ne sera plus privé : il va être envoyé immédiatement à Google Sheets, ' +
+        'visible et modifiable par toute l\'équipe.\n\n' +
         'Continuer ?'
       );
       if (!confirmed) { syncToggleInput.checked = false; return; }
-      s.folder = '';
+      s.shared = true;
       save(render);
     } else {
-      // Synced → Local : ne modifie pas l'original, crée une copie indépendante dans "Local"
       const confirmed = confirm(
-        '⚠️ Ce snippet va être dupliqué dans le dossier "Local".\n\n' +
-        'La copie restera uniquement sur cet appareil et ne sera jamais envoyée à Google Sheets. ' +
-        'Ce snippet-ci (synchronisé) n\'est pas modifié.\n\n' +
+        '⚠️ Ce snippet va être retiré du Google Sheet partagé : il ne sera plus visible ni ' +
+        'modifiable par le reste de l\'équipe, et restera uniquement sur cet appareil.\n\n' +
         'Continuer ?'
       );
       if (!confirmed) { syncToggleInput.checked = true; return; }
-      const copy = { ...s, origin: 'local', folder: LOCAL_FOLDER_NAME, trigger: s.trigger + '-local' };
-      snippets.push(copy);
+      s.shared = false;
       save(render);
     }
   });
@@ -412,6 +422,7 @@ function makeEditable(td, snippet, field, multiline) {
 
 searchEl.addEventListener('input', render);
 folderFilterEl.addEventListener('change', render);
+localOnlyFilterEl.addEventListener('change', render);
 
 // Pré-remplit le formulaire d'ajout avec le dossier concerné et y amène l'utilisateur
 function quickAddToFolder(folderName) {
@@ -442,7 +453,7 @@ document.getElementById('add-form').addEventListener('submit', (e) => {
   }
 
   snippets = snippets.filter(s => !(s.trigger === trigger && s.origin !== 'synced'));
-  snippets.push({ trigger, content, folder, origin: 'local' });
+  snippets.push({ trigger, content, folder, origin: 'local', shared: true });
   save(() => {
     render();
     e.target.reset();
@@ -488,7 +499,8 @@ document.getElementById('import-xlsx').addEventListener('change', (e) => {
       trigger: String(r.trigger ?? r.Trigger ?? '').trim(),
       content: String(r.content ?? r.Content ?? ''),
       folder: String(r.folder ?? r.Folder ?? '').trim(),
-      origin: 'local'
+      origin: 'local',
+      shared: true
     })).filter(s => s.trigger && s.content);
 
     const map = new Map(snippets.map(s => [s.trigger, s]));

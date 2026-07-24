@@ -1,5 +1,12 @@
 # Changelog — Snippet Expander
 
+## v1.6.0 — 2026-07-24
+- **Supprime le dossier réservé "Local"** : ce n'est plus un dossier qui détermine si un snippet est synchronisé, mais une propriété explicite `shared` portée par chaque snippet (une migration automatique convertit les anciens snippets du dossier "Local" à l'ouverture)
+- **Renomme le label de l'interrupteur "Synced" en "Shared"** (labels désormais "Shared"/"Local")
+- **Change le comportement de l'interrupteur** : dans les deux sens, il modifie maintenant le snippet **sur place** (plus de duplication ni de changement de dossier automatique) ; passer sur "Local" retire immédiatement le snippet du Google Sheet partagé, passer sur "Shared" l'y envoie immédiatement — une confirmation rappelle la conséquence dans les deux cas
+- **Couleur neutre pour la position "Local"** de l'interrupteur (plus de vert vif)
+- **Ajoute une case à cocher "Local uniquement"** en haut de la liste des snippets, pour n'afficher que ceux qui ne sont pas partagés
+
 ## v1.5.0 — 2026-07-24
 - **Remplace le tag "synced"/"local" par un interrupteur à bascule** sur chaque ligne (fusionne l'ancien tag de provenance et l'indicateur de synchro en un seul contrôle interactif, basé sur le dossier plutôt que l'origine — c'est le dossier qui gouverne réellement la synchro)
   - Passer de **Synced à Local** : duplique le snippet dans le dossier "Local" (jamais synchronisé), sans modifier l'original synchronisé

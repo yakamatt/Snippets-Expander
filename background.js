@@ -4,11 +4,12 @@ const SYNC_ALARM = 'snippet-sync';
 const UPDATE_ALARM = 'snippet-update-check';
 const DEFAULT_GITHUB_URL = 'https://raw.githubusercontent.com/yakamatt/Snippets-Expander/main';
 const DEFAULT_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbwlew8sAl_APmmZS5bpedGnSf6Ukn0Tvs3S93BGGwt6pwUMzg1uwfOWq91zEhTUVJG9/exec';
-// Dossier réservé : les snippets qu'il contient ne sont jamais envoyés à Google Sheets, quoi qu'il arrive.
-// Tous les autres dossiers sont synchronisés (poussés automatiquement 10s après chaque modification, voir options.js).
-const LOCAL_FOLDER_NAME = 'Local';
-function isLocalFolder(name) {
-  return String(name || '').trim().toLowerCase() === LOCAL_FOLDER_NAME.toLowerCase();
+// Un snippet est synchronisé sauf si sa propriété `shared` vaut explicitement false. Le fallback
+// sur l'ancien dossier "Local" couvre les snippets stockés avant l'ajout de ce champ (voir aussi
+// la migration équivalente dans options.js load()).
+function isShared(s) {
+  if (typeof s.shared === 'boolean') return s.shared;
+  return String(s.folder || '').trim().toLowerCase() !== 'local';
 }
 
 chrome.runtime.onInstalled.addListener((details) => {
@@ -94,7 +95,8 @@ async function pullFromSheet() {
     trigger: s.trigger,
     content: s.content,
     folder: s.folder || '',
-    origin: 'synced'
+    origin: 'synced',
+    shared: true
   }));
 
   const { snippets: current } = await chrome.storage.local.get(['snippets']);
@@ -126,9 +128,9 @@ async function pushToSheet() {
   const { snippets } = await chrome.storage.local.get(['snippets']);
   if (!syncSettings || !syncSettings.webAppUrl) throw new Error('URL du Web App non configurée');
 
-  // Le dossier "Local" ne quitte jamais cet appareil : exclu de tout envoi vers Google Sheets.
+  // Les snippets non partagés (`shared: false`) ne quittent jamais cet appareil : exclus de tout envoi.
   const payload = (snippets || [])
-    .filter(s => !isLocalFolder(s.folder))
+    .filter(s => isShared(s))
     .map(s => ({ trigger: s.trigger, content: s.content, folder: s.folder || '' }));
 
   const res = await fetch(syncSettings.webAppUrl, {
