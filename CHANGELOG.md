@@ -1,5 +1,13 @@
 # Changelog — Snippet Expander
 
+## v1.2.2 — 2026-07-24
+- La synchro automatique "Toutes les heures" est désormais forcée à l'activation si elle est encore sur "Désactivée" — s'applique aussi bien aux nouvelles installations qu'aux installations existantes dont ce réglage datait d'avant l'introduction de ce défaut (recalculé à chaque installation/mise à jour de l'extension)
+
+## v1.2.1 — 2026-07-24
+- Les snippets synchronisés (🔒) sont désormais **modifiables directement** dans le tableau (déclencheur et contenu), au lieu d'être en lecture seule
+- Toute modification d'un snippet synchronisé déclenche une confirmation explicite ("action non annulable, appliquée à tous les utilisateurs") puis renvoie immédiatement l'ensemble de vos snippets locaux vers le Google Sheet partagé (même mécanisme que "Envoyer vers Google Sheets")
+- Le texte d'aide associé a été mis à jour en conséquence (page Options + README)
+
 ## v1.2.0 — 2026-07-24
 - **Préparation pour la publication sur le Chrome Web Store** (voir README section 7)
 - Système de mise à jour adaptatif : la page Options détecte via `chrome.management.getSelf()` si l'extension tourne en mode développeur ou a été installée normalement (Store) — le bloc GitHub/zip manuel n'est affiché qu'en mode développeur ; en mode normal, un message indique que les mises à jour sont automatiques (gérées par Chrome), et l'alarme de vérification GitHub en arrière-plan est également désactivée dans ce cas

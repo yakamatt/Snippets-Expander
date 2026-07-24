@@ -20,6 +20,9 @@ chrome.runtime.onInstalled.addListener((details) => {
       autoCheckUpdates: true
     };
     const merged = { ...defaults, ...(res.syncSettings || {}) };
+    // La synchro auto toutes les heures est active par défaut : si elle est encore désactivée
+    // (valeur héritée d'avant l'introduction de ce défaut), on la (ré)active à chaque installation/mise à jour.
+    if (!merged.autoSyncMinutes) merged.autoSyncMinutes = 60;
     chrome.storage.sync.set({ syncSettings: merged }, () => {
       // Première installation : importe immédiatement les snippets partagés par défaut
       if (isFreshInstall) pullFromSheet().catch(() => {});

@@ -48,7 +48,7 @@ Dans la page Options :
 ### d. Fusion des données (important)
 Contrairement à la v1.0, **la récupération ne supprime plus jamais vos snippets créés localement**. Au moment de la récupération :
 - vos snippets locaux sont conservés
-- les snippets provenant du Sheet sont ajoutés/mis à jour, marqués 🔒 (lecture seule — modifiez-les sur Google Sheets, ou cliquez sur "Dupliquer en local" pour en faire une copie éditable)
+- les snippets provenant du Sheet sont ajoutés/mis à jour, marqués 🔒 ; ils restent **modifiables directement** dans le tableau, mais toute modification est immédiatement renvoyée vers le Sheet partagé et **s'applique à tous les utilisateurs** (action non annulable — une confirmation est demandée avant l'envoi). Pour une copie privée non partagée, utilisez plutôt "Dupliquer en local"
 - en cas de déclencheur identique entre un snippet local et un snippet synchronisé, la **priorité de synchronisation** (réglable dans Paramètres avancés) décide qui l'emporte : Google Sheets par défaut, ou vos snippets locaux si vous le préférez
 
 L'envoi **vers** Google Sheets (qui écrase le contenu du Sheet) a été déplacé dans **Paramètres avancés > Zone à risque**, avec confirmation obligatoire, car c'est une action destructive pour les autres utilisateurs du Sheet partagé.
