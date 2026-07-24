@@ -3,7 +3,7 @@
 const SYNC_ALARM = 'snippet-sync';
 const UPDATE_ALARM = 'snippet-update-check';
 const DEFAULT_GITHUB_URL = 'https://raw.githubusercontent.com/yakamatt/Snippets-Expander/main';
-const DEFAULT_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbwD5Qroaap9pF7nHdJG45FuonkRWocCPtEOIwNBnWSktBhfed9Eare74eXCPFPkl4G6/exec';
+const DEFAULT_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbwlew8sAl_APmmZS5bpedGnSf6Ukn0Tvs3S93BGGwt6pwUMzg1uwfOWq91zEhTUVJG9/exec';
 
 chrome.runtime.onInstalled.addListener((details) => {
   chrome.storage.local.get(['snippets'], (res) => {

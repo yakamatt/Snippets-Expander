@@ -1,5 +1,12 @@
 # Changelog — Snippet Expander
 
+## v1.2.4 — 2026-07-24
+- Suppression de la section "Dossiers" (chips) devenue redondante
+- Renommer/supprimer un dossier se fait maintenant directement depuis l'en-tête de groupe du tableau des snippets, via deux icônes (✏️ renommer, 🗑️ supprimer) alignées à droite
+
+## v1.2.3 — 2026-07-24
+- URL Google Sheets par défaut remplacée par un nouveau déploiement à jour (structure `trigger`/`content`/`folder`, sans `description`) — corrige l'ancien déploiement qui ne renvoyait jamais de dossier et réécrivait une colonne "description" vide à chaque envoi
+
 ## v1.2.2 — 2026-07-24
 - La synchro automatique "Toutes les heures" est désormais forcée à l'activation si elle est encore sur "Désactivée" — s'applique aussi bien aux nouvelles installations qu'aux installations existantes dont ce réglage datait d'avant l'introduction de ce défaut (recalculé à chaque installation/mise à jour de l'extension)
 
