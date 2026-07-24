@@ -56,7 +56,7 @@
           <input type="text" id="search" placeholder="Rechercher..." />
         </div>
       </div>
-      <p class="hint">Cliquez directement dans une cellule pour modifier un snippet (enregistrement automatique). Toute modification (hors dossier "Local") est synchronisée vers Google Sheets ~10s après la dernière frappe, pour tous les utilisateurs. 🔒 = snippet synchronisé.</p>
+      <p class="hint">Cliquez directement dans une cellule pour modifier un snippet (enregistrement automatique). Toute modification (hors dossier "Local") est synchronisée immédiatement vers Google Sheets, pour tous les utilisateurs. 🔒 = snippet synchronisé.</p>
       <table id="snippets-table">
         <thead>
           <tr><th>Déclencheur</th><th>Contenu</th><th></th></tr>
@@ -126,7 +126,7 @@
             <option value="local">Mes snippets locaux ont la priorité</option>
           </select>
 
-          <p class="hint">Envoie tous vos snippets vers le Google Sheet partagé (hors dossier "Local") et <strong>écrase entièrement</strong> son contenu actuel (y compris les modifications d'autres personnes). Inutile en temps normal : la synchro se fait déjà automatiquement ~10s après chaque modification.</p>
+          <p class="hint">Envoie tous vos snippets vers le Google Sheet partagé (hors dossier "Local") et <strong>écrase entièrement</strong> son contenu actuel (y compris les modifications d'autres personnes). Inutile en temps normal : la synchro se fait déjà automatiquement et immédiatement à chaque modification.</p>
           <button id="push-btn" class="danger-btn">🚨 Envoyer vers Google Sheets (écrase les données)</button>
         </div>
 

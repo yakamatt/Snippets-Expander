@@ -1,5 +1,8 @@
 # Changelog — Snippet Expander
 
+## v1.4.3 — 2026-07-24
+- **Supprime le délai de 10s avant synchro automatique** : toute modification (ajout, édition, changement de dossier, suppression) envoie désormais immédiatement vers Google Sheets, sans debounce. Rend inutile le filet de sécurité `visibilitychange` de la v1.4.2 (plus de délai à couvrir), qui est retiré
+
 ## v1.4.2 — 2026-07-24
 - **Corrige une perte silencieuse de synchro automatique** : créer un snippet (ou toute autre modification) puis fermer l'onglet Options avant la fin des ~10s de délai faisait disparaître la synchro vers Google Sheets — le snippet restait bien enregistré localement, dans le bon dossier, mais ne partait jamais en ligne. Un filet de sécurité déclenche maintenant l'envoi immédiatement dès que la page devient masquée (`visibilitychange`), au lieu d'attendre la fin du délai
 
