@@ -1,9 +1,8 @@
-const BUILD_DATE = '2026-07-24'; // v1.4.2
+const BUILD_DATE = '2026-07-24'; // v1.4.3
 const DEFAULT_GITHUB_URL = 'https://raw.githubusercontent.com/yakamatt/Snippets-Expander/main';
 const DEFAULT_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbwlew8sAl_APmmZS5bpedGnSf6Ukn0Tvs3S93BGGwt6pwUMzg1uwfOWq91zEhTUVJG9/exec';
 // Dossier réservé : jamais envoyé à Google Sheets. Tous les autres dossiers sont synchronisés.
 const LOCAL_FOLDER_NAME = 'Local';
-const AUTO_SYNC_DEBOUNCE_MS = 10000;
 
 let snippets = [];
 const collapsedFolders = new Set();
@@ -76,21 +75,14 @@ function renderUpdateMode() {
 function save(cb) {
   chrome.storage.local.set({ snippets }, () => {
     if (cb) cb();
-    scheduleAutoSync();
+    syncNow();
   });
 }
 
-// Toute modification (ajout, édition, suppression, changement de dossier...) programme un envoi
-// vers Google Sheets 10s plus tard (debounce : la frappe suivante repousse le délai). Les snippets
-// du dossier "Local" restent exclus de l'envoi (voir background.js pushToSheet).
-let autoSyncTimer = null;
-function scheduleAutoSync() {
-  if (autoSyncTimer) clearTimeout(autoSyncTimer);
-  autoSyncTimer = setTimeout(flushAutoSync, AUTO_SYNC_DEBOUNCE_MS);
-}
-
-function flushAutoSync() {
-  autoSyncTimer = null;
+// Toute modification (ajout, édition, suppression, changement de dossier...) synchronise
+// immédiatement vers Google Sheets, sans délai. Les snippets du dossier "Local" restent exclus
+// de l'envoi (voir background.js pushToSheet).
+function syncNow() {
   chrome.storage.sync.get(['syncSettings'], (res) => {
     if (!(res.syncSettings || {}).webAppUrl) return; // pas d'URL configurée : rien à synchroniser
     chrome.runtime.sendMessage({ type: 'PUSH_TO_SHEET' }, (resp) => {
@@ -102,17 +94,6 @@ function flushAutoSync() {
     });
   });
 }
-
-// Filet de sécurité : si l'onglet Options est fermé/masqué avant la fin du délai de 10s, le
-// setTimeout ci-dessus meurt avec la page et la synchro ne partirait jamais. On force l'envoi
-// immédiatement dès que la page devient invisible (fermeture, changement d'onglet...) s'il y a
-// encore une synchro en attente — par exemple juste après avoir créé un snippet puis fermé l'onglet.
-document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'hidden' && autoSyncTimer) {
-    clearTimeout(autoSyncTimer);
-    flushAutoSync();
-  }
-});
 
 function getFolders() {
   const used = snippets.map(s => s.folder).filter(Boolean);
@@ -307,8 +288,8 @@ function renderSnippetRow(s) {
     syncIndicator.textContent = '🔒 non synchronisé';
     syncIndicator.title = 'Dossier "Local" : jamais envoyé à Google Sheets.';
   } else {
-    syncIndicator.textContent = '☁ sync ~10s';
-    syncIndicator.title = 'Toute modification est synchronisée vers Google Sheets (~10s après la dernière frappe), pour tous les utilisateurs.';
+    syncIndicator.textContent = '☁ sync auto';
+    syncIndicator.title = 'Toute modification est synchronisée immédiatement vers Google Sheets, pour tous les utilisateurs.';
   }
   actionTd.appendChild(syncIndicator);
 
