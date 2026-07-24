@@ -1,5 +1,8 @@
 # Changelog — Snippet Expander
 
+## v1.4.2 — 2026-07-24
+- **Corrige une perte silencieuse de synchro automatique** : créer un snippet (ou toute autre modification) puis fermer l'onglet Options avant la fin des ~10s de délai faisait disparaître la synchro vers Google Sheets — le snippet restait bien enregistré localement, dans le bon dossier, mais ne partait jamais en ligne. Un filet de sécurité déclenche maintenant l'envoi immédiatement dès que la page devient masquée (`visibilitychange`), au lieu d'attendre la fin du délai
+
 ## v1.4.1 — 2026-07-24
 - **Annule le glisser-déposer** introduit en v1.4.0 pour changer un snippet de dossier
 - Remplacé par une **icône 📁 dédiée**, juste à côté de "Dupliquer en local"/"Supprimer" : au clic, elle se transforme temporairement en sélecteur de dossier (même liste que le formulaire d'ajout, "Nouveau dossier..." inclus), qui redevient une icône une fois le choix fait — pas de `<select>` toujours visible sur chaque ligne, et aucune interférence avec l'édition directe du déclencheur/contenu
