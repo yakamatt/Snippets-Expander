@@ -1,4 +1,4 @@
-const BUILD_DATE = '2026-07-24'; // v1.8.0
+const BUILD_DATE = '2026-07-24'; // v1.9.0
 const DEFAULT_GITHUB_URL = 'https://raw.githubusercontent.com/yakamatt/Snippets-Expander/main';
 const DEFAULT_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbwlew8sAl_APmmZS5bpedGnSf6Ukn0Tvs3S93BGGwt6pwUMzg1uwfOWq91zEhTUVJG9/exec';
 
@@ -21,6 +21,12 @@ const folderFilterEl = document.getElementById('folder-filter');
 const localOnlyFilterEl = document.getElementById('local-only-filter');
 const newFolderSelect = document.getElementById('new-folder-select');
 const newFolderInput = document.getElementById('new-folder-input');
+const newSharedToggle = document.getElementById('new-shared-toggle');
+const newSharedToggleLabel = document.getElementById('new-shared-toggle-label');
+
+newSharedToggle.addEventListener('change', () => {
+  newSharedToggleLabel.textContent = newSharedToggle.checked ? 'Partagé' : 'Privé';
+});
 
 function load() {
   chrome.storage.local.get(['snippets', 'lastSync', 'updateCheck', 'pinBannerDismissed'], (res) => {
@@ -515,12 +521,13 @@ document.getElementById('add-form').addEventListener('submit', (e) => {
   }
 
   snippets = snippets.filter(s => !(s.trigger === trigger && s.origin !== 'synced'));
-  snippets.push({ trigger, content, folder, origin: 'local', shared: true });
+  snippets.push({ trigger, content, folder, origin: 'local', shared: newSharedToggle.checked });
   pendingFocusTrigger = trigger;
   save(() => {
     render();
     e.target.reset();
     newFolderInput.hidden = true;
+    newSharedToggleLabel.textContent = 'Privé';
   });
 });
 

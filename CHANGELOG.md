@@ -1,5 +1,9 @@
 # Changelog — Snippet Expander
 
+## v1.9.0 — 2026-07-24
+- **Ajoute un interrupteur Partagé/Privé dans le formulaire "Ajouter un snippet"**, réglé sur **Privé** par défaut : le choix se fait désormais à la création plutôt que systématiquement en tant que "Partagé" puis à re-régler après coup
+- Vérifié que l'apparence de chaque snippet créé correspond bien à son état Partagé/Privé dès son premier rendu
+
 ## v1.8.0 — 2026-07-24
 - **Met en avant (scroll + focus) le snippet créé, dupliqué ou déplacé de dossier**, juste après le rendu qui suit l'action — son dossier est déplié automatiquement si besoin pour que sa ligne soit visible
 - **L'apparence d'une ligne suit maintenant son état Partagé/Privé** : un snippet "Privé" a un texte atténué ; dès qu'il redevient "Partagé" (ou inversement), son apparence est recalculée pour correspondre aux autres lignes du même état

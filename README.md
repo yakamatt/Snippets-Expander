@@ -14,7 +14,7 @@ Remplace automatiquement un texte court (ex: `;sig`) par un texte prédéfini, d
 ## 2. Utiliser l'extension
 
 - Cliquez sur l'icône ⚡ pour ouvrir les paramètres et gérer vos snippets.
-- Un snippet a un **déclencheur** (ex: `;sig`, `/adresse`), un **contenu** et un **dossier** optionnel.
+- Un snippet a un **déclencheur** (ex: `;sig`, `/adresse`), un **contenu** et un **dossier** optionnel. Le formulaire d'ajout propose aussi l'interrupteur Partagé/Privé, réglé sur **Privé** par défaut.
 - Tapez le déclencheur dans n'importe quel champ (Gmail, formulaires web, réseaux sociaux, contenteditable...) : après une courte temporisation (1 seconde par défaut, réglable), il se remplace par le contenu — les sauts de ligne et retours à la ligne sont respectés.
 - Placeholders disponibles : `{date}`, `{time}`, `{cursor}` (repositionne le curseur après expansion).
 - **Édition directe** : cliquez dans n'importe quelle cellule du tableau des snippets pour la modifier ; l'enregistrement est automatique dès que vous cliquez ailleurs (blur). Toute modification d'un snippet **partagé** (voir plus bas) est renvoyée vers Google Sheets après un court délai (réglable, 5s par défaut — voir section 5).
