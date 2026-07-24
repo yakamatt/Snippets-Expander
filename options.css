@@ -195,16 +195,25 @@ td[contenteditable="true"] { cursor: text; outline: none; }
 td[contenteditable="true"]:focus { background: var(--accent-wash); box-shadow: inset 0 0 0 1px var(--accent); border-radius: 4px; }
 td.locked { color: var(--ink-muted); background: color-mix(in srgb, var(--border) 35%, transparent); }
 td.trigger.locked::before { content: '🔒 '; }
-.sync-indicator {
-  font-size: 11px; color: var(--ink-faint); cursor: default; white-space: nowrap;
-}
-.origin-badge {
-  font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 700;
-  font-family: var(--font-mono); letter-spacing: 0.02em; text-transform: uppercase;
-}
-.origin-local { background: var(--success-bg); color: var(--success); }
-.origin-synced { background: var(--info-bg); color: var(--info); }
 .folder-badge { font-size: 11px; color: var(--ink-muted); }
+
+.sync-toggle { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; user-select: none; }
+.sync-toggle input[type=checkbox] {
+  appearance: none; -webkit-appearance: none; width: 30px; height: 17px; padding: 0;
+  background: var(--success); border-radius: 999px; position: relative; cursor: pointer;
+  margin: 0; flex-shrink: 0; transition: background 0.15s;
+}
+.sync-toggle input[type=checkbox]::before {
+  content: ''; position: absolute; top: 2px; left: 2px; width: 13px; height: 13px; border-radius: 50%;
+  background: var(--surface); transition: transform 0.15s;
+}
+.sync-toggle input[type=checkbox]:checked { background: var(--info); }
+.sync-toggle input[type=checkbox]:checked::before { transform: translateX(13px); }
+.sync-toggle input[type=checkbox]:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.sync-toggle-label {
+  font-size: 10px; font-weight: 700; font-family: var(--font-mono);
+  letter-spacing: 0.02em; text-transform: uppercase; color: var(--ink-muted);
+}
 button.dup { background: var(--accent-wash); color: var(--accent-hover); padding: 5px 10px; font-size: 12px; }
 .action-cell { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 

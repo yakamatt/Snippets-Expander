@@ -1,5 +1,11 @@
 # Changelog — Snippet Expander
 
+## v1.5.0 — 2026-07-24
+- **Remplace le tag "synced"/"local" par un interrupteur à bascule** sur chaque ligne (fusionne l'ancien tag de provenance et l'indicateur de synchro en un seul contrôle interactif, basé sur le dossier plutôt que l'origine — c'est le dossier qui gouverne réellement la synchro)
+  - Passer de **Synced à Local** : duplique le snippet dans le dossier "Local" (jamais synchronisé), sans modifier l'original synchronisé
+  - Passer de **Local à Synced** : sort simplement ce snippet du dossier "Local" (pas de copie), il rejoint immédiatement la synchro Google Sheets
+  - Une confirmation explique l'action avant de la valider, dans les deux sens
+
 ## v1.4.4 — 2026-07-24
 - **Rend visibles les erreurs de synchronisation automatique**, jusqu'ici affichées uniquement dans "Paramètres avancés" (masqué par défaut) : un échec (URL non configurée, erreur réseau, erreur du script Google) restait invisible pour qui crée un snippet depuis le formulaire principal, donnant l'impression que la synchro "ne marche pas" sans jamais montrer pourquoi. Le statut apparaît désormais aussi juste sous "Mes snippets", et les erreurs sont loguées dans la console pour diagnostic
 - Distingue maintenant explicitement le cas "aucune URL Google Sheets configurée" (le snippet reste local, avertissement clair) d'une véritable erreur réseau/serveur (`chrome.runtime.lastError` détecté séparément)
