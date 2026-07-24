@@ -74,18 +74,6 @@ code { background: #f1f1f5; padding: 1px 5px; border-radius: 4px; }
 
 .folder-select-wrap { display: flex; flex-direction: column; gap: 6px; }
 
-.folder-chips { display: flex; flex-wrap: wrap; gap: 8px; }
-.folder-chip {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 5px 10px; border-radius: 16px; font-size: 12.5px; font-weight: 600;
-}
-.folder-chip .chip-count { opacity: 0.7; font-weight: 400; }
-.folder-chip button {
-  background: none; border: none; padding: 0 2px; font-size: 12px; cursor: pointer; color: inherit; opacity: 0.6;
-}
-.folder-chip button:hover { opacity: 1; background: none; }
-.folder-chip.empty-state { background: #f3f4f6; color: #9ca3af; font-weight: 400; }
-
 tr.folder-group-header td {
   font-weight: 700; font-size: 12.5px; padding: 8px 10px; cursor: pointer;
   border-bottom: 2px solid #eee; user-select: none;
@@ -93,6 +81,13 @@ tr.folder-group-header td {
 tr.folder-group-header .chevron { display: inline-block; transition: transform 0.15s; margin-right: 6px; }
 tr.folder-group-header.collapsed .chevron { transform: rotate(-90deg); }
 tr.folder-group-hidden { display: none; }
+
+.folder-group-td { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.folder-group-actions { display: flex; gap: 2px; margin-left: auto; }
+.folder-group-actions button {
+  background: none; border: none; padding: 2px 4px; font-size: 12px; cursor: pointer; opacity: 0.6;
+}
+.folder-group-actions button:hover { opacity: 1; background: none; }
 
 .filters { display: flex; gap: 8px; }
 .filters select { width: auto; }

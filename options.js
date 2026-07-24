@@ -1,4 +1,4 @@
-const BUILD_DATE = '2026-07-24'; // v1.2.3
+const BUILD_DATE = '2026-07-24'; // v1.2.4
 const DEFAULT_GITHUB_URL = 'https://raw.githubusercontent.com/yakamatt/Snippets-Expander/main';
 const DEFAULT_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbwlew8sAl_APmmZS5bpedGnSf6Ukn0Tvs3S93BGGwt6pwUMzg1uwfOWq91zEhTUVJG9/exec';
 
@@ -9,7 +9,6 @@ const bodyEl = document.getElementById('snippets-body');
 const countEl = document.getElementById('count');
 const searchEl = document.getElementById('search');
 const folderFilterEl = document.getElementById('folder-filter');
-const folderChipsEl = document.getElementById('folder-chips');
 const newFolderSelect = document.getElementById('new-folder-select');
 const newFolderInput = document.getElementById('new-folder-input');
 
@@ -75,61 +74,7 @@ function escapeHtml(str) {
   return div.innerHTML;
 }
 
-// ---------- Dossiers : chips + selects ----------
-
-function renderFolderChips() {
-  const folders = getFolders();
-  folderChipsEl.innerHTML = '';
-
-  if (!folders.length) {
-    const empty = document.createElement('span');
-    empty.className = 'folder-chip empty-state';
-    empty.textContent = 'Aucun dossier pour l\'instant';
-    folderChipsEl.appendChild(empty);
-    return;
-  }
-
-  folders.forEach(folder => {
-    const count = snippets.filter(s => s.folder === folder).length;
-    const color = folderColor(folder);
-    const chip = document.createElement('span');
-    chip.className = 'folder-chip';
-    chip.style.background = color.bg;
-    chip.style.color = color.text;
-
-    const label = document.createElement('span');
-    label.textContent = folder;
-    chip.appendChild(label);
-
-    const countSpan = document.createElement('span');
-    countSpan.className = 'chip-count';
-    countSpan.textContent = `(${count})`;
-    chip.appendChild(countSpan);
-
-    const renameBtn = document.createElement('button');
-    renameBtn.textContent = '✏️';
-    renameBtn.title = 'Renommer le dossier';
-    renameBtn.addEventListener('click', () => {
-      const newName = prompt(`Renommer le dossier "${folder}" en :`, folder);
-      if (!newName || newName.trim() === '' || newName.trim() === folder) return;
-      snippets.forEach(s => { if (s.folder === folder) s.folder = newName.trim(); });
-      save(render);
-    });
-    chip.appendChild(renameBtn);
-
-    const removeBtn = document.createElement('button');
-    removeBtn.textContent = '✕';
-    removeBtn.title = 'Dissocier ce dossier (les snippets ne sont pas supprimés)';
-    removeBtn.addEventListener('click', () => {
-      if (!confirm(`Retirer le dossier "${folder}" ? Les ${count} snippet(s) concerné(s) seront déplacés vers "Sans dossier".`)) return;
-      snippets.forEach(s => { if (s.folder === folder) s.folder = ''; });
-      save(render);
-    });
-    chip.appendChild(removeBtn);
-
-    folderChipsEl.appendChild(chip);
-  });
-}
+// ---------- Dossiers : selects ----------
 
 function renderFolderSelects() {
   const folders = getFolders();
@@ -156,7 +101,6 @@ function render() {
   const filter = (searchEl.value || '').toLowerCase();
   const folderFilter = folderFilterEl.value;
 
-  renderFolderChips();
   renderFolderSelects();
 
   const rows = snippets.filter(s => {
@@ -186,7 +130,43 @@ function render() {
 
     const headerTd = document.createElement('td');
     headerTd.colSpan = 3;
-    headerTd.innerHTML = `<span class="chevron">▾</span>${escapeHtml(folderName || 'Sans dossier')} (${groupRows.length})`;
+    headerTd.className = 'folder-group-td';
+
+    const label = document.createElement('span');
+    label.className = 'folder-group-label';
+    label.innerHTML = `<span class="chevron">▾</span>${escapeHtml(folderName || 'Sans dossier')} (${groupRows.length})`;
+    headerTd.appendChild(label);
+
+    if (folderName) {
+      const actions = document.createElement('span');
+      actions.className = 'folder-group-actions';
+
+      const renameBtn = document.createElement('button');
+      renameBtn.textContent = '✏️';
+      renameBtn.title = 'Renommer le dossier';
+      renameBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const newName = prompt(`Renommer le dossier "${folderName}" en :`, folderName);
+        if (!newName || newName.trim() === '' || newName.trim() === folderName) return;
+        snippets.forEach(s => { if (s.folder === folderName) s.folder = newName.trim(); });
+        save(render);
+      });
+      actions.appendChild(renameBtn);
+
+      const removeBtn = document.createElement('button');
+      removeBtn.textContent = '🗑️';
+      removeBtn.title = 'Supprimer ce dossier (les snippets ne sont pas supprimés)';
+      removeBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (!confirm(`Supprimer le dossier "${folderName}" ? Les ${groupRows.length} snippet(s) concerné(s) seront déplacés vers "Sans dossier".`)) return;
+        snippets.forEach(s => { if (s.folder === folderName) s.folder = ''; });
+        save(render);
+      });
+      actions.appendChild(removeBtn);
+
+      headerTd.appendChild(actions);
+    }
+
     headerTr.appendChild(headerTd);
     headerTr.addEventListener('click', () => {
       if (collapsedFolders.has(folderName)) collapsedFolders.delete(folderName);
