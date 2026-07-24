@@ -12,11 +12,14 @@ function isLocalFolder(name) {
 }
 
 chrome.runtime.onInstalled.addListener((details) => {
-  chrome.storage.local.get(['snippets'], (res) => {
-    if (!res.snippets) chrome.storage.local.set({ snippets: [] });
-  });
-  chrome.storage.sync.get(['syncSettings'], (res) => {
-    const isFreshInstall = details.reason === 'install' && !res.syncSettings;
+  // Tout est enchaîné séquentiellement (await) dans une seule chaîne asynchrone : sur une
+  // installation fraîche, on ne doit ouvrir les paramètres qu'une fois l'import terminé, sans
+  // quoi la page Options se charge (et lit le storage) avant la fin du fetch réseau de
+  // pullFromSheet(), et affiche "Mes snippets (0)" même si l'import réussit juste après.
+  (async () => {
+    const { syncSettings } = await chrome.storage.sync.get(['syncSettings']);
+    const isFreshInstall = details.reason === 'install' && !syncSettings;
+
     const defaults = {
       webAppUrl: DEFAULT_WEBAPP_URL,
       autoSyncMinutes: 60,
@@ -25,20 +28,25 @@ chrome.runtime.onInstalled.addListener((details) => {
       githubRepoUrl: DEFAULT_GITHUB_URL,
       autoCheckUpdates: true
     };
-    const merged = { ...defaults, ...(res.syncSettings || {}) };
+    const merged = { ...defaults, ...(syncSettings || {}) };
     // La synchro auto toutes les heures est active par défaut : si elle est encore désactivée
     // (valeur héritée d'avant l'introduction de ce défaut), on la (ré)active à chaque installation/mise à jour.
     if (!merged.autoSyncMinutes) merged.autoSyncMinutes = 60;
-    chrome.storage.sync.set({ syncSettings: merged }, () => {
-      // Première installation : importe immédiatement les snippets partagés par défaut,
-      // puis ouvre les paramètres pour inciter à épingler l'extension dans la barre d'outils
-      if (isFreshInstall) {
-        pullFromSheet().catch(() => {});
-        chrome.runtime.openOptionsPage();
-      }
-    });
-  });
-  scheduleAlarms();
+    await chrome.storage.sync.set({ syncSettings: merged });
+
+    const { snippets } = await chrome.storage.local.get(['snippets']);
+    if (!snippets) await chrome.storage.local.set({ snippets: [] });
+
+    if (isFreshInstall) {
+      // Première installation : importe les snippets partagés par défaut AVANT d'ouvrir les
+      // paramètres (pour inciter à épingler l'extension), afin que la page affiche déjà les
+      // snippets importés dès son ouverture.
+      await pullFromSheet().catch(() => {});
+      chrome.runtime.openOptionsPage();
+    }
+
+    scheduleAlarms();
+  })();
 });
 
 chrome.runtime.onStartup.addListener(scheduleAlarms);

@@ -1,5 +1,10 @@
 # Changelog — Snippet Expander
 
+## v1.3.3 — 2026-07-24
+- **Corrige l'import automatique à l'installation**, qui n'affichait jamais les snippets importés au premier lancement de la page Options : `chrome.runtime.openOptionsPage()` était appelé sans attendre la fin de `pullFromSheet()` (fetch réseau), donc la page se chargeait et lisait le storage avant que l'import ne soit terminé. Toute la séquence d'installation (réglages par défaut, import, ouverture des paramètres) est maintenant strictement enchaînée avec `await`
+- Supprime une condition de course annexe : l'initialisation de `snippets: []` et l'écriture de `pullFromSheet()` visaient la même clé de storage depuis deux chaînes asynchrones indépendantes, sans garantie d'ordre
+- La page Options se rafraîchit désormais automatiquement si les snippets changent en arrière-plan (import différé, synchro auto horaire, autre onglet...), au lieu de rester figée jusqu'au prochain rechargement manuel
+
 ## v1.3.2 — 2026-07-24
 - **Export XLSX : les sauts de ligne sont désormais visibles à l'ouverture.** La bibliothèque XLSX gratuite (SheetJS Community) ne peut pas écrire de style de cellule (wrap text, gras...) — silencieusement ignoré à l'export, vérifié en inspectant le fichier généré. Les sauts de ligne réels étaient déjà conservés dans la donnée, mais restaient invisibles faute de hauteur de ligne suffisante. Correction : largeur de colonnes + hauteur de ligne calculée selon le nombre de lignes de chaque snippet (propriétés de feuille, pas des styles de cellule, donc bien écrites par la version gratuite)
 

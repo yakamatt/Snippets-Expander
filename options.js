@@ -1,4 +1,4 @@
-const BUILD_DATE = '2026-07-24'; // v1.3.2
+const BUILD_DATE = '2026-07-24'; // v1.3.3
 const DEFAULT_GITHUB_URL = 'https://raw.githubusercontent.com/yakamatt/Snippets-Expander/main';
 const DEFAULT_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbwlew8sAl_APmmZS5bpedGnSf6Ukn0Tvs3S93BGGwt6pwUMzg1uwfOWq91zEhTUVJG9/exec';
 // Dossier réservé : jamais envoyé à Google Sheets. Tous les autres dossiers sont synchronisés.
@@ -34,6 +34,18 @@ function load() {
   });
   renderUpdateMode();
 }
+
+// Rafraîchit automatiquement le tableau si les snippets changent en arrière-plan (import à
+// l'installation, synchro auto horaire, pull déclenché depuis un autre onglet...). Le contrôle
+// JSON.stringify évite de se re-rendre inutilement sur l'écho de nos propres écritures (save()),
+// ce qui perturberait sinon une édition en cours dans une cellule.
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area !== 'local' || !changes.snippets) return;
+  const incoming = changes.snippets.newValue || [];
+  if (JSON.stringify(incoming) === JSON.stringify(snippets)) return;
+  snippets = incoming;
+  render();
+});
 
 document.getElementById('pin-banner-dismiss').addEventListener('click', () => {
   document.getElementById('pin-banner').hidden = true;
