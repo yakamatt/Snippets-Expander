@@ -3,21 +3,27 @@
 const SYNC_ALARM = 'snippet-sync';
 const UPDATE_ALARM = 'snippet-update-check';
 const DEFAULT_GITHUB_URL = 'https://raw.githubusercontent.com/yakamatt/Snippets-Expander/main';
+const DEFAULT_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbwD5Qroaap9pF7nHdJG45FuonkRWocCPtEOIwNBnWSktBhfed9Eare74eXCPFPkl4G6/exec';
 
-chrome.runtime.onInstalled.addListener(() => {
+chrome.runtime.onInstalled.addListener((details) => {
   chrome.storage.local.get(['snippets'], (res) => {
     if (!res.snippets) chrome.storage.local.set({ snippets: [] });
   });
   chrome.storage.sync.get(['syncSettings'], (res) => {
+    const isFreshInstall = details.reason === 'install' && !res.syncSettings;
     const defaults = {
-      webAppUrl: '',
-      autoSyncMinutes: 0,
+      webAppUrl: DEFAULT_WEBAPP_URL,
+      autoSyncMinutes: 60,
       expansionDelayMs: 500,
       syncPriority: 'remote', // 'remote' = Google Sheets écrase les doublons locaux | 'local' = les snippets locaux sont conservés
       githubRepoUrl: DEFAULT_GITHUB_URL,
       autoCheckUpdates: true
     };
-    chrome.storage.sync.set({ syncSettings: { ...defaults, ...(res.syncSettings || {}) } });
+    const merged = { ...defaults, ...(res.syncSettings || {}) };
+    chrome.storage.sync.set({ syncSettings: merged }, () => {
+      // Première installation : importe immédiatement les snippets partagés par défaut
+      if (isFreshInstall) pullFromSheet().catch(() => {});
+    });
   });
   scheduleAlarms();
 });
@@ -37,9 +43,14 @@ function scheduleAlarms() {
       chrome.alarms.create(SYNC_ALARM, { periodInMinutes: settings.autoSyncMinutes });
     }
     chrome.alarms.clear(UPDATE_ALARM);
-    if (settings.autoCheckUpdates && settings.githubRepoUrl) {
-      chrome.alarms.create(UPDATE_ALARM, { periodInMinutes: 720 }); // 2x/jour
-    }
+    // La vérification GitHub n'a de sens qu'en mode développeur ("non empaquetée") : une fois
+    // publiée sur le Chrome Web Store, Chrome met à jour l'extension tout seul.
+    chrome.management.getSelf((info) => {
+      const isDev = info.installType === 'development';
+      if (isDev && settings.autoCheckUpdates && settings.githubRepoUrl) {
+        chrome.alarms.create(UPDATE_ALARM, { periodInMinutes: 720 }); // 2x/jour
+      }
+    });
   });
 }
 
@@ -61,7 +72,6 @@ async function pullFromSheet() {
   const remoteSnippets = remoteRaw.map(s => ({
     trigger: s.trigger,
     content: s.content,
-    description: s.description || '',
     folder: s.folder || '',
     origin: 'synced'
   }));
@@ -96,7 +106,7 @@ async function pushToSheet() {
   if (!syncSettings || !syncSettings.webAppUrl) throw new Error('URL du Web App non configurée');
 
   const payload = (snippets || []).map(s => ({
-    trigger: s.trigger, content: s.content, description: s.description || '', folder: s.folder || ''
+    trigger: s.trigger, content: s.content, folder: s.folder || ''
   }));
 
   const res = await fetch(syncSettings.webAppUrl, {

@@ -19,7 +19,11 @@ main { max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; 
 }
 .card h2 { margin-top: 0; font-size: 16px; }
 
-form#add-form { display: flex; flex-direction: column; gap: 10px; }
+#add-snippet-table th:nth-child(1), #add-snippet-table td:nth-child(1) { width: 180px; }
+#add-snippet-table th:nth-child(3), #add-snippet-table td:nth-child(3) { width: 220px; }
+#add-snippet-table .action-cell { white-space: normal; }
+#add-snippet-table .folder-select-wrap { margin-bottom: 8px; }
+
 input[type=text], textarea, select {
   width: 100%;
   padding: 9px 12px;

@@ -8,7 +8,7 @@ function getSheet_() {
   let sheet = ss.getSheetByName(SHEET_NAME);
   if (!sheet) {
     sheet = ss.insertSheet(SHEET_NAME);
-    sheet.appendRow(['trigger', 'content', 'description', 'folder']);
+    sheet.appendRow(['trigger', 'content', 'folder']);
   }
   return sheet;
 }
@@ -22,8 +22,7 @@ function doGet(e) {
     .map(row => ({
       trigger: String(row[0]),
       content: String(row[1] || ''),
-      description: String(row[2] || ''),
-      folder: String(row[3] || '')
+      folder: String(row[2] || '')
     }));
   return ContentService
     .createTextOutput(JSON.stringify(snippets))
@@ -35,9 +34,9 @@ function doPost(e) {
   const body = JSON.parse(e.postData.contents);
 
   sheet.clearContents();
-  sheet.appendRow(['trigger', 'content', 'description', 'folder']);
+  sheet.appendRow(['trigger', 'content', 'folder']);
   body.forEach(s => {
-    sheet.appendRow([s.trigger || '', s.content || '', s.description || '', s.folder || '']);
+    sheet.appendRow([s.trigger || '', s.content || '', s.folder || '']);
   });
 
   return ContentService

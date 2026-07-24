@@ -13,7 +13,7 @@ Remplace automatiquement un texte court (ex: `;sig`) par un texte prédéfini, d
 ## 2. Utiliser l'extension
 
 - Cliquez sur l'icône ⚡ pour ouvrir les paramètres et gérer vos snippets.
-- Un snippet a un **déclencheur** (ex: `;sig`, `/adresse`), un **contenu**, une description optionnelle et un **dossier** optionnel.
+- Un snippet a un **déclencheur** (ex: `;sig`, `/adresse`), un **contenu** et un **dossier** optionnel.
 - Tapez le déclencheur dans n'importe quel champ (Gmail, formulaires web, réseaux sociaux, contenteditable...) : après une courte temporisation (1 seconde par défaut, réglable), il se remplace par le contenu — les sauts de ligne et retours à la ligne sont respectés.
 - Placeholders disponibles : `{date}`, `{time}`, `{cursor}` (repositionne le curseur après expansion).
 - **Édition directe** : cliquez dans n'importe quelle cellule du tableau des snippets pour la modifier ; l'enregistrement est automatique dès que vous cliquez ailleurs (blur).
@@ -22,15 +22,17 @@ Remplace automatiquement un texte court (ex: `;sig`) par un texte prédéfini, d
 ## 3. Import / Export Excel (CSV)
 
 Dans la page Options :
-- **Exporter en CSV** : télécharge tous vos snippets (`trigger,content,description,folder`) dans un fichier `.csv` ouvrable/éditable dans Excel.
+- **Exporter en CSV** : télécharge tous vos snippets (`trigger,content,folder`) dans un fichier `.csv` ouvrable/éditable dans Excel.
 - **Importer un CSV** : les snippets importés sont ajoutés comme snippets **locaux** modifiables ; ceux avec un déclencheur déjà existant sont mis à jour.
 
 ## 4. Partage en temps réel avec une équipe (Google Sheets, gratuit)
 
+À l'installation, l'extension importe automatiquement les snippets partagés par défaut (URL Google Sheets pré-configurée dans les paramètres, synchro auto activée toutes les heures). Vous pouvez remplacer cette URL par la vôtre à tout moment dans **Paramètres avancés > Partage & synchro**.
+
 ### a. Créer le Google Sheet
 1. Créez un nouveau Google Sheet (sheets.new)
 2. Renommez le premier onglet en `Snippets`
-3. Ajoutez la ligne d'en-tête : `trigger | content | description | folder`
+3. Ajoutez la ligne d'en-tête : `trigger | content | folder`
 
 ### b. Déployer le script gratuit (Google Apps Script)
 1. Dans le Sheet : **Extensions > Apps Script**
@@ -76,20 +78,53 @@ git push -u origin main
 
 (Remplacez l'URL par celle de votre dépôt. Git vous demandera de vous authentifier — utilisez un token d'accès personnel GitHub si le mot de passe classique est refusé : **Settings > Developer settings > Personal access tokens**.)
 
-### c. Utiliser GitHub comme source de mise à jour
-1. Dans les Options > Paramètres avancés > "Mise à jour de l'extension", renseignez l'URL raw de votre dépôt, par exemple :
+### c. Utiliser GitHub comme source de mise à jour (mode développeur uniquement)
+Cette section ne s'applique que si l'extension reste chargée en **mode développeur** ("non empaquetée"). Si vous l'avez publiée sur le Chrome Web Store (voir section 7), ignorez-la : Chrome gère les mises à jour tout seul et ce bloc de paramètres est automatiquement masqué dans la page Options.
+
+1. Dans les Options > Paramètres avancés > "Mise à jour de l'extension (mode développeur)", renseignez l'URL raw de votre dépôt, par exemple :
    `https://raw.githubusercontent.com/VOTRE-UTILISATEUR/snippet-expander/main`
 2. Cochez "Vérifier automatiquement les mises à jour" si souhaité, ou cliquez sur "Vérifier une mise à jour maintenant"
 3. L'extension compare le numéro de version de `manifest.json` sur GitHub avec la version installée
 
-⚠️ **Limite technique importante** : une extension chargée en mode développeur ("non empaquetée") ne peut pas se ré-écrire elle-même — Chrome ne l'autorise pas, pour des raisons de sécurité. La vérification GitHub **notifie** donc qu'une nouvelle version existe (badge rouge sur l'icône + notification), mais la mise à jour reste manuelle :
+⚠️ **Limite technique importante** : une extension chargée en mode développeur ne peut pas se ré-écrire elle-même — Chrome ne l'autorise pas, pour des raisons de sécurité. La vérification GitHub **notifie** donc qu'une nouvelle version existe (badge rouge sur l'icône + notification), mais la mise à jour reste manuelle :
 1. Cliquez sur le bouton **"⬇️ Télécharger la mise à jour"** (dans la bannière en haut de la page Options, ou dans "Paramètres avancés > Mise à jour de l'extension") — le zip du dépôt se télécharge automatiquement
 2. Décompressez-le et remplacez les fichiers dans le **même dossier** que celui chargé dans Chrome (ne créez pas un nouveau dossier)
 3. Allez sur `chrome://extensions`, cliquez sur l'icône **Actualiser** ⟳ de l'extension
 
 Comme `chrome.storage` est lié à l'identifiant de l'extension (dérivé du chemin du dossier), **vos snippets et paramètres sont automatiquement conservés** tant que vous réutilisez le même dossier — aucune perte de données.
 
-**Mise à jour réellement automatique et silencieuse** : ce n'est possible que si l'extension est publiée sur le **Chrome Web Store** (Chrome gère alors les mises à jour tout seul, comme pour n'importe quelle extension installée normalement). Cela coûte 5 $ US en frais de compte développeur, une seule fois. C'est optionnel et non nécessaire pour un usage interne/équipe.
+## 7. Publier sur le Chrome Web Store
+
+Une fois publiée, l'extension se met à jour **automatiquement et silencieusement** — Chrome vérifie et installe les nouvelles versions tout seul, comme pour n'importe quelle extension du Store. La page Options détecte ce mode d'installation (`chrome.management.getSelf()`) et masque alors tout le bloc "mise à jour manuelle via GitHub" décrit ci-dessus, qui ne concerne que le mode développeur.
+
+### a. Créer un compte développeur Chrome Web Store
+1. Rendez-vous sur [chrome.google.com/webstore/devconsole](https://chrome.google.com/webstore/devconsole)
+2. Connectez-vous avec un compte Google, payez les frais d'inscription unique de **5 $ US**
+
+### b. Préparer le package
+1. Incrémentez `version` dans `manifest.json` si besoin
+2. Depuis le dossier `snippet-expander` (celui qui contient `manifest.json`), créez un zip du contenu du dossier (**pas** du dossier lui-même) :
+   ```bash
+   zip -r snippet-expander.zip . -x ".git/*" -x ".DS_Store" -x "*.md"
+   ```
+
+### c. Créer la fiche sur le Developer Dashboard
+1. **New Item** > uploadez `snippet-expander.zip`
+2. Renseignez : description courte/longue, catégorie ("Outils de productivité"), langue
+3. Icônes déjà incluses dans `icons/` (16/32/48/128px) — fournissez en plus une image promo 440×280 (obligatoire) et idéalement 1400×560 (facultative)
+4. Ajoutez 1 à 5 captures d'écran de la page Options et d'un exemple d'expansion en action
+
+### d. Déclarer les pratiques de confidentialité (obligatoire)
+Dans l'onglet **"Privacy practices"** du dashboard :
+- **Permission `host_permissions: <all_urls>`** : à justifier — nécessaire pour détecter la frappe et remplacer le texte dans n'importe quel champ, sur n'importe quel site
+- **Usage des données** : l'extension lit/écrit du texte dans les champs des pages visitées (fonctionnalité cœur) et envoie vos snippets à l'URL Google Sheets que *vous* configurez — aucune donnée n'est envoyée à un serveur tiers appartenant au développeur
+- Fournissez une **URL de politique de confidentialité** (une simple page expliquant les points ci-dessus suffit ; ce README peut servir de base)
+- Cochez la case de certification de conformité au programme développeur
+
+### e. Soumettre pour examen
+1. **Submit for review**
+2. Le délai d'examen est généralement de quelques heures à quelques jours pour une première soumission
+3. Une fois approuvée, l'extension est disponible publiquement (ou en accès restreint si vous choisissez une visibilité "non répertoriée"/"privée" pour un usage interne à une équipe)
 
 ## Structure du projet
 
