@@ -1,4 +1,4 @@
-const BUILD_DATE = '2026-07-24'; // v1.3.3
+const BUILD_DATE = '2026-07-24'; // v1.4.0
 const DEFAULT_GITHUB_URL = 'https://raw.githubusercontent.com/yakamatt/Snippets-Expander/main';
 const DEFAULT_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbwlew8sAl_APmmZS5bpedGnSf6Ukn0Tvs3S93BGGwt6pwUMzg1uwfOWq91zEhTUVJG9/exec';
 // Dossier réservé : jamais envoyé à Google Sheets. Tous les autres dossiers sont synchronisés.
@@ -7,6 +7,7 @@ const AUTO_SYNC_DEBOUNCE_MS = 10000;
 
 let snippets = [];
 const collapsedFolders = new Set();
+let draggedSnippet = null; // snippet actuellement glissé (drag & drop, changement de dossier)
 
 const bodyEl = document.getElementById('snippets-body');
 const countEl = document.getElementById('count');
@@ -197,15 +198,20 @@ function render() {
     headerTr.style.background = color.bg;
     headerTr.style.color = color.text;
 
+    // Le flex est posé sur un wrapper interne, pas directement sur le <td> : un display:flex
+    // sur un <td colspan> casse le calcul de largeur de table-layout:fixed (Chrome le réduit
+    // à la largeur de la seule 1re colonne au lieu de sommer les 3 colonnes couvertes).
     const headerTd = document.createElement('td');
     headerTd.colSpan = 3;
-    headerTd.className = 'folder-group-td';
+    const headerRow = document.createElement('div');
+    headerRow.className = 'folder-group-td';
+    headerTd.appendChild(headerRow);
 
     const label = document.createElement('span');
     label.className = 'folder-group-label';
     const suffix = isLocal ? ' 🔒 non synchronisé' : '';
     label.innerHTML = `<span class="chevron">▾</span>${escapeHtml(folderName || 'Sans dossier')} (${groupRows.length})${suffix}`;
-    headerTd.appendChild(label);
+    headerRow.appendChild(label);
 
     const actions = document.createElement('span');
     actions.className = 'folder-group-actions';
@@ -244,7 +250,7 @@ function render() {
       actions.appendChild(removeBtn);
     }
 
-    headerTd.appendChild(actions);
+    headerRow.appendChild(actions);
 
     headerTr.appendChild(headerTd);
     headerTr.addEventListener('click', () => {
@@ -252,11 +258,34 @@ function render() {
       else collapsedFolders.add(folderName);
       render();
     });
+    makeDropTarget(headerTr, folderName);
     bodyEl.appendChild(headerTr);
 
     if (isCollapsed) return;
 
     groupRows.forEach(s => renderSnippetRow(s));
+  });
+}
+
+// Rend un élément (en-tête de groupe ou ligne de snippet) capable de recevoir un snippet glissé
+// par sa poignée, pour le déplacer vers le dossier `folderName`.
+function makeDropTarget(el, folderName) {
+  el.addEventListener('dragover', (e) => {
+    if (!draggedSnippet) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    el.classList.add('drop-target');
+  });
+  el.addEventListener('dragleave', () => el.classList.remove('drop-target'));
+  el.addEventListener('drop', (e) => {
+    e.preventDefault();
+    el.classList.remove('drop-target');
+    if (!draggedSnippet) return;
+    if ((draggedSnippet.folder || '') !== folderName) {
+      draggedSnippet.folder = folderName;
+      save(render);
+    }
+    draggedSnippet = null;
   });
 }
 
@@ -294,24 +323,26 @@ function renderSnippetRow(s) {
   }
   actionTd.appendChild(syncIndicator);
 
-  const folderSelectWrap = document.createElement('span');
-  folderSelectWrap.className = 'row-folder-select-wrap';
-  const folderSelect = document.createElement('select');
-  folderSelect.className = 'row-folder-select';
-  folderSelect.title = 'Changer de dossier';
-  populateFolderOptions(folderSelect, s.folder || '');
-  folderSelect.addEventListener('change', () => {
-    if (folderSelect.value === '__new__') {
-      const newName = prompt('Nom du nouveau dossier :', '');
-      if (!newName || !newName.trim()) { folderSelect.value = s.folder || ''; return; }
-      s.folder = newName.trim();
-    } else {
-      s.folder = folderSelect.value;
-    }
-    save(render);
+  // Glisser cette poignée vers un en-tête de dossier (ou une autre ligne) pour déplacer ce
+  // snippet — seule la poignée est "draggable", jamais les cellules éditables, pour ne pas
+  // perturber la sélection de texte ni l'édition directe du déclencheur/contenu.
+  const dragHandle = document.createElement('span');
+  dragHandle.className = 'drag-handle';
+  dragHandle.textContent = '⠿';
+  dragHandle.title = 'Glisser vers un dossier pour y déplacer ce snippet';
+  dragHandle.draggable = true;
+  dragHandle.addEventListener('dragstart', (e) => {
+    draggedSnippet = s;
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', s.trigger);
+    tr.classList.add('dragging');
   });
-  folderSelectWrap.appendChild(folderSelect);
-  actionTd.appendChild(folderSelectWrap);
+  dragHandle.addEventListener('dragend', () => {
+    draggedSnippet = null;
+    tr.classList.remove('dragging');
+  });
+  actionTd.appendChild(dragHandle);
+  makeDropTarget(tr, s.folder || '');
 
   if (isLocked) {
     const dupBtn = document.createElement('button');
