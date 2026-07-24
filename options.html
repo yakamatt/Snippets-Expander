@@ -19,16 +19,27 @@
     <section class="card">
       <h2>Ajouter un snippet</h2>
       <form id="add-form">
-        <input type="text" id="new-trigger" placeholder="Déclencheur (ex: ;sig)" required />
-        <textarea id="new-content" placeholder="Texte de remplacement... (utilisez {date}, {time}, {cursor}, et Entrée pour les sauts de ligne)"></textarea>
-        <div class="folder-select-wrap">
-          <select id="new-folder-select">
-            <option value="">Sans dossier</option>
-            <option value="__new__">➕ Nouveau dossier...</option>
-          </select>
-          <input type="text" id="new-folder-input" placeholder="Nom du nouveau dossier" hidden />
-        </div>
-        <button type="submit">Ajouter</button>
+        <table id="add-snippet-table">
+          <thead>
+            <tr><th>Déclencheur</th><th>Contenu</th><th></th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><input type="text" id="new-trigger" placeholder="ex: /GN4" required /></td>
+              <td><textarea id="new-content" placeholder="Texte de remplacement... (utilisez {date}, {time}, {cursor}, et Entrée pour les sauts de ligne)"></textarea></td>
+              <td class="action-cell">
+                <div class="folder-select-wrap">
+                  <select id="new-folder-select">
+                    <option value="">Sans dossier</option>
+                    <option value="__new__">➕ Nouveau dossier...</option>
+                  </select>
+                  <input type="text" id="new-folder-input" placeholder="Nom du nouveau dossier" hidden />
+                </div>
+                <button type="submit">Ajouter</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </form>
     </section>
 
