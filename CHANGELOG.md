@@ -1,5 +1,11 @@
 # Changelog — Snippet Expander
 
+## v1.3.1 — 2026-07-24
+- **Refonte visuelle complète** de la page Options : palette chaude (fond parchemin, accent ambre au lieu de l'indigo générique), typographie monospace pour les titres/labels/déclencheurs (en écho au caractère "code" des snippets) associée à une police système soignée pour le corps de texte
+- Prise en charge du **mode sombre** (`prefers-color-scheme`), y compris pour les couleurs de dossier générées dynamiquement (posées en style inline, donc gérées explicitement en JS)
+- Palette de couleurs de dossier resserrée à un jeu de teintes choisies (au lieu d'un arc-en-ciel de teinte aléatoire), plus harmonieuse avec le reste de l'interface
+- Note de synchronisation par ligne remplacée par une puce compacte avec infobulle, moins envahissante visuellement que le paragraphe précédent
+
 ## v1.3.0 — 2026-07-24
 - **Export/Import remplacés par du XLSX natif** (via SheetJS, incluse localement dans `lib/`) au lieu du CSV
 - **Dossier "Local" réservé** : les snippets qu'il contient ne sont jamais envoyés à Google Sheets, quoi qu'il arrive ; tous les autres dossiers sont synchronisés. Toujours proposé dans les listes de dossiers, marqué 🔒

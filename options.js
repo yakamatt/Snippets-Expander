@@ -1,4 +1,4 @@
-const BUILD_DATE = '2026-07-24'; // v1.3.0
+const BUILD_DATE = '2026-07-24'; // v1.3.1
 const DEFAULT_GITHUB_URL = 'https://raw.githubusercontent.com/yakamatt/Snippets-Expander/main';
 const DEFAULT_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbwlew8sAl_APmmZS5bpedGnSf6Ukn0Tvs3S93BGGwt6pwUMzg1uwfOWq91zEhTUVJG9/exec';
 // Dossier réservé : jamais envoyé à Google Sheets. Tous les autres dossiers sont synchronisés.
@@ -99,12 +99,21 @@ function isLocalFolder(name) {
   return String(name || '').trim().toLowerCase() === LOCAL_FOLDER_NAME.toLowerCase();
 }
 
-// Couleur pastel déterministe à partir du nom du dossier
+// Couleur pastel déterministe à partir du nom du dossier, piochée dans une palette de teintes
+// choisies pour rester harmonieuses sur le fond chaud de l'extension (plutôt qu'un arc-en-ciel brut).
+// Ces couleurs sont posées en style inline (une par dossier) : elles doivent donc s'adapter elles-mêmes
+// au thème sombre, la cascade CSS ne pouvant pas les intercepter.
+const FOLDER_HUES = [38, 16, 350, 300, 255, 185, 100, 55];
+function isDarkMode() {
+  return !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+}
 function folderColor(name) {
   let hash = 0;
   for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  const hue = Math.abs(hash) % 360;
-  return { bg: `hsl(${hue}, 70%, 93%)`, text: `hsl(${hue}, 55%, 32%)` };
+  const hue = FOLDER_HUES[Math.abs(hash) % FOLDER_HUES.length];
+  return isDarkMode()
+    ? { bg: `hsl(${hue}, 28%, 22%)`, text: `hsl(${hue}, 55%, 78%)` }
+    : { bg: `hsl(${hue}, 45%, 91%)`, text: `hsl(${hue}, 45%, 30%)` };
 }
 
 function escapeHtml(str) {
@@ -170,7 +179,9 @@ function render() {
     headerTr.className = 'folder-group-header';
     const isCollapsed = collapsedFolders.has(folderName);
     if (isCollapsed) headerTr.classList.add('collapsed');
-    const color = folderName && !isLocal ? folderColor(folderName) : { bg: '#f3f4f6', text: '#6b7280' };
+    const color = folderName && !isLocal
+      ? folderColor(folderName)
+      : (isDarkMode() ? { bg: '#2a241a', text: '#a79a85' } : { bg: '#efe8db', text: '#77694f' });
     headerTr.style.background = color.bg;
     headerTr.style.color = color.text;
 
@@ -260,12 +271,16 @@ function renderSnippetRow(s) {
   actionTd.appendChild(originBadge);
   actionTd.appendChild(document.createTextNode(' '));
 
-  const note = document.createElement('div');
-  note.className = 'locked-note';
-  note.textContent = isLocal
-    ? '🔒 Dossier "Local" : jamais envoyé à Google Sheets.'
-    : '⚠️ Toute modification est synchronisée vers Google Sheets (~10s après la dernière frappe), pour tous les utilisateurs.';
-  actionTd.appendChild(note);
+  const syncIndicator = document.createElement('span');
+  syncIndicator.className = 'sync-indicator';
+  if (isLocal) {
+    syncIndicator.textContent = '🔒 non synchronisé';
+    syncIndicator.title = 'Dossier "Local" : jamais envoyé à Google Sheets.';
+  } else {
+    syncIndicator.textContent = '☁ sync ~10s';
+    syncIndicator.title = 'Toute modification est synchronisée vers Google Sheets (~10s après la dernière frappe), pour tous les utilisateurs.';
+  }
+  actionTd.appendChild(syncIndicator);
 
   const folderSelectWrap = document.createElement('span');
   folderSelectWrap.className = 'row-folder-select-wrap';
