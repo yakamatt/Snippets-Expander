@@ -1,6 +1,9 @@
-const BUILD_DATE = '2026-07-24'; // v1.2.4
+const BUILD_DATE = '2026-07-24'; // v1.3.0
 const DEFAULT_GITHUB_URL = 'https://raw.githubusercontent.com/yakamatt/Snippets-Expander/main';
 const DEFAULT_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbwlew8sAl_APmmZS5bpedGnSf6Ukn0Tvs3S93BGGwt6pwUMzg1uwfOWq91zEhTUVJG9/exec';
+// Dossier réservé : jamais envoyé à Google Sheets. Tous les autres dossiers sont synchronisés.
+const LOCAL_FOLDER_NAME = 'Local';
+const AUTO_SYNC_DEBOUNCE_MS = 10000;
 
 let snippets = [];
 const collapsedFolders = new Set();
@@ -13,11 +16,12 @@ const newFolderSelect = document.getElementById('new-folder-select');
 const newFolderInput = document.getElementById('new-folder-input');
 
 function load() {
-  chrome.storage.local.get(['snippets', 'lastSync', 'updateCheck'], (res) => {
+  chrome.storage.local.get(['snippets', 'lastSync', 'updateCheck', 'pinBannerDismissed'], (res) => {
     snippets = res.snippets || [];
     render();
     renderVersionFooter(res.lastSync);
     renderUpdateBanner(res.updateCheck);
+    document.getElementById('pin-banner').hidden = !!res.pinBannerDismissed;
   });
   chrome.storage.sync.get(['syncSettings'], (res) => {
     const s = res.syncSettings || {};
@@ -30,6 +34,11 @@ function load() {
   });
   renderUpdateMode();
 }
+
+document.getElementById('pin-banner-dismiss').addEventListener('click', () => {
+  document.getElementById('pin-banner').hidden = true;
+  chrome.storage.local.set({ pinBannerDismissed: true });
+});
 
 // Le flux de mise à jour manuel (URL GitHub raw + téléchargement zip) n'a de sens qu'en mode
 // développeur ("non empaquetée") : une fois publiée sur le Chrome Web Store, Chrome met à jour
@@ -53,11 +62,41 @@ function renderUpdateMode() {
 }
 
 function save(cb) {
-  chrome.storage.local.set({ snippets }, cb);
+  chrome.storage.local.set({ snippets }, () => {
+    if (cb) cb();
+    scheduleAutoSync();
+  });
+}
+
+// Toute modification (ajout, édition, suppression, changement de dossier...) programme un envoi
+// vers Google Sheets 10s plus tard (debounce : la frappe suivante repousse le délai). Les snippets
+// du dossier "Local" restent exclus de l'envoi (voir background.js pushToSheet).
+let autoSyncTimer = null;
+function scheduleAutoSync() {
+  if (autoSyncTimer) clearTimeout(autoSyncTimer);
+  autoSyncTimer = setTimeout(() => {
+    autoSyncTimer = null;
+    chrome.storage.sync.get(['syncSettings'], (res) => {
+      if (!(res.syncSettings || {}).webAppUrl) return; // pas d'URL configurée : rien à synchroniser
+      chrome.runtime.sendMessage({ type: 'PUSH_TO_SHEET' }, (resp) => {
+        const statusEl = document.getElementById('sync-status');
+        if (!statusEl) return;
+        statusEl.textContent = resp && resp.ok
+          ? '✅ Synchronisation automatique effectuée.'
+          : '❌ Erreur de synchronisation automatique : ' + (resp && resp.error);
+      });
+    });
+  }, AUTO_SYNC_DEBOUNCE_MS);
 }
 
 function getFolders() {
-  return Array.from(new Set(snippets.map(s => s.folder).filter(Boolean))).sort((a, b) => a.localeCompare(b));
+  const used = snippets.map(s => s.folder).filter(Boolean);
+  // "Local" est toujours proposé, même si aucun snippet ne l'utilise encore
+  return Array.from(new Set([...used, LOCAL_FOLDER_NAME])).sort((a, b) => a.localeCompare(b));
+}
+
+function isLocalFolder(name) {
+  return String(name || '').trim().toLowerCase() === LOCAL_FOLDER_NAME.toLowerCase();
 }
 
 // Couleur pastel déterministe à partir du nom du dossier
@@ -76,18 +115,24 @@ function escapeHtml(str) {
 
 // ---------- Dossiers : selects ----------
 
+// Remplit un <select> avec "Sans dossier" + la liste des dossiers ("Local" marqué 🔒) + "Nouveau dossier"
+function populateFolderOptions(selectEl, selectedValue) {
+  const folders = getFolders();
+  selectEl.innerHTML = '<option value="">Sans dossier</option>' +
+    folders.map(f => `<option value="${escapeHtml(f)}">${escapeHtml(isLocalFolder(f) ? f + ' 🔒' : f)}</option>`).join('') +
+    '<option value="__new__">➕ Nouveau dossier...</option>';
+  selectEl.value = (selectedValue && folders.includes(selectedValue)) ? selectedValue : '';
+}
+
 function renderFolderSelects() {
   const folders = getFolders();
   const currentFilter = folderFilterEl.value;
   folderFilterEl.innerHTML = '<option value="">Tous les dossiers</option>' +
-    folders.map(f => `<option value="${escapeHtml(f)}">${escapeHtml(f)}</option>`).join('');
+    folders.map(f => `<option value="${escapeHtml(f)}">${escapeHtml(isLocalFolder(f) ? f + ' 🔒' : f)}</option>`).join('');
   folderFilterEl.value = folders.includes(currentFilter) ? currentFilter : '';
 
   const currentNewSelectValue = newFolderSelect.value;
-  newFolderSelect.innerHTML = '<option value="">Sans dossier</option>' +
-    folders.map(f => `<option value="${escapeHtml(f)}">${escapeHtml(f)}</option>`).join('') +
-    '<option value="__new__">➕ Nouveau dossier...</option>';
-  if (folders.includes(currentNewSelectValue)) newFolderSelect.value = currentNewSelectValue;
+  populateFolderOptions(newFolderSelect, currentNewSelectValue);
 }
 
 newFolderSelect.addEventListener('change', () => {
@@ -120,11 +165,12 @@ function render() {
     const groupRows = rows.filter(s => (s.folder || '') === folderName);
     if (!groupRows.length) return;
 
+    const isLocal = isLocalFolder(folderName);
     const headerTr = document.createElement('tr');
     headerTr.className = 'folder-group-header';
     const isCollapsed = collapsedFolders.has(folderName);
     if (isCollapsed) headerTr.classList.add('collapsed');
-    const color = folderName ? folderColor(folderName) : { bg: '#f3f4f6', text: '#6b7280' };
+    const color = folderName && !isLocal ? folderColor(folderName) : { bg: '#f3f4f6', text: '#6b7280' };
     headerTr.style.background = color.bg;
     headerTr.style.color = color.text;
 
@@ -134,13 +180,23 @@ function render() {
 
     const label = document.createElement('span');
     label.className = 'folder-group-label';
-    label.innerHTML = `<span class="chevron">▾</span>${escapeHtml(folderName || 'Sans dossier')} (${groupRows.length})`;
+    const suffix = isLocal ? ' 🔒 non synchronisé' : '';
+    label.innerHTML = `<span class="chevron">▾</span>${escapeHtml(folderName || 'Sans dossier')} (${groupRows.length})${suffix}`;
     headerTd.appendChild(label);
 
-    if (folderName) {
-      const actions = document.createElement('span');
-      actions.className = 'folder-group-actions';
+    const actions = document.createElement('span');
+    actions.className = 'folder-group-actions';
 
+    const addBtn = document.createElement('button');
+    addBtn.textContent = '+';
+    addBtn.title = `Ajouter un snippet dans "${folderName || 'Sans dossier'}"`;
+    addBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      quickAddToFolder(folderName);
+    });
+    actions.appendChild(addBtn);
+
+    if (folderName) {
       const renameBtn = document.createElement('button');
       renameBtn.textContent = '✏️';
       renameBtn.title = 'Renommer le dossier';
@@ -163,9 +219,9 @@ function render() {
         save(render);
       });
       actions.appendChild(removeBtn);
-
-      headerTd.appendChild(actions);
     }
+
+    headerTd.appendChild(actions);
 
     headerTr.appendChild(headerTd);
     headerTr.addEventListener('click', () => {
@@ -183,17 +239,18 @@ function render() {
 
 function renderSnippetRow(s) {
   const isLocked = s.origin === 'synced';
+  const isLocal = isLocalFolder(s.folder);
   const tr = document.createElement('tr');
 
   const triggerTd = document.createElement('td');
   triggerTd.className = 'trigger' + (isLocked ? ' locked' : '');
   triggerTd.textContent = s.trigger;
-  makeEditable(triggerTd, s, 'trigger', false, isLocked);
+  makeEditable(triggerTd, s, 'trigger', false);
 
   const contentTd = document.createElement('td');
   contentTd.className = 'content' + (isLocked ? ' locked' : '');
   contentTd.textContent = s.content;
-  makeEditable(contentTd, s, 'content', true, isLocked);
+  makeEditable(contentTd, s, 'content', true);
 
   const actionTd = document.createElement('td');
   actionTd.className = 'action-cell';
@@ -203,12 +260,33 @@ function renderSnippetRow(s) {
   actionTd.appendChild(originBadge);
   actionTd.appendChild(document.createTextNode(' '));
 
-  if (isLocked) {
-    const note = document.createElement('div');
-    note.className = 'locked-note';
-    note.textContent = '⚠️ Modifiable, mais la modification sera appliquée à tous les utilisateurs via Google Sheets (non annulable).';
-    actionTd.appendChild(note);
+  const note = document.createElement('div');
+  note.className = 'locked-note';
+  note.textContent = isLocal
+    ? '🔒 Dossier "Local" : jamais envoyé à Google Sheets.'
+    : '⚠️ Toute modification est synchronisée vers Google Sheets (~10s après la dernière frappe), pour tous les utilisateurs.';
+  actionTd.appendChild(note);
 
+  const folderSelectWrap = document.createElement('span');
+  folderSelectWrap.className = 'row-folder-select-wrap';
+  const folderSelect = document.createElement('select');
+  folderSelect.className = 'row-folder-select';
+  folderSelect.title = 'Changer de dossier';
+  populateFolderOptions(folderSelect, s.folder || '');
+  folderSelect.addEventListener('change', () => {
+    if (folderSelect.value === '__new__') {
+      const newName = prompt('Nom du nouveau dossier :', '');
+      if (!newName || !newName.trim()) { folderSelect.value = s.folder || ''; return; }
+      s.folder = newName.trim();
+    } else {
+      s.folder = folderSelect.value;
+    }
+    save(render);
+  });
+  folderSelectWrap.appendChild(folderSelect);
+  actionTd.appendChild(folderSelectWrap);
+
+  if (isLocked) {
     const dupBtn = document.createElement('button');
     dupBtn.className = 'dup';
     dupBtn.textContent = 'Dupliquer en local';
@@ -233,44 +311,30 @@ function renderSnippetRow(s) {
   bodyEl.appendChild(tr);
 }
 
-function makeEditable(td, snippet, field, multiline, isSynced) {
+function makeEditable(td, snippet, field, multiline) {
   td.setAttribute('contenteditable', 'true');
   td.addEventListener('blur', () => {
     const newValue = multiline ? td.innerText.replace(/\r/g, '') : td.textContent.trim();
     if (snippet[field] === newValue) return;
     if (field === 'trigger' && !newValue) { td.textContent = snippet.trigger; return; }
-    if (isSynced) {
-      const confirmed = confirm(
-        '⚠️ Ce snippet est synchronisé depuis Google Sheets.\n\n' +
-        'Modifier cette valeur l\'enverra immédiatement dans le Sheet partagé et s\'appliquera à TOUS les utilisateurs ' +
-        '(le Sheet est entièrement réécrit avec l\'ensemble de vos snippets locaux actuels, pas seulement celui-ci).\n\n' +
-        'Cette action est irréversible. Continuer ?'
-      );
-      if (!confirmed) { td.textContent = snippet[field]; return; }
-    }
     snippet[field] = newValue;
-    save(() => {
-      if (isSynced) pushSyncedEdit();
-    });
+    save();
   });
   td.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && !multiline) { e.preventDefault(); td.blur(); }
   });
 }
 
-function pushSyncedEdit() {
-  chrome.runtime.sendMessage({ type: 'PUSH_TO_SHEET' }, (resp) => {
-    const statusEl = document.getElementById('sync-status');
-    if (resp && resp.ok) {
-      if (statusEl) statusEl.textContent = '✅ Modification envoyée vers Google Sheets (appliquée à tous les utilisateurs).';
-    } else {
-      alert('❌ Erreur lors de l\'envoi vers Google Sheets : ' + (resp && resp.error));
-    }
-  });
-}
-
 searchEl.addEventListener('input', render);
 folderFilterEl.addEventListener('change', render);
+
+// Pré-remplit le formulaire d'ajout avec le dossier concerné et y amène l'utilisateur
+function quickAddToFolder(folderName) {
+  populateFolderOptions(newFolderSelect, folderName || '');
+  newFolderInput.hidden = true;
+  document.getElementById('add-snippet-table').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  document.getElementById('new-trigger').focus();
+}
 
 document.getElementById('add-form').addEventListener('submit', (e) => {
   e.preventDefault();
@@ -279,6 +343,18 @@ document.getElementById('add-form').addEventListener('submit', (e) => {
   let folder = newFolderSelect.value;
   if (folder === '__new__') folder = newFolderInput.value.trim();
   if (!trigger || !content) return;
+
+  // Vérifie l'unicité du déclencheur : un conflit avec un snippet synchronisé est autorisé,
+  // mais l'utilisateur doit savoir que sa version locale prendra le dessus sur celle en ligne.
+  const conflict = snippets.find(s => s.trigger === trigger && s.origin === 'synced');
+  if (conflict) {
+    const confirmed = confirm(
+      `⚠️ Le déclencheur "${trigger}" existe déjà dans la version synchronisée (Google Sheets).\n\n` +
+      'Votre snippet local sera prioritaire : c\'est lui qui s\'affichera à la place de la version en ligne pour ce déclencheur.\n\n' +
+      'Continuer ?'
+    );
+    if (!confirmed) return;
+  }
 
   snippets = snippets.filter(s => !(s.trigger === trigger && s.origin !== 'synced'));
   snippets.push({ trigger, content, folder, origin: 'local' });
@@ -289,68 +365,30 @@ document.getElementById('add-form').addEventListener('submit', (e) => {
   });
 });
 
-// --- Export / Import CSV (compatible Excel) ---
+// --- Export / Import XLSX (via SheetJS, voir lib/xlsx.full.min.js) ---
 
-function csvEscape(field) {
-  const str = String(field ?? '');
-  if (/[",\n]/.test(str)) return '"' + str.replace(/"/g, '""') + '"';
-  return str;
-}
-
-function toCSV(list) {
-  const header = 'trigger,content,folder';
-  const lines = list.map(s => [s.trigger, s.content, s.folder || ''].map(csvEscape).join(','));
-  return [header, ...lines].join('\r\n');
-}
-
-function parseCSV(text) {
-  const rows = [];
-  let row = [], field = '', inQuotes = false;
-  for (let i = 0; i < text.length; i++) {
-    const c = text[i];
-    if (inQuotes) {
-      if (c === '"') { if (text[i + 1] === '"') { field += '"'; i++; } else inQuotes = false; }
-      else field += c;
-    } else {
-      if (c === '"') inQuotes = true;
-      else if (c === ',') { row.push(field); field = ''; }
-      else if (c === '\n') { row.push(field); rows.push(row); row = []; field = ''; }
-      else if (c === '\r') { /* ignore */ }
-      else field += c;
-    }
-  }
-  if (field.length || row.length) { row.push(field); rows.push(row); }
-  return rows.filter(r => r.length && r.some(c => c !== ''));
-}
-
-document.getElementById('export-csv').addEventListener('click', () => {
-  const csv = toCSV(snippets);
-  const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'snippets.csv';
-  a.click();
-  URL.revokeObjectURL(url);
+document.getElementById('export-xlsx').addEventListener('click', () => {
+  const rows = snippets.map(s => ({ trigger: s.trigger, content: s.content, folder: s.folder || '' }));
+  const ws = XLSX.utils.json_to_sheet(rows, { header: ['trigger', 'content', 'folder'] });
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Snippets');
+  XLSX.writeFile(wb, 'snippets.xlsx');
 });
 
-document.getElementById('import-csv').addEventListener('change', (e) => {
+document.getElementById('import-xlsx').addEventListener('change', (e) => {
   const file = e.target.files[0];
   if (!file) return;
   const reader = new FileReader();
   reader.onload = () => {
-    const rows = parseCSV(reader.result);
-    if (!rows.length) return;
-    const header = rows[0].map(h => h.trim().toLowerCase());
-    const triggerIdx = header.indexOf('trigger');
-    const contentIdx = header.indexOf('content');
-    const folderIdx = header.indexOf('folder');
-    const dataRows = triggerIdx === -1 ? rows : rows.slice(1);
+    const data = new Uint8Array(reader.result);
+    const wb = XLSX.read(data, { type: 'array' });
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(ws, { defval: '' });
 
-    const imported = dataRows.map(r => ({
-      trigger: triggerIdx === -1 ? r[0] : r[triggerIdx],
-      content: triggerIdx === -1 ? r[1] : r[contentIdx],
-      folder: (folderIdx === -1 ? '' : r[folderIdx]) || '',
+    const imported = rows.map(r => ({
+      trigger: String(r.trigger ?? r.Trigger ?? '').trim(),
+      content: String(r.content ?? r.Content ?? ''),
+      folder: String(r.folder ?? r.Folder ?? '').trim(),
       origin: 'local'
     })).filter(s => s.trigger && s.content);
 
@@ -363,7 +401,7 @@ document.getElementById('import-csv').addEventListener('change', (e) => {
       document.getElementById('import-status').textContent = `✅ ${imported.length} snippet(s) importé(s).`;
     });
   };
-  reader.readAsText(file, 'UTF-8');
+  reader.readAsArrayBuffer(file);
 });
 
 // --- Synchro Google Sheets ---

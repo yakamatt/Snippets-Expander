@@ -1,5 +1,15 @@
 # Changelog — Snippet Expander
 
+## v1.3.0 — 2026-07-24
+- **Export/Import remplacés par du XLSX natif** (via SheetJS, incluse localement dans `lib/`) au lieu du CSV
+- **Dossier "Local" réservé** : les snippets qu'il contient ne sont jamais envoyés à Google Sheets, quoi qu'il arrive ; tous les autres dossiers sont synchronisés. Toujours proposé dans les listes de dossiers, marqué 🔒
+- **Synchro automatique après modification** : tout ajout/édition/suppression/changement de dossier programme un envoi vers Google Sheets ~10s plus tard (debounce), sans confirmation, sauf pour le dossier "Local" qui en reste exclu — remplace l'ancienne confirmation systématique sur les snippets synchronisés
+- **Bouton "+" sur chaque en-tête de dossier** pour ajouter rapidement un snippet dans ce dossier précis
+- **Changement de dossier d'un snippet existant** : un petit sélecteur de dossier apparaît maintenant sur chaque ligne du tableau
+- **Vérification d'unicité à la création** : si le déclencheur existe déjà côté synchronisé, une confirmation prévient que la version locale sera prioritaire sur la version en ligne
+- `content.js` : à longueur de déclencheur égale, un snippet local gagne désormais toujours face à un snippet synchronisé (résout une ambiguïté d'ordre lors de doublons)
+- **Bannière d'incitation à épingler l'extension** dans la barre d'outils, affichée à la première installation (page Options ouverte automatiquement)
+
 ## v1.2.4 — 2026-07-24
 - Suppression de la section "Dossiers" (chips) devenue redondante
 - Renommer/supprimer un dossier se fait maintenant directement depuis l'en-tête de groupe du tableau des snippets, via deux icônes (✏️ renommer, 🗑️ supprimer) alignées à droite

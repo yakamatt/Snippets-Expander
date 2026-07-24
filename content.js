@@ -46,7 +46,11 @@ function findCursorOffset(rawText) {
 function findMatch(before) {
   return SNIPPETS
     .slice()
-    .sort((a, b) => b.trigger.length - a.trigger.length)
+    .sort((a, b) => {
+      if (b.trigger.length !== a.trigger.length) return b.trigger.length - a.trigger.length;
+      // À longueur de déclencheur égale, un snippet local est toujours prioritaire sur un snippet synchronisé
+      return (a.origin === 'synced' ? 1 : 0) - (b.origin === 'synced' ? 1 : 0);
+    })
     .find(s => before.endsWith(s.trigger));
 }
 

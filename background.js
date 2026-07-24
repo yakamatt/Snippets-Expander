@@ -4,6 +4,12 @@ const SYNC_ALARM = 'snippet-sync';
 const UPDATE_ALARM = 'snippet-update-check';
 const DEFAULT_GITHUB_URL = 'https://raw.githubusercontent.com/yakamatt/Snippets-Expander/main';
 const DEFAULT_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbwlew8sAl_APmmZS5bpedGnSf6Ukn0Tvs3S93BGGwt6pwUMzg1uwfOWq91zEhTUVJG9/exec';
+// Dossier réservé : les snippets qu'il contient ne sont jamais envoyés à Google Sheets, quoi qu'il arrive.
+// Tous les autres dossiers sont synchronisés (poussés automatiquement 10s après chaque modification, voir options.js).
+const LOCAL_FOLDER_NAME = 'Local';
+function isLocalFolder(name) {
+  return String(name || '').trim().toLowerCase() === LOCAL_FOLDER_NAME.toLowerCase();
+}
 
 chrome.runtime.onInstalled.addListener((details) => {
   chrome.storage.local.get(['snippets'], (res) => {
@@ -24,8 +30,12 @@ chrome.runtime.onInstalled.addListener((details) => {
     // (valeur héritée d'avant l'introduction de ce défaut), on la (ré)active à chaque installation/mise à jour.
     if (!merged.autoSyncMinutes) merged.autoSyncMinutes = 60;
     chrome.storage.sync.set({ syncSettings: merged }, () => {
-      // Première installation : importe immédiatement les snippets partagés par défaut
-      if (isFreshInstall) pullFromSheet().catch(() => {});
+      // Première installation : importe immédiatement les snippets partagés par défaut,
+      // puis ouvre les paramètres pour inciter à épingler l'extension dans la barre d'outils
+      if (isFreshInstall) {
+        pullFromSheet().catch(() => {});
+        chrome.runtime.openOptionsPage();
+      }
     });
   });
   scheduleAlarms();
@@ -108,9 +118,10 @@ async function pushToSheet() {
   const { snippets } = await chrome.storage.local.get(['snippets']);
   if (!syncSettings || !syncSettings.webAppUrl) throw new Error('URL du Web App non configurée');
 
-  const payload = (snippets || []).map(s => ({
-    trigger: s.trigger, content: s.content, folder: s.folder || ''
-  }));
+  // Le dossier "Local" ne quitte jamais cet appareil : exclu de tout envoi vers Google Sheets.
+  const payload = (snippets || [])
+    .filter(s => !isLocalFolder(s.folder))
+    .map(s => ({ trigger: s.trigger, content: s.content, folder: s.folder || '' }));
 
   const res = await fetch(syncSettings.webAppUrl, {
     method: 'POST',

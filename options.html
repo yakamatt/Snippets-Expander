@@ -8,10 +8,14 @@
 <body>
   <header>
     <h1>⚡ Snippet Expander</h1>
-    <p class="subtitle">Vos snippets, gérés localement et partageables via Google Sheets ou fichier CSV.</p>
+    <p class="subtitle">Vos snippets, gérés localement et partageables via Google Sheets ou fichier XLSX.</p>
     <div id="update-banner" class="update-banner" hidden>
       <span id="update-banner-text"></span>
       <button id="update-banner-btn" class="update-btn">⬇️ Télécharger la mise à jour</button>
+    </div>
+    <div id="pin-banner" class="pin-banner" hidden>
+      <span>📌 Pensez à épingler Snippet Expander dans la barre d'outils : cliquez sur le puzzle 🧩 en haut du navigateur, puis sur l'épingle 📌 à côté de Snippet Expander.</span>
+      <button id="pin-banner-dismiss" class="pin-btn">J'ai compris</button>
     </div>
   </header>
 
@@ -41,6 +45,7 @@
           </tbody>
         </table>
       </form>
+      <p class="hint">Le dossier <strong>"Local"</strong> reste toujours sur cet appareil et n'est jamais envoyé à Google Sheets. Tous les autres dossiers (y compris "Sans dossier") sont synchronisés automatiquement.</p>
     </section>
 
     <section class="card">
@@ -51,7 +56,7 @@
           <input type="text" id="search" placeholder="Rechercher..." />
         </div>
       </div>
-      <p class="hint">Cliquez directement dans une cellule pour modifier un snippet (enregistrement automatique). 🔒 = donnée synchronisée : la modifier l'envoie immédiatement à tous les utilisateurs via Google Sheets (confirmation demandée, action non annulable).</p>
+      <p class="hint">Cliquez directement dans une cellule pour modifier un snippet (enregistrement automatique). Toute modification (hors dossier "Local") est synchronisée vers Google Sheets ~10s après la dernière frappe, pour tous les utilisateurs. 🔒 = snippet synchronisé.</p>
       <table id="snippets-table">
         <thead>
           <tr><th>Déclencheur</th><th>Contenu</th><th></th></tr>
@@ -65,13 +70,13 @@
       <div id="advanced-panel" hidden>
 
         <div class="advanced-block">
-          <h3>Import / Export (Excel / CSV)</h3>
-          <p class="hint">Le format CSV s'ouvre et s'édite directement dans Excel. Colonnes : <code>trigger,content,folder</code></p>
+          <h3>Import / Export (Excel XLSX)</h3>
+          <p class="hint">Fichier Excel (.xlsx) natif, colonnes : <code>trigger,content,folder</code></p>
           <div class="button-row">
-            <button id="export-csv">⬇️ Exporter en CSV</button>
+            <button id="export-xlsx">⬇️ Exporter en XLSX</button>
             <label class="file-btn">
-              ⬆️ Importer un CSV
-              <input type="file" id="import-csv" accept=".csv" hidden />
+              ⬆️ Importer un XLSX
+              <input type="file" id="import-xlsx" accept=".xlsx" hidden />
             </label>
           </div>
           <p class="hint" id="import-status"></p>
@@ -121,7 +126,7 @@
             <option value="local">Mes snippets locaux ont la priorité</option>
           </select>
 
-          <p class="hint">Envoie tous vos snippets locaux vers le Google Sheet partagé et <strong>écrase entièrement</strong> son contenu actuel (y compris les modifications d'autres personnes).</p>
+          <p class="hint">Envoie tous vos snippets vers le Google Sheet partagé (hors dossier "Local") et <strong>écrase entièrement</strong> son contenu actuel (y compris les modifications d'autres personnes). Inutile en temps normal : la synchro se fait déjà automatiquement ~10s après chaque modification.</p>
           <button id="push-btn" class="danger-btn">🚨 Envoyer vers Google Sheets (écrase les données)</button>
         </div>
 
@@ -157,6 +162,7 @@
     <footer id="version-footer"></footer>
   </main>
 
+  <script src="lib/xlsx.full.min.js"></script>
   <script src="options.js"></script>
 </body>
 </html>

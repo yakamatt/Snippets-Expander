@@ -1,6 +1,6 @@
 # Snippet Expander — extension Chrome gratuite (alternative à Blaze.Today)
 
-Remplace automatiquement un texte court (ex: `;sig`) par un texte prédéfini, dans n'importe quel champ de texte du navigateur. Snippets illimités, organisés en dossiers, import/export Excel (CSV), et partage d'équipe via Google Sheets avec fusion intelligente — **100% gratuit**.
+Remplace automatiquement un texte court (ex: `;sig`) par un texte prédéfini, dans n'importe quel champ de texte du navigateur. Snippets illimités, organisés en dossiers, import/export Excel (XLSX natif), et partage d'équipe via Google Sheets avec synchro automatique — **100% gratuit**.
 
 ## 1. Installer l'extension dans Chrome
 
@@ -9,6 +9,7 @@ Remplace automatiquement un texte court (ex: `;sig`) par un texte prédéfini, d
 3. Cliquez sur **Charger l'extension non empaquetée**
 4. Sélectionnez le dossier `snippet-expander` (celui qui contient `manifest.json`)
 5. L'icône ⚡ apparaît dans la barre d'outils — **un clic dessus ouvre directement les paramètres**
+6. À la première installation, la page Options s'ouvre automatiquement avec une bannière 📌 vous invitant à épingler l'extension (clic sur le puzzle 🧩 en haut du navigateur, puis sur l'épingle à côté de Snippet Expander) pour l'avoir toujours sous la main
 
 ## 2. Utiliser l'extension
 
@@ -16,14 +17,16 @@ Remplace automatiquement un texte court (ex: `;sig`) par un texte prédéfini, d
 - Un snippet a un **déclencheur** (ex: `;sig`, `/adresse`), un **contenu** et un **dossier** optionnel.
 - Tapez le déclencheur dans n'importe quel champ (Gmail, formulaires web, réseaux sociaux, contenteditable...) : après une courte temporisation (1 seconde par défaut, réglable), il se remplace par le contenu — les sauts de ligne et retours à la ligne sont respectés.
 - Placeholders disponibles : `{date}`, `{time}`, `{cursor}` (repositionne le curseur après expansion).
-- **Édition directe** : cliquez dans n'importe quelle cellule du tableau des snippets pour la modifier ; l'enregistrement est automatique dès que vous cliquez ailleurs (blur).
-- **Dossiers** : tapez un nom de dossier lors de la création d'un snippet (ou modifiez la cellule "Dossier" plus tard) pour organiser vos snippets ; utilisez le filtre en haut de la liste pour n'afficher qu'un dossier.
+- **Édition directe** : cliquez dans n'importe quelle cellule du tableau des snippets pour la modifier ; l'enregistrement est automatique dès que vous cliquez ailleurs (blur). Toute modification (hors dossier "Local", voir plus bas) est renvoyée vers Google Sheets ~10 secondes après votre dernière frappe.
+- **Dossiers** : choisissez un dossier lors de la création d'un snippet, ou changez-le à tout moment via le petit sélecteur de dossier présent sur chaque ligne du tableau. Utilisez le filtre en haut de la liste pour n'afficher qu'un dossier. Chaque en-tête de groupe de dossier propose trois icônes alignées à droite : **+** (ajouter rapidement un snippet dans ce dossier), **✏️** (renommer) et **🗑️** (supprimer le dossier — les snippets ne sont pas supprimés, ils repassent en "Sans dossier").
+- **Dossier "Local"** : réservé, toujours proposé dans les listes de dossiers. Les snippets qu'il contient restent uniquement sur cet appareil et ne sont **jamais** envoyés à Google Sheets, quoi qu'il arrive. Tous les autres dossiers (y compris "Sans dossier") sont synchronisés.
+- **Déclencheurs uniques** : à la création d'un snippet, si le déclencheur existe déjà côté synchronisé (Google Sheets), une confirmation s'affiche : votre version locale sera prioritaire et s'affichera à la place de la version en ligne pour ce déclencheur (voir aussi "Priorité de synchronisation" plus bas).
 
-## 3. Import / Export Excel (CSV)
+## 3. Import / Export Excel (XLSX)
 
-Dans la page Options :
-- **Exporter en CSV** : télécharge tous vos snippets (`trigger,content,folder`) dans un fichier `.csv` ouvrable/éditable dans Excel.
-- **Importer un CSV** : les snippets importés sont ajoutés comme snippets **locaux** modifiables ; ceux avec un déclencheur déjà existant sont mis à jour.
+Dans la page Options > Paramètres avancés :
+- **Exporter en XLSX** : télécharge tous vos snippets (`trigger,content,folder`) dans un vrai fichier `.xlsx`, lisible nativement par Excel ou Google Sheets (via [SheetJS](https://sheetjs.com), incluse localement dans `lib/`, aucune connexion externe requise).
+- **Importer un XLSX** : les snippets importés sont ajoutés comme snippets **locaux** modifiables ; ceux avec un déclencheur déjà existant sont mis à jour.
 
 ## 4. Partage en temps réel avec une équipe (Google Sheets, gratuit)
 
@@ -47,18 +50,21 @@ Dans la page Options :
 
 ### d. Fusion des données (important)
 Contrairement à la v1.0, **la récupération ne supprime plus jamais vos snippets créés localement**. Au moment de la récupération :
-- vos snippets locaux sont conservés
-- les snippets provenant du Sheet sont ajoutés/mis à jour, marqués 🔒 ; ils restent **modifiables directement** dans le tableau, mais toute modification est immédiatement renvoyée vers le Sheet partagé et **s'applique à tous les utilisateurs** (action non annulable — une confirmation est demandée avant l'envoi). Pour une copie privée non partagée, utilisez plutôt "Dupliquer en local"
+- vos snippets locaux sont conservés (sauf ceux du dossier "Local", jamais concernés par la synchro)
+- les snippets provenant du Sheet sont ajoutés/mis à jour, marqués 🔒 ; ils restent **modifiables directement** dans le tableau, comme n'importe quel snippet. Pour une copie indépendante qui ne sera plus jamais écrasée par une future récupération, utilisez plutôt "Dupliquer en local"
 - en cas de déclencheur identique entre un snippet local et un snippet synchronisé, la **priorité de synchronisation** (réglable dans Paramètres avancés) décide qui l'emporte : Google Sheets par défaut, ou vos snippets locaux si vous le préférez
 
-L'envoi **vers** Google Sheets (qui écrase le contenu du Sheet) a été déplacé dans **Paramètres avancés > Zone à risque**, avec confirmation obligatoire, car c'est une action destructive pour les autres utilisateurs du Sheet partagé.
+**Synchro automatique après modification** : toute modification d'un snippet (ajout, édition, changement de dossier, suppression) programme un envoi vers Google Sheets ~10 secondes plus tard (la frappe suivante repousse ce délai). Seuls les snippets du dossier **"Local"** en sont exclus — tout le reste est synchronisé, silencieusement, sans confirmation à chaque fois.
+
+Le bouton d'envoi manuel **"🚨 Envoyer vers Google Sheets"** (Paramètres avancés > Zone à risque) reste disponible pour forcer une resynchro complète immédiate, mais n'est plus nécessaire en usage normal.
 
 ## 5. Paramètres avancés
 
 Accessibles via le bouton "⚙️ Paramètres avancés" en bas de la page Options :
+- **Import / Export XLSX** : voir section 3
 - **Temporisation avant expansion** : délai (ms) après la fin de la frappe avant remplacement (évite qu'un mot plus long contenant un déclencheur ne s'expanse par erreur)
 - **Priorité de synchronisation** : Google Sheets ou snippets locaux en cas de doublon
-- **Envoi vers Google Sheets** : bouton à risque, confirmation obligatoire
+- **Envoi vers Google Sheets** : bouton à risque, confirmation obligatoire (resynchro manuelle complète, hors dossier "Local")
 - **Mise à jour de l'extension** : voir section suivante
 
 ## 6. Mettre l'extension sur GitHub
@@ -134,6 +140,7 @@ snippet-expander/
 ├── background.js          # Synchro (fusion), clic icône, vérification MAJ GitHub
 ├── content.js              # Détection, temporisation et remplacement du texte
 ├── options.html/css/js     # Page de gestion complète (édition inline, dossiers, avancé)
+├── lib/xlsx.full.min.js   # SheetJS, pour l'export/import XLSX (aucune dépendance réseau)
 ├── icons/                  # Icônes de l'extension
 ├── CHANGELOG.md             # Historique des versions
 └── google-apps-script/
