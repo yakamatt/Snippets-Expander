@@ -25,6 +25,7 @@ chrome.runtime.onInstalled.addListener((details) => {
       webAppUrl: DEFAULT_WEBAPP_URL,
       autoSyncMinutes: 60,
       expansionDelayMs: 500,
+      syncDelaySeconds: 5,
       syncPriority: 'remote', // 'remote' = Google Sheets écrase les doublons locaux | 'local' = les snippets locaux sont conservés
       githubRepoUrl: DEFAULT_GITHUB_URL,
       autoCheckUpdates: true

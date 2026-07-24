@@ -1,4 +1,4 @@
-const BUILD_DATE = '2026-07-24'; // v1.7.0
+const BUILD_DATE = '2026-07-24'; // v1.8.0
 const DEFAULT_GITHUB_URL = 'https://raw.githubusercontent.com/yakamatt/Snippets-Expander/main';
 const DEFAULT_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbwlew8sAl_APmmZS5bpedGnSf6Ukn0Tvs3S93BGGwt6pwUMzg1uwfOWq91zEhTUVJG9/exec';
 
@@ -10,6 +10,9 @@ function isShared(s) {
 
 let snippets = [];
 const collapsedFolders = new Set();
+// Déclencheur du snippet à mettre en avant (scroll + focus) au prochain rendu, positionné juste
+// avant un save() suite à une création, une duplication ou un changement de dossier.
+let pendingFocusTrigger = null;
 
 const bodyEl = document.getElementById('snippets-body');
 const countEl = document.getElementById('count');
@@ -45,6 +48,7 @@ function load() {
     document.getElementById('webapp-url').value = s.webAppUrl || DEFAULT_WEBAPP_URL;
     document.getElementById('autosync').value = String(s.autoSyncMinutes || 0);
     document.getElementById('expansion-delay').value = s.expansionDelayMs ?? 500;
+    document.getElementById('sync-delay').value = s.syncDelaySeconds ?? 5;
     document.getElementById('sync-priority').value = s.syncPriority || 'remote';
     document.getElementById('github-url').value = s.githubRepoUrl || DEFAULT_GITHUB_URL;
     document.getElementById('auto-check-updates').checked = !!s.autoCheckUpdates;
@@ -93,13 +97,14 @@ function renderUpdateMode() {
 function save(cb) {
   chrome.storage.local.set({ snippets }, () => {
     if (cb) cb();
-    syncNow();
+    scheduleSyncNow();
   });
 }
 
-// Toute modification (ajout, édition, suppression, changement de dossier...) synchronise
-// immédiatement vers Google Sheets, sans délai. Les snippets dont la propriété `shared` vaut
-// false restent exclus de l'envoi (voir background.js pushToSheet).
+// Toute modification (ajout, édition, suppression, changement de dossier...) programme un envoi
+// vers Google Sheets après un court délai (réglable, "Paramètres avancés", 5s par défaut) : ça
+// regroupe plusieurs modifications rapprochées en un seul envoi. Les snippets dont la propriété
+// `shared` vaut false restent exclus de l'envoi (voir background.js pushToSheet).
 // Le statut est écrit à la fois dans le panneau avancé (#sync-status) et dans une ligne toujours
 // visible sous "Mes snippets" (#live-sync-status) : sans ça, un échec de synchro (ex: URL absente,
 // erreur réseau) restait invisible pour qui n'ouvre jamais "Paramètres avancés", et donnait
@@ -110,6 +115,31 @@ function setSyncStatus(msg) {
     if (el) el.textContent = msg;
   });
 }
+
+let syncDebounceTimer = null;
+
+function scheduleSyncNow() {
+  chrome.storage.sync.get(['syncSettings'], (res) => {
+    const delaySec = (res.syncSettings || {}).syncDelaySeconds ?? 5;
+    if (syncDebounceTimer) { clearTimeout(syncDebounceTimer); syncDebounceTimer = null; }
+    if (!delaySec) { syncNow(); return; }
+    setSyncStatus(`⏳ Synchronisation dans ${delaySec}s...`);
+    syncDebounceTimer = setTimeout(() => {
+      syncDebounceTimer = null;
+      syncNow();
+    }, delaySec * 1000);
+  });
+}
+
+// Filet de sécurité : si l'onglet Options est masqué (fermé, changé) avant la fin du délai,
+// l'envoi est déclenché immédiatement plutôt que d'être silencieusement perdu.
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden' && syncDebounceTimer) {
+    clearTimeout(syncDebounceTimer);
+    syncDebounceTimer = null;
+    syncNow();
+  }
+});
 
 function syncNow() {
   chrome.storage.sync.get(['syncSettings'], (res) => {
@@ -209,6 +239,13 @@ function render() {
   countEl.textContent = snippets.length;
   bodyEl.innerHTML = '';
 
+  // Le dossier du snippet à mettre en avant doit être déplié, sans quoi sa ligne ne serait pas
+  // construite du tout (voir la mise en avant en fin de fonction).
+  if (pendingFocusTrigger) {
+    const focusTarget = snippets.find(sn => sn.trigger === pendingFocusTrigger);
+    if (focusTarget) collapsedFolders.delete(focusTarget.folder || '');
+  }
+
   const folders = getFolders();
   const groupOrder = ['', ...folders]; // "Sans dossier" en premier
 
@@ -291,6 +328,21 @@ function render() {
 
     groupRows.forEach(s => renderSnippetRow(s));
   });
+
+  // Met en avant le snippet créé/dupliqué/déplacé lors de la dernière action (scroll + focus) :
+  // le tableau étant entièrement reconstruit à chaque rendu, tout focus précédent est de toute façon perdu.
+  if (pendingFocusTrigger) {
+    const targetRow = Array.from(bodyEl.querySelectorAll('tr')).find(tr => {
+      const td = tr.querySelector('td.trigger');
+      return td && td.textContent === pendingFocusTrigger;
+    });
+    if (targetRow) {
+      targetRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      const triggerTd = targetRow.querySelector('td.trigger');
+      if (triggerTd) triggerTd.focus();
+    }
+    pendingFocusTrigger = null;
+  }
 }
 
 // Copie indépendante d'un snippet, marquée "privé" (shared:false) : n'affecte jamais l'original.
@@ -299,6 +351,7 @@ function render() {
 function duplicateAsPrivate(s) {
   const copy = { ...s, origin: 'local', shared: false, trigger: s.trigger + '-privé' };
   snippets.push(copy);
+  pendingFocusTrigger = copy.trigger;
   save(render);
 }
 
@@ -306,6 +359,10 @@ function renderSnippetRow(s) {
   const isLocked = s.origin === 'synced';
   const shared = isShared(s);
   const tr = document.createElement('tr');
+  // Toute ligne "privé" a une apparence propre (texte atténué), quelle que soit son origine :
+  // dès qu'un snippet redevient "partagé", ce rendu recalcule ses classes et son apparence
+  // redevient identique à celle des autres snippets partagés, sans rien de plus à faire.
+  if (!shared) tr.classList.add('snippet-private');
 
   const triggerTd = document.createElement('td');
   triggerTd.className = 'trigger' + (isLocked ? ' locked' : '');
@@ -381,6 +438,7 @@ function renderSnippetRow(s) {
       } else {
         s.folder = select.value;
       }
+      pendingFocusTrigger = s.trigger;
       save(render);
     });
     select.addEventListener('blur', () => render());
@@ -458,6 +516,7 @@ document.getElementById('add-form').addEventListener('submit', (e) => {
 
   snippets = snippets.filter(s => !(s.trigger === trigger && s.origin !== 'synced'));
   snippets.push({ trigger, content, folder, origin: 'local', shared: true });
+  pendingFocusTrigger = trigger;
   save(() => {
     render();
     e.target.reset();
@@ -577,6 +636,10 @@ document.getElementById('toggle-advanced').addEventListener('click', () => {
 
 document.getElementById('expansion-delay').addEventListener('change', (e) => {
   updateSyncSettings({ expansionDelayMs: parseInt(e.target.value, 10) || 0 });
+});
+
+document.getElementById('sync-delay').addEventListener('change', (e) => {
+  updateSyncSettings({ syncDelaySeconds: parseInt(e.target.value, 10) || 0 });
 });
 
 document.getElementById('sync-priority').addEventListener('change', (e) => {

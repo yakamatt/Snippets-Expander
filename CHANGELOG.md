@@ -1,5 +1,10 @@
 # Changelog — Snippet Expander
 
+## v1.8.0 — 2026-07-24
+- **Met en avant (scroll + focus) le snippet créé, dupliqué ou déplacé de dossier**, juste après le rendu qui suit l'action — son dossier est déplié automatiquement si besoin pour que sa ligne soit visible
+- **L'apparence d'une ligne suit maintenant son état Partagé/Privé** : un snippet "Privé" a un texte atténué ; dès qu'il redevient "Partagé" (ou inversement), son apparence est recalculée pour correspondre aux autres lignes du même état
+- **Ajoute une temporisation avant synchronisation** (nouveau "Paramètre avancé", 5s par défaut, réglable) : les modifications rapprochées (plusieurs éditions à la suite) sont regroupées en un seul envoi vers Google Sheets au lieu d'un envoi immédiat à chaque changement. Un filet de sécurité envoie immédiatement si l'onglet Options est masqué avant la fin du délai
+
 ## v1.7.0 — 2026-07-24
 - **Renomme les labels de l'interrupteur "Shared"/"Local" en "Partagé"/"Privé"**
 - **Change à nouveau le comportement de l'interrupteur**, qui redevient asymétrique : passer un snippet de **Privé à Partagé** le modifie sur place (il rejoint immédiatement la synchro Google Sheets) ; passer de **Partagé à Privé** ne modifie plus l'original mais crée une **copie indépendante** marquée "Privé", jamais envoyée à Google Sheets — une confirmation détaille l'action dans les deux sens

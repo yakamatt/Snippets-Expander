@@ -109,6 +109,17 @@
         </div>
 
         <div class="advanced-block">
+          <h3>Temporisation avant synchronisation</h3>
+          <p class="hint">Délai d'attente après une modification (ajout, édition, suppression, changement de dossier) avant l'envoi vers Google Sheets, pour regrouper plusieurs modifications rapprochées en un seul envoi.</p>
+          <div class="row-between">
+            <label for="sync-delay">Délai</label>
+            <div class="inline-input">
+              <input type="number" id="sync-delay" min="0" max="120" step="1" value="5" /> s
+            </div>
+          </div>
+        </div>
+
+        <div class="advanced-block">
           <h3>Temporisation avant expansion</h3>
           <p class="hint">Délai d'attente après la fin de la frappe du déclencheur avant remplacement, pour éviter une expansion prématurée si vous continuez à taper.</p>
           <div class="row-between">
