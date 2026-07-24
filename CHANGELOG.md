@@ -1,5 +1,8 @@
 # Changelog — Snippet Expander
 
+## v1.9.1 — 2026-07-24
+- **Corrige la distinction visuelle Partagé/Privé, quasi invisible** : le seul changement de couleur de texte passait inaperçu sur fond blanc. Une ligne "Privé" a maintenant un fond distinctement teinté (en plus du texte atténué), rendant le changement d'état évident au premier coup d'œil
+
 ## v1.9.0 — 2026-07-24
 - **Ajoute un interrupteur Partagé/Privé dans le formulaire "Ajouter un snippet"**, réglé sur **Privé** par défaut : le choix se fait désormais à la création plutôt que systématiquement en tant que "Partagé" puis à re-régler après coup
 - Vérifié que l'apparence de chaque snippet créé correspond bien à son état Partagé/Privé dès son premier rendu

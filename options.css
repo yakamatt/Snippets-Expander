@@ -203,6 +203,9 @@ td.locked { color: var(--ink-muted); background: color-mix(in srgb, var(--border
 td.trigger.locked::before { content: '🔒 '; }
 .folder-badge { font-size: 11px; color: var(--ink-muted); }
 
+/* Le seul changement de couleur de texte passait inaperçu (trop proche du fond blanc par défaut) :
+   un fond distinct rend le passage Partagé <-> Privé visible au premier coup d'œil sur la ligne. */
+tr.snippet-private td:not(.locked) { background: color-mix(in srgb, var(--ink-faint) 16%, transparent); }
 tr.snippet-private td.trigger:not(.locked) { color: var(--ink-faint); }
 tr.snippet-private td.content:not(.locked) { color: var(--ink-muted); }
 
