@@ -110,6 +110,11 @@ td.trigger.locked::before { content: '🔒 '; }
 button.dup { background: #e5e7eb; color: #1f2430; padding: 5px 10px; font-size: 12px; margin-right: 4px; }
 .action-cell { white-space: nowrap; }
 
+.row-folder-select-wrap { display: inline-block; margin-right: 4px; }
+select.row-folder-select {
+  width: auto; padding: 5px 8px; font-size: 12px; border-radius: 6px; display: inline-block;
+}
+
 .link-btn { background: none; color: #4f46e5; padding: 4px 0; font-weight: 600; }
 .link-btn:hover { background: none; text-decoration: underline; }
 
@@ -131,5 +136,13 @@ button.dup { background: #e5e7eb; color: #1f2430; padding: 5px 10px; font-size: 
 .update-banner a { color: #92400e; font-weight: 600; }
 .update-btn { background: #92400e; color: #fff; white-space: nowrap; }
 .update-btn:hover { background: #78350f; }
+
+.pin-banner {
+  background: #eef2ff; color: #3730a3; border-radius: 8px; padding: 10px 14px;
+  font-size: 13px; margin-top: 12px; display: flex; justify-content: space-between; align-items: center; gap: 10px;
+}
+.pin-banner[hidden] { display: none; }
+.pin-btn { background: #3730a3; color: #fff; white-space: nowrap; }
+.pin-btn:hover { background: #312e81; }
 
 #version-footer { text-align: center; color: #9ca3af; font-size: 12px; padding: 10px 0 30px; }
