@@ -39,13 +39,17 @@
                   </select>
                   <input type="text" id="new-folder-input" placeholder="Nom du nouveau dossier" hidden />
                 </div>
+                <label class="sync-toggle" title="Choisissez si ce nouveau snippet doit être envoyé à Google Sheets (Partagé) ou rester uniquement sur cet appareil (Privé).">
+                  <input type="checkbox" id="new-shared-toggle" />
+                  <span class="sync-toggle-label" id="new-shared-toggle-label">Privé</span>
+                </label>
                 <button type="submit">Ajouter</button>
               </td>
             </tr>
           </tbody>
         </table>
       </form>
-      <p class="hint">Par défaut, un nouveau snippet est <strong>partagé</strong> : il est envoyé automatiquement à Google Sheets. Utilisez l'interrupteur sur chaque ligne pour le rendre <strong>privé</strong> (uniquement sur cet appareil).</p>
+      <p class="hint">Choisissez <strong>Partagé</strong> ou <strong>Privé</strong> pour ce nouveau snippet — <strong>Privé</strong> par défaut. Vous pourrez changer son état à tout moment via l'interrupteur sur sa ligne.</p>
     </section>
 
     <section class="card">
