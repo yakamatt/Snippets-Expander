@@ -208,16 +208,10 @@ td.trigger.locked::before { content: '🔒 '; }
 button.dup { background: var(--accent-wash); color: var(--accent-hover); padding: 5px 10px; font-size: 12px; }
 .action-cell { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 
-.drag-handle {
-  cursor: grab; font-size: 15px; color: var(--ink-faint); padding: 0 2px; line-height: 1;
-  user-select: none;
+button.folder-btn { background: var(--accent-wash); color: var(--accent-hover); padding: 5px 8px; font-size: 12px; }
+select.row-folder-select {
+  width: auto; padding: 5px 8px; font-size: 12px; border-radius: 6px; display: inline-block;
 }
-.drag-handle:hover { color: var(--ink-muted); }
-.drag-handle:active { cursor: grabbing; }
-tr.dragging { opacity: 0.4; }
-/* box-shadow uniquement (pas de background) : les en-têtes de dossier ont déjà une couleur de
-   fond posée en style inline par JS, qui l'emporterait de toute façon sur une règle CSS */
-tr.drop-target td { box-shadow: inset 0 0 0 2px var(--accent); }
 
 .link-btn { background: none; color: var(--accent-hover); padding: 4px 0; font-weight: 600; }
 .link-btn:hover { background: none; text-decoration: underline; }

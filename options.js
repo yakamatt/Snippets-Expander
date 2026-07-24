@@ -1,4 +1,4 @@
-const BUILD_DATE = '2026-07-24'; // v1.4.0
+const BUILD_DATE = '2026-07-24'; // v1.4.1
 const DEFAULT_GITHUB_URL = 'https://raw.githubusercontent.com/yakamatt/Snippets-Expander/main';
 const DEFAULT_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbwlew8sAl_APmmZS5bpedGnSf6Ukn0Tvs3S93BGGwt6pwUMzg1uwfOWq91zEhTUVJG9/exec';
 // Dossier réservé : jamais envoyé à Google Sheets. Tous les autres dossiers sont synchronisés.
@@ -7,7 +7,6 @@ const AUTO_SYNC_DEBOUNCE_MS = 10000;
 
 let snippets = [];
 const collapsedFolders = new Set();
-let draggedSnippet = null; // snippet actuellement glissé (drag & drop, changement de dossier)
 
 const bodyEl = document.getElementById('snippets-body');
 const countEl = document.getElementById('count');
@@ -258,34 +257,11 @@ function render() {
       else collapsedFolders.add(folderName);
       render();
     });
-    makeDropTarget(headerTr, folderName);
     bodyEl.appendChild(headerTr);
 
     if (isCollapsed) return;
 
     groupRows.forEach(s => renderSnippetRow(s));
-  });
-}
-
-// Rend un élément (en-tête de groupe ou ligne de snippet) capable de recevoir un snippet glissé
-// par sa poignée, pour le déplacer vers le dossier `folderName`.
-function makeDropTarget(el, folderName) {
-  el.addEventListener('dragover', (e) => {
-    if (!draggedSnippet) return;
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    el.classList.add('drop-target');
-  });
-  el.addEventListener('dragleave', () => el.classList.remove('drop-target'));
-  el.addEventListener('drop', (e) => {
-    e.preventDefault();
-    el.classList.remove('drop-target');
-    if (!draggedSnippet) return;
-    if ((draggedSnippet.folder || '') !== folderName) {
-      draggedSnippet.folder = folderName;
-      save(render);
-    }
-    draggedSnippet = null;
   });
 }
 
@@ -323,26 +299,32 @@ function renderSnippetRow(s) {
   }
   actionTd.appendChild(syncIndicator);
 
-  // Glisser cette poignée vers un en-tête de dossier (ou une autre ligne) pour déplacer ce
-  // snippet — seule la poignée est "draggable", jamais les cellules éditables, pour ne pas
-  // perturber la sélection de texte ni l'édition directe du déclencheur/contenu.
-  const dragHandle = document.createElement('span');
-  dragHandle.className = 'drag-handle';
-  dragHandle.textContent = '⠿';
-  dragHandle.title = 'Glisser vers un dossier pour y déplacer ce snippet';
-  dragHandle.draggable = true;
-  dragHandle.addEventListener('dragstart', (e) => {
-    draggedSnippet = s;
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', s.trigger);
-    tr.classList.add('dragging');
+  // Icône dédiée pour changer de dossier : au clic, se transforme en sélecteur (réutilise la
+  // même liste que le formulaire d'ajout), pour ne jamais avoir un <select> toujours visible
+  // sur chaque ligne ni interférer avec l'édition directe du déclencheur/contenu.
+  const folderBtn = document.createElement('button');
+  folderBtn.className = 'folder-btn';
+  folderBtn.textContent = '📁';
+  folderBtn.title = 'Changer de dossier';
+  folderBtn.addEventListener('click', () => {
+    const select = document.createElement('select');
+    select.className = 'row-folder-select';
+    populateFolderOptions(select, s.folder || '');
+    select.addEventListener('change', () => {
+      if (select.value === '__new__') {
+        const newName = prompt('Nom du nouveau dossier :', '');
+        if (!newName || !newName.trim()) { render(); return; }
+        s.folder = newName.trim();
+      } else {
+        s.folder = select.value;
+      }
+      save(render);
+    });
+    select.addEventListener('blur', () => render());
+    folderBtn.replaceWith(select);
+    select.focus();
   });
-  dragHandle.addEventListener('dragend', () => {
-    draggedSnippet = null;
-    tr.classList.remove('dragging');
-  });
-  actionTd.appendChild(dragHandle);
-  makeDropTarget(tr, s.folder || '');
+  actionTd.appendChild(folderBtn);
 
   if (isLocked) {
     const dupBtn = document.createElement('button');
