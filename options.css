@@ -101,8 +101,11 @@ td[contenteditable="true"] { cursor: text; outline: none; }
 td[contenteditable="true"]:focus { background: #eef2ff; box-shadow: inset 0 0 0 1px #4f46e5; border-radius: 4px; }
 td.content { white-space: pre-wrap; }
 td.locked { color: #6b7280; background: #fafafa; }
-.lock-icon { margin-right: 4px; }
-.locked-note { display: block; font-size: 11px; color: #9ca3af; font-style: italic; margin-top: 4px; }
+td.trigger.locked::before { content: '🔒 '; }
+.locked-note {
+  display: block; white-space: normal; max-width: 220px;
+  font-size: 11px; color: #9ca3af; font-style: italic; margin-bottom: 4px;
+}
 .origin-badge {
   font-size: 10.5px; padding: 2px 7px; border-radius: 10px; font-weight: 600;
 }

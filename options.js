@@ -1,4 +1,4 @@
-const BUILD_DATE = '2026-07-24'; // v1.2.0
+const BUILD_DATE = '2026-07-24'; // v1.2.1
 const DEFAULT_GITHUB_URL = 'https://raw.githubusercontent.com/yakamatt/Snippets-Expander/main';
 const DEFAULT_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbwD5Qroaap9pF7nHdJG45FuonkRWocCPtEOIwNBnWSktBhfed9Eare74eXCPFPkl4G6/exec';
 
@@ -207,21 +207,13 @@ function renderSnippetRow(s) {
 
   const triggerTd = document.createElement('td');
   triggerTd.className = 'trigger' + (isLocked ? ' locked' : '');
-  triggerTd.textContent = (isLocked ? '🔒 ' : '') + s.trigger;
-  if (!isLocked) makeEditable(triggerTd, s, 'trigger');
+  triggerTd.textContent = s.trigger;
+  makeEditable(triggerTd, s, 'trigger', false, isLocked);
 
   const contentTd = document.createElement('td');
   contentTd.className = 'content' + (isLocked ? ' locked' : '');
   contentTd.textContent = s.content;
-  if (isLocked) {
-    const note = document.createElement('span');
-    note.className = 'locked-note';
-    note.textContent = 'Donnée importée, modifiez la source sur Google Sheets pour la mettre à jour.';
-    contentTd.appendChild(document.createElement('br'));
-    contentTd.appendChild(note);
-  } else {
-    makeEditable(contentTd, s, 'content', true);
-  }
+  makeEditable(contentTd, s, 'content', true, isLocked);
 
   const actionTd = document.createElement('td');
   actionTd.className = 'action-cell';
@@ -232,6 +224,11 @@ function renderSnippetRow(s) {
   actionTd.appendChild(document.createTextNode(' '));
 
   if (isLocked) {
+    const note = document.createElement('div');
+    note.className = 'locked-note';
+    note.textContent = '⚠️ Modifiable, mais la modification sera appliquée à tous les utilisateurs via Google Sheets (non annulable).';
+    actionTd.appendChild(note);
+
     const dupBtn = document.createElement('button');
     dupBtn.className = 'dup';
     dupBtn.textContent = 'Dupliquer en local';
@@ -256,17 +253,39 @@ function renderSnippetRow(s) {
   bodyEl.appendChild(tr);
 }
 
-function makeEditable(td, snippet, field, multiline) {
+function makeEditable(td, snippet, field, multiline, isSynced) {
   td.setAttribute('contenteditable', 'true');
   td.addEventListener('blur', () => {
     const newValue = multiline ? td.innerText.replace(/\r/g, '') : td.textContent.trim();
     if (snippet[field] === newValue) return;
     if (field === 'trigger' && !newValue) { td.textContent = snippet.trigger; return; }
+    if (isSynced) {
+      const confirmed = confirm(
+        '⚠️ Ce snippet est synchronisé depuis Google Sheets.\n\n' +
+        'Modifier cette valeur l\'enverra immédiatement dans le Sheet partagé et s\'appliquera à TOUS les utilisateurs ' +
+        '(le Sheet est entièrement réécrit avec l\'ensemble de vos snippets locaux actuels, pas seulement celui-ci).\n\n' +
+        'Cette action est irréversible. Continuer ?'
+      );
+      if (!confirmed) { td.textContent = snippet[field]; return; }
+    }
     snippet[field] = newValue;
-    save();
+    save(() => {
+      if (isSynced) pushSyncedEdit();
+    });
   });
   td.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && !multiline) { e.preventDefault(); td.blur(); }
+  });
+}
+
+function pushSyncedEdit() {
+  chrome.runtime.sendMessage({ type: 'PUSH_TO_SHEET' }, (resp) => {
+    const statusEl = document.getElementById('sync-status');
+    if (resp && resp.ok) {
+      if (statusEl) statusEl.textContent = '✅ Modification envoyée vers Google Sheets (appliquée à tous les utilisateurs).';
+    } else {
+      alert('❌ Erreur lors de l\'envoi vers Google Sheets : ' + (resp && resp.error));
+    }
   });
 }
 
