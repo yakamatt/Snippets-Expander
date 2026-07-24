@@ -45,19 +45,19 @@
           </tbody>
         </table>
       </form>
-      <p class="hint">Par défaut, un nouveau snippet est <strong>partagé</strong> (Shared) : il est envoyé automatiquement à Google Sheets. Utilisez l'interrupteur sur chaque ligne pour le garder uniquement sur cet appareil (Local).</p>
+      <p class="hint">Par défaut, un nouveau snippet est <strong>partagé</strong> : il est envoyé automatiquement à Google Sheets. Utilisez l'interrupteur sur chaque ligne pour le rendre <strong>privé</strong> (uniquement sur cet appareil).</p>
     </section>
 
     <section class="card">
       <div class="row-between">
         <h2>Mes snippets (<span id="count">0</span>)</h2>
         <div class="filters">
-          <label class="local-only-label"><input type="checkbox" id="local-only-filter" /> Local uniquement</label>
+          <label class="local-only-label"><input type="checkbox" id="local-only-filter" /> Privé uniquement</label>
           <select id="folder-filter"><option value="">Tous les dossiers</option></select>
           <input type="text" id="search" placeholder="Rechercher..." />
         </div>
       </div>
-      <p class="hint">Cliquez directement dans une cellule pour modifier un snippet (enregistrement automatique). Un snippet "Shared" est synchronisé immédiatement vers Google Sheets, pour tous les utilisateurs ; un snippet "Local" reste uniquement sur cet appareil. 🔒 = snippet synchronisé.</p>
+      <p class="hint">Cliquez directement dans une cellule pour modifier un snippet (enregistrement automatique). Un snippet "Partagé" est synchronisé immédiatement vers Google Sheets, pour tous les utilisateurs ; un snippet "Privé" reste uniquement sur cet appareil. 🔒 = snippet synchronisé.</p>
       <p class="hint" id="live-sync-status"></p>
       <table id="snippets-table">
         <thead>
@@ -128,7 +128,7 @@
             <option value="local">Mes snippets locaux ont la priorité</option>
           </select>
 
-          <p class="hint">Envoie tous vos snippets partagés ("Shared") vers le Google Sheet et <strong>écrase entièrement</strong> son contenu actuel (y compris les modifications d'autres personnes). Inutile en temps normal : la synchro se fait déjà automatiquement et immédiatement à chaque modification.</p>
+          <p class="hint">Envoie tous vos snippets partagés ("Partagé") vers le Google Sheet et <strong>écrase entièrement</strong> son contenu actuel (y compris les modifications d'autres personnes). Inutile en temps normal : la synchro se fait déjà automatiquement et immédiatement à chaque modification.</p>
           <button id="push-btn" class="danger-btn">🚨 Envoyer vers Google Sheets (écrase les données)</button>
         </div>
 

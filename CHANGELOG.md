@@ -1,5 +1,11 @@
 # Changelog — Snippet Expander
 
+## v1.7.0 — 2026-07-24
+- **Renomme les labels de l'interrupteur "Shared"/"Local" en "Partagé"/"Privé"**
+- **Change à nouveau le comportement de l'interrupteur**, qui redevient asymétrique : passer un snippet de **Privé à Partagé** le modifie sur place (il rejoint immédiatement la synchro Google Sheets) ; passer de **Partagé à Privé** ne modifie plus l'original mais crée une **copie indépendante** marquée "Privé", jamais envoyée à Google Sheets — une confirmation détaille l'action dans les deux sens
+- **Unifie ce comportement avec le bouton "Dupliquer en local"** des snippets synchronisés, renommé "Dupliquer en privé" : il effectue désormais exactement la même action que le passage Partagé → Privé de l'interrupteur
+- Renomme la case à cocher "Local uniquement" en "Privé uniquement"
+
 ## v1.6.0 — 2026-07-24
 - **Supprime le dossier réservé "Local"** : ce n'est plus un dossier qui détermine si un snippet est synchronisé, mais une propriété explicite `shared` portée par chaque snippet (une migration automatique convertit les anciens snippets du dossier "Local" à l'ouverture)
 - **Renomme le label de l'interrupteur "Synced" en "Shared"** (labels désormais "Shared"/"Local")
