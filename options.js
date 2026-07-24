@@ -1,4 +1,4 @@
-const BUILD_DATE = '2026-07-24'; // v1.4.3
+const BUILD_DATE = '2026-07-24'; // v1.4.4
 const DEFAULT_GITHUB_URL = 'https://raw.githubusercontent.com/yakamatt/Snippets-Expander/main';
 const DEFAULT_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbwlew8sAl_APmmZS5bpedGnSf6Ukn0Tvs3S93BGGwt6pwUMzg1uwfOWq91zEhTUVJG9/exec';
 // Dossier réservé : jamais envoyé à Google Sheets. Tous les autres dossiers sont synchronisés.
@@ -82,15 +82,36 @@ function save(cb) {
 // Toute modification (ajout, édition, suppression, changement de dossier...) synchronise
 // immédiatement vers Google Sheets, sans délai. Les snippets du dossier "Local" restent exclus
 // de l'envoi (voir background.js pushToSheet).
+// Le statut est écrit à la fois dans le panneau avancé (#sync-status) et dans une ligne toujours
+// visible sous "Mes snippets" (#live-sync-status) : sans ça, un échec de synchro (ex: URL absente,
+// erreur réseau) restait invisible pour qui n'ouvre jamais "Paramètres avancés", et donnait
+// l'impression que la synchro "ne marche pas" sans jamais montrer pourquoi.
+function setSyncStatus(msg) {
+  ['sync-status', 'live-sync-status'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = msg;
+  });
+}
+
 function syncNow() {
   chrome.storage.sync.get(['syncSettings'], (res) => {
-    if (!(res.syncSettings || {}).webAppUrl) return; // pas d'URL configurée : rien à synchroniser
+    if (!(res.syncSettings || {}).webAppUrl) {
+      setSyncStatus('⚠️ Aucune URL Google Sheets configurée : ce snippet reste local uniquement (Paramètres avancés > Partage & synchro).');
+      console.warn('[Snippet Expander] Synchro ignorée : aucune URL Google Sheets configurée (syncSettings.webAppUrl).');
+      return;
+    }
     chrome.runtime.sendMessage({ type: 'PUSH_TO_SHEET' }, (resp) => {
-      const statusEl = document.getElementById('sync-status');
-      if (!statusEl) return;
-      statusEl.textContent = resp && resp.ok
-        ? '✅ Synchronisation automatique effectuée.'
-        : '❌ Erreur de synchronisation automatique : ' + (resp && resp.error);
+      if (chrome.runtime.lastError) {
+        setSyncStatus('❌ Erreur de synchronisation : ' + chrome.runtime.lastError.message);
+        console.error('[Snippet Expander] Erreur de messagerie lors de la synchro :', chrome.runtime.lastError.message);
+        return;
+      }
+      if (resp && resp.ok) {
+        setSyncStatus('✅ Synchronisation automatique effectuée.');
+      } else {
+        setSyncStatus('❌ Erreur de synchronisation automatique : ' + (resp && resp.error));
+        console.error('[Snippet Expander] Échec de la synchro (PUSH_TO_SHEET) :', resp && resp.error);
+      }
     });
   });
 }
