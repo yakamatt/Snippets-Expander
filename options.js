@@ -1,5 +1,6 @@
-const BUILD_DATE = '2026-07-23'; // v1.1.3
+const BUILD_DATE = '2026-07-24'; // v1.2.0
 const DEFAULT_GITHUB_URL = 'https://raw.githubusercontent.com/yakamatt/Snippets-Expander/main';
+const DEFAULT_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbwD5Qroaap9pF7nHdJG45FuonkRWocCPtEOIwNBnWSktBhfed9Eare74eXCPFPkl4G6/exec';
 
 let snippets = [];
 const collapsedFolders = new Set();
@@ -21,12 +22,34 @@ function load() {
   });
   chrome.storage.sync.get(['syncSettings'], (res) => {
     const s = res.syncSettings || {};
-    document.getElementById('webapp-url').value = s.webAppUrl || '';
+    document.getElementById('webapp-url').value = s.webAppUrl || DEFAULT_WEBAPP_URL;
     document.getElementById('autosync').value = String(s.autoSyncMinutes || 0);
     document.getElementById('expansion-delay').value = s.expansionDelayMs ?? 500;
     document.getElementById('sync-priority').value = s.syncPriority || 'remote';
     document.getElementById('github-url').value = s.githubRepoUrl || DEFAULT_GITHUB_URL;
     document.getElementById('auto-check-updates').checked = !!s.autoCheckUpdates;
+  });
+  renderUpdateMode();
+}
+
+// Le flux de mise à jour manuel (URL GitHub raw + téléchargement zip) n'a de sens qu'en mode
+// développeur ("non empaquetée") : une fois publiée sur le Chrome Web Store, Chrome met à jour
+// l'extension tout seul, silencieusement.
+function renderUpdateMode() {
+  const devBlock = document.getElementById('update-block-dev');
+  const storeBlock = document.getElementById('update-block-store');
+  if (!chrome.management || !chrome.management.getSelf) {
+    devBlock.hidden = false; // API indisponible (contexte de test) : on affiche le mode dev par défaut
+    return;
+  }
+  chrome.management.getSelf((info) => {
+    const isDev = info.installType === 'development';
+    devBlock.hidden = !isDev;
+    storeBlock.hidden = isDev;
+    if (!isDev) {
+      document.getElementById('update-status-store').textContent =
+        `Version installée : v${chrome.runtime.getManifest().version}`;
+    }
   });
 }
 
@@ -140,8 +163,7 @@ function render() {
     if (folderFilter && s.folder !== folderFilter) return false;
     if (!filter) return true;
     return s.trigger.toLowerCase().includes(filter) ||
-           s.content.toLowerCase().includes(filter) ||
-           (s.description || '').toLowerCase().includes(filter);
+           s.content.toLowerCase().includes(filter);
   });
 
   countEl.textContent = snippets.length;
@@ -163,7 +185,7 @@ function render() {
     headerTr.style.color = color.text;
 
     const headerTd = document.createElement('td');
-    headerTd.colSpan = 4;
+    headerTd.colSpan = 3;
     headerTd.innerHTML = `<span class="chevron">▾</span>${escapeHtml(folderName || 'Sans dossier')} (${groupRows.length})`;
     headerTr.appendChild(headerTd);
     headerTr.addEventListener('click', () => {
@@ -201,11 +223,6 @@ function renderSnippetRow(s) {
     makeEditable(contentTd, s, 'content', true);
   }
 
-  const descTd = document.createElement('td');
-  descTd.className = 'desc';
-  descTd.textContent = s.description || '';
-  makeEditable(descTd, s, 'description');
-
   const actionTd = document.createElement('td');
   actionTd.className = 'action-cell';
   const originBadge = document.createElement('span');
@@ -235,7 +252,7 @@ function renderSnippetRow(s) {
   });
   actionTd.appendChild(delBtn);
 
-  tr.append(triggerTd, contentTd, descTd, actionTd);
+  tr.append(triggerTd, contentTd, actionTd);
   bodyEl.appendChild(tr);
 }
 
@@ -260,13 +277,12 @@ document.getElementById('add-form').addEventListener('submit', (e) => {
   e.preventDefault();
   const trigger = document.getElementById('new-trigger').value.trim();
   const content = document.getElementById('new-content').value;
-  const description = document.getElementById('new-description').value.trim();
   let folder = newFolderSelect.value;
   if (folder === '__new__') folder = newFolderInput.value.trim();
   if (!trigger || !content) return;
 
   snippets = snippets.filter(s => !(s.trigger === trigger && s.origin !== 'synced'));
-  snippets.push({ trigger, content, description, folder, origin: 'local' });
+  snippets.push({ trigger, content, folder, origin: 'local' });
   save(() => {
     render();
     e.target.reset();
@@ -283,8 +299,8 @@ function csvEscape(field) {
 }
 
 function toCSV(list) {
-  const header = 'trigger,content,description,folder';
-  const lines = list.map(s => [s.trigger, s.content, s.description || '', s.folder || ''].map(csvEscape).join(','));
+  const header = 'trigger,content,folder';
+  const lines = list.map(s => [s.trigger, s.content, s.folder || ''].map(csvEscape).join(','));
   return [header, ...lines].join('\r\n');
 }
 
@@ -329,14 +345,12 @@ document.getElementById('import-csv').addEventListener('change', (e) => {
     const header = rows[0].map(h => h.trim().toLowerCase());
     const triggerIdx = header.indexOf('trigger');
     const contentIdx = header.indexOf('content');
-    const descIdx = header.indexOf('description');
     const folderIdx = header.indexOf('folder');
     const dataRows = triggerIdx === -1 ? rows : rows.slice(1);
 
     const imported = dataRows.map(r => ({
       trigger: triggerIdx === -1 ? r[0] : r[triggerIdx],
       content: triggerIdx === -1 ? r[1] : r[contentIdx],
-      description: (triggerIdx === -1 ? r[2] : r[descIdx]) || '',
       folder: (folderIdx === -1 ? '' : r[folderIdx]) || '',
       origin: 'local'
     })).filter(s => s.trigger && s.content);

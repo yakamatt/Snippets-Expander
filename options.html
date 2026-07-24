@@ -21,15 +21,12 @@
       <form id="add-form">
         <input type="text" id="new-trigger" placeholder="Déclencheur (ex: ;sig)" required />
         <textarea id="new-content" placeholder="Texte de remplacement... (utilisez {date}, {time}, {cursor}, et Entrée pour les sauts de ligne)"></textarea>
-        <div class="two-col">
-          <input type="text" id="new-description" placeholder="Description (optionnel)" />
-          <div class="folder-select-wrap">
-            <select id="new-folder-select">
-              <option value="">Sans dossier</option>
-              <option value="__new__">➕ Nouveau dossier...</option>
-            </select>
-            <input type="text" id="new-folder-input" placeholder="Nom du nouveau dossier" hidden />
-          </div>
+        <div class="folder-select-wrap">
+          <select id="new-folder-select">
+            <option value="">Sans dossier</option>
+            <option value="__new__">➕ Nouveau dossier...</option>
+          </select>
+          <input type="text" id="new-folder-input" placeholder="Nom du nouveau dossier" hidden />
         </div>
         <button type="submit">Ajouter</button>
       </form>
@@ -52,7 +49,7 @@
       <p class="hint">Cliquez directement dans une cellule pour modifier un snippet local (enregistrement automatique). 🔒 = donnée synchronisée, non modifiable ici.</p>
       <table id="snippets-table">
         <thead>
-          <tr><th>Déclencheur</th><th>Contenu</th><th>Description</th><th></th></tr>
+          <tr><th>Déclencheur</th><th>Contenu</th><th></th></tr>
         </thead>
         <tbody id="snippets-body"></tbody>
       </table>
@@ -60,7 +57,7 @@
 
     <section class="card">
       <h2>Import / Export (Excel / CSV)</h2>
-      <p class="hint">Le format CSV s'ouvre et s'édite directement dans Excel. Colonnes : <code>trigger,content,description,folder</code></p>
+      <p class="hint">Le format CSV s'ouvre et s'édite directement dans Excel. Colonnes : <code>trigger,content,folder</code></p>
       <div class="button-row">
         <button id="export-csv">⬇️ Exporter en CSV</button>
         <label class="file-btn">
@@ -78,7 +75,7 @@
         <div class="advanced-block">
           <h3>Partage &amp; synchro via Google Sheets (gratuit)</h3>
           <p class="hint">
-            1. Créez un Google Sheet avec un onglet "Snippets" (colonnes trigger / content / description / folder).<br />
+            1. Créez un Google Sheet avec un onglet "Snippets" (colonnes trigger / content / folder).<br />
             2. Déployez le script fourni (voir README) comme "Web App".<br />
             3. Collez l'URL ci-dessous. La récupération fusionne avec vos snippets locaux — rien n'est perdu.
           </p>
@@ -123,8 +120,16 @@
           <button id="push-btn" class="danger-btn">🚨 Envoyer vers Google Sheets (écrase les données)</button>
         </div>
 
-        <div class="advanced-block">
+        <div class="advanced-block" id="update-block-store" hidden>
           <h3>Mise à jour de l'extension</h3>
+          <p class="hint">
+            Cette extension a été installée depuis le Chrome Web Store : les mises à jour se font automatiquement en arrière-plan, gérées par Chrome. Aucune action de votre part n'est nécessaire.
+          </p>
+          <p class="hint" id="update-status-store"></p>
+        </div>
+
+        <div class="advanced-block" id="update-block-dev" hidden>
+          <h3>Mise à jour de l'extension (mode développeur)</h3>
           <p class="hint">
             Aucune donnée locale n'est perdue lors d'une mise à jour tant que vous remplacez les fichiers dans le <em>même dossier</em> puis cliquez sur "Actualiser" dans <code>chrome://extensions</code>.
           </p>

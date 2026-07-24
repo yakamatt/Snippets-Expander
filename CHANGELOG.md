@@ -1,5 +1,12 @@
 # Changelog — Snippet Expander
 
+## v1.2.0 — 2026-07-24
+- **Préparation pour la publication sur le Chrome Web Store** (voir README section 7)
+- Système de mise à jour adaptatif : la page Options détecte via `chrome.management.getSelf()` si l'extension tourne en mode développeur ou a été installée normalement (Store) — le bloc GitHub/zip manuel n'est affiché qu'en mode développeur ; en mode normal, un message indique que les mises à jour sont automatiques (gérées par Chrome), et l'alarme de vérification GitHub en arrière-plan est également désactivée dans ce cas
+- **Champ "description" supprimé partout** (formulaire d'ajout, tableau, CSV, Google Sheets/`Code.gs`) : les snippets n'ont plus que déclencheur + contenu + dossier
+  - ⚠️ Changement de structure du Google Sheet partagé : la colonne "folder" passe de la colonne D à la colonne C. Après avoir redéployé `Code.gs`, pensez à supprimer la colonne "description" de votre Sheet (ou faites un "Envoyer vers Google Sheets" depuis l'extension pour reconstruire automatiquement la bonne structure à partir de vos données locales)
+- À la première installation, l'extension importe désormais automatiquement les snippets partagés par défaut depuis une URL Google Sheets pré-configurée, avec synchro auto activée toutes les heures
+
 ## v1.1.3 — 2026-07-23
 - "Vérifier automatiquement les mises à jour" est désormais coché par défaut (nouvelles installations)
 - Temporisation avant expansion : 500 ms par défaut (au lieu de 1000 ms)
