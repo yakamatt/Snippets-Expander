@@ -86,20 +86,33 @@ function save(cb) {
 let autoSyncTimer = null;
 function scheduleAutoSync() {
   if (autoSyncTimer) clearTimeout(autoSyncTimer);
-  autoSyncTimer = setTimeout(() => {
-    autoSyncTimer = null;
-    chrome.storage.sync.get(['syncSettings'], (res) => {
-      if (!(res.syncSettings || {}).webAppUrl) return; // pas d'URL configurée : rien à synchroniser
-      chrome.runtime.sendMessage({ type: 'PUSH_TO_SHEET' }, (resp) => {
-        const statusEl = document.getElementById('sync-status');
-        if (!statusEl) return;
-        statusEl.textContent = resp && resp.ok
-          ? '✅ Synchronisation automatique effectuée.'
-          : '❌ Erreur de synchronisation automatique : ' + (resp && resp.error);
-      });
-    });
-  }, AUTO_SYNC_DEBOUNCE_MS);
+  autoSyncTimer = setTimeout(flushAutoSync, AUTO_SYNC_DEBOUNCE_MS);
 }
+
+function flushAutoSync() {
+  autoSyncTimer = null;
+  chrome.storage.sync.get(['syncSettings'], (res) => {
+    if (!(res.syncSettings || {}).webAppUrl) return; // pas d'URL configurée : rien à synchroniser
+    chrome.runtime.sendMessage({ type: 'PUSH_TO_SHEET' }, (resp) => {
+      const statusEl = document.getElementById('sync-status');
+      if (!statusEl) return;
+      statusEl.textContent = resp && resp.ok
+        ? '✅ Synchronisation automatique effectuée.'
+        : '❌ Erreur de synchronisation automatique : ' + (resp && resp.error);
+    });
+  });
+}
+
+// Filet de sécurité : si l'onglet Options est fermé/masqué avant la fin du délai de 10s, le
+// setTimeout ci-dessus meurt avec la page et la synchro ne partirait jamais. On force l'envoi
+// immédiatement dès que la page devient invisible (fermeture, changement d'onglet...) s'il y a
+// encore une synchro en attente — par exemple juste après avoir créé un snippet puis fermé l'onglet.
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden' && autoSyncTimer) {
+    clearTimeout(autoSyncTimer);
+    flushAutoSync();
+  }
+});
 
 function getFolders() {
   const used = snippets.map(s => s.folder).filter(Boolean);
