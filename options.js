@@ -1,4 +1,4 @@
-const BUILD_DATE = '2026-07-24'; // v1.3.1
+const BUILD_DATE = '2026-07-24'; // v1.3.2
 const DEFAULT_GITHUB_URL = 'https://raw.githubusercontent.com/yakamatt/Snippets-Expander/main';
 const DEFAULT_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbwlew8sAl_APmmZS5bpedGnSf6Ukn0Tvs3S93BGGwt6pwUMzg1uwfOWq91zEhTUVJG9/exec';
 // Dossier réservé : jamais envoyé à Google Sheets. Tous les autres dossiers sont synchronisés.
@@ -385,6 +385,20 @@ document.getElementById('add-form').addEventListener('submit', (e) => {
 document.getElementById('export-xlsx').addEventListener('click', () => {
   const rows = snippets.map(s => ({ trigger: s.trigger, content: s.content, folder: s.folder || '' }));
   const ws = XLSX.utils.json_to_sheet(rows, { header: ['trigger', 'content', 'folder'] });
+
+  // La bibliothèque XLSX gratuite (SheetJS Community) ne peut pas écrire de style de cellule
+  // (wrap text, gras...) : elle est silencieusement ignorée à l'export. Les sauts de ligne réels
+  // sont en revanche bien conservés dans la valeur — il suffit d'une ligne assez haute pour les
+  // rendre visibles à l'ouverture, d'où le calcul de hauteur ci-dessous (propriété de feuille,
+  // pas un style de cellule, donc bien écrite par la version gratuite).
+  ws['!cols'] = [{ wch: 24 }, { wch: 70 }, { wch: 18 }];
+  const LINE_HEIGHT_PX = 15;
+  const MIN_ROW_PX = 20;
+  ws['!rows'] = [{ hpx: MIN_ROW_PX }, ...rows.map(r => {
+    const lineCount = (String(r.content).match(/\n/g) || []).length + 1;
+    return { hpx: Math.max(MIN_ROW_PX, lineCount * LINE_HEIGHT_PX) };
+  })];
+
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Snippets');
   XLSX.writeFile(wb, 'snippets.xlsx');
