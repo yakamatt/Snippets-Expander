@@ -1,5 +1,8 @@
 # Changelog — Snippet Expander
 
+## v1.3.2 — 2026-07-24
+- **Export XLSX : les sauts de ligne sont désormais visibles à l'ouverture.** La bibliothèque XLSX gratuite (SheetJS Community) ne peut pas écrire de style de cellule (wrap text, gras...) — silencieusement ignoré à l'export, vérifié en inspectant le fichier généré. Les sauts de ligne réels étaient déjà conservés dans la donnée, mais restaient invisibles faute de hauteur de ligne suffisante. Correction : largeur de colonnes + hauteur de ligne calculée selon le nombre de lignes de chaque snippet (propriétés de feuille, pas des styles de cellule, donc bien écrites par la version gratuite)
+
 ## v1.3.1 — 2026-07-24
 - **Refonte visuelle complète** de la page Options : palette chaude (fond parchemin, accent ambre au lieu de l'indigo générique), typographie monospace pour les titres/labels/déclencheurs (en écho au caractère "code" des snippets) associée à une police système soignée pour le corps de texte
 - Prise en charge du **mode sombre** (`prefers-color-scheme`), y compris pour les couleurs de dossier générées dynamiquement (posées en style inline, donc gérées explicitement en JS)
