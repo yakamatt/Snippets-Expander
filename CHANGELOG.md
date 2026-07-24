@@ -1,5 +1,9 @@
 # Changelog — Snippet Expander
 
+## v1.4.4 — 2026-07-24
+- **Rend visibles les erreurs de synchronisation automatique**, jusqu'ici affichées uniquement dans "Paramètres avancés" (masqué par défaut) : un échec (URL non configurée, erreur réseau, erreur du script Google) restait invisible pour qui crée un snippet depuis le formulaire principal, donnant l'impression que la synchro "ne marche pas" sans jamais montrer pourquoi. Le statut apparaît désormais aussi juste sous "Mes snippets", et les erreurs sont loguées dans la console pour diagnostic
+- Distingue maintenant explicitement le cas "aucune URL Google Sheets configurée" (le snippet reste local, avertissement clair) d'une véritable erreur réseau/serveur (`chrome.runtime.lastError` détecté séparément)
+
 ## v1.4.3 — 2026-07-24
 - **Supprime le délai de 10s avant synchro automatique** : toute modification (ajout, édition, changement de dossier, suppression) envoie désormais immédiatement vers Google Sheets, sans debounce. Rend inutile le filet de sécurité `visibilitychange` de la v1.4.2 (plus de délai à couvrir), qui est retiré
 
