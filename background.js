@@ -43,10 +43,9 @@ chrome.runtime.onInstalled.addListener((details) => {
 
 chrome.runtime.onStartup.addListener(scheduleAlarms);
 
-// Clic sur l'icône de la barre d'outils → ouvre directement les paramètres
-chrome.action.onClicked.addListener(() => {
-  chrome.runtime.openOptionsPage();
-});
+// Note : pas de listener chrome.action.onClicked ici — un "default_popup" est déclaré dans le
+// manifest (popup.html), donc Chrome affiche directement le popup au clic sur l'icône et
+// n'émet jamais cet événement.
 
 function scheduleAlarms() {
   chrome.storage.sync.get(['syncSettings'], (res) => {
