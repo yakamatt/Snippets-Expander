@@ -8,22 +8,22 @@ Remplace automatiquement un texte court (ex: `;sig`) par un texte prédéfini, d
 2. Activez le **Mode développeur** (en haut à droite)
 3. Cliquez sur **Charger l'extension non empaquetée**
 4. Sélectionnez le dossier `snippet-expander` (celui qui contient `manifest.json`)
-5. L'icône ⚡ apparaît dans la barre d'outils — **un clic dessus ouvre directement les paramètres**
+5. L'icône ⚡ apparaît dans la barre d'outils — **un clic dessus ouvre un petit menu** avec un bouton "Actualiser les données" et un lien vers les paramètres complets
 6. À la première installation, la page Options s'ouvre automatiquement avec une bannière 📌 vous invitant à épingler l'extension (clic sur le puzzle 🧩 en haut du navigateur, puis sur l'épingle à côté de Snippet Expander) pour l'avoir toujours sous la main
 
 ## 2. Utiliser l'extension
 
-- Cliquez sur l'icône ⚡ pour ouvrir les paramètres et consulter vos snippets.
+- Cliquez sur l'icône ⚡ pour ouvrir le petit menu ("popup"), avec un bouton **"🔄 Actualiser les données"** et un lien **"⚙️ Paramètres"** vers la page complète (liste des snippets, filtres, réglages avancés).
 - Un snippet a un **déclencheur** (ex: `;sig`, `/adresse`), un **contenu** et un **dossier** optionnel.
 - Tapez le déclencheur dans n'importe quel champ (Gmail, formulaires web, réseaux sociaux, contenteditable...) : après une courte temporisation (1 seconde par défaut, réglable), il se remplace par le contenu — les sauts de ligne et retours à la ligne sont respectés.
 - Placeholders disponibles : `{date}`, `{time}`, `{cursor}` (repositionne le curseur après expansion).
 - **Lecture seule** : les snippets ne se créent, se modifient ou se suppriment plus depuis l'extension. Toute la gestion se fait directement dans le tableau Google Sheets partagé (bouton "📄 Ouvrir le tableau Google Sheets" en haut de la page Options).
-- **Mise à jour des données** : cliquez sur "🔄 Mise à jour des données depuis le tableau Google Sheets" en haut de la page pour récupérer immédiatement vos dernières modifications faites dans le Sheet. Une synchro automatique (réglable, toutes les heures par défaut) s'exécute aussi en arrière-plan.
+- **Mise à jour des données** : les données se mettent à jour automatiquement en arrière-plan (fréquence réglable, toutes les heures par défaut — voir Paramètres avancés). Pour forcer une actualisation immédiate : bouton "🔄 Actualiser les données" dans le popup de l'icône, ou "🔄 Forcer l'actualisation des données depuis le tableau Google Sheets" en haut de la page Options.
 - **Dossiers** : les snippets sont groupés par dossier (colonne `folder` du Sheet) pour la navigation ; utilisez le filtre en haut de la liste pour n'afficher qu'un dossier, ou la recherche pour filtrer par texte.
 
 ## 3. Partage en temps réel avec une équipe (Google Sheets, gratuit)
 
-À l'installation, l'extension importe automatiquement les snippets partagés par défaut (URL Google Sheets pré-configurée dans les paramètres, synchro auto activée toutes les heures). Vous pouvez remplacer cette URL par la vôtre à tout moment dans **Paramètres avancés > Partage & synchro**.
+À l'installation, l'extension importe automatiquement les snippets partagés par défaut (URL Google Sheets pré-configurée dans le code, synchro auto activée toutes les heures). Il n'y a pas d'interface pour changer cette URL depuis l'extension : pour utiliser votre propre Google Sheet, modifiez la constante `DEFAULT_WEBAPP_URL` dans `background.js` (voir étape c ci-dessous).
 
 ### a. Créer le Google Sheet
 1. Créez un nouveau Google Sheet (sheets.new)
@@ -38,18 +38,19 @@ Remplace automatiquement un texte court (ex: `;sig`) par un texte prédéfini, d
 5. Déployez, autorisez les permissions, copiez l'**URL de l'application Web** (`.../exec`)
 
 ### c. Configurer l'extension
-1. Options de l'extension > collez l'URL dans la section "Partage & synchro"
-2. Choisissez une fréquence de synchro automatique (optionnel)
+1. Dans `background.js`, remplacez la valeur de la constante `DEFAULT_WEBAPP_URL` par l'URL de votre application Web
+2. Rechargez l'extension (`chrome://extensions` > icône **Actualiser** ⟳)
+3. Ajustez si besoin la fréquence d'actualisation automatique dans **Paramètres avancés > Fréquence d'actualisation des données** (optionnel, toutes les heures par défaut)
 
 ### d. Mise à jour des données (lecture seule)
-L'extension ne modifie jamais le Sheet : elle se contente de le lire. À chaque récupération (clic sur "🔄 Mise à jour des données" ou synchro automatique en arrière-plan), les snippets affichés dans l'extension sont **entièrement remplacés** par le contenu actuel du Sheet.
+L'extension ne modifie jamais le Sheet : elle se contente de le lire. À chaque récupération (bouton "🔄 Actualiser les données" du popup, "🔄 Forcer l'actualisation..." de la page Options, ou synchro automatique en arrière-plan), les snippets affichés dans l'extension sont **entièrement remplacés** par le contenu actuel du Sheet.
 
-Pour ajouter, modifier ou supprimer un snippet : faites-le directement dans le Google Sheet (lien "📄 Ouvrir le tableau Google Sheets" en haut de la page Options), puis cliquez sur "🔄 Mise à jour des données" dans l'extension pour récupérer le résultat.
+Pour ajouter, modifier ou supprimer un snippet : faites-le directement dans le Google Sheet (lien "📄 Ouvrir le tableau Google Sheets" en haut de la page Options), puis actualisez les données dans l'extension pour récupérer le résultat.
 
 ## 4. Paramètres avancés
 
 Accessibles via le bouton "⚙️ Paramètres avancés" en bas de la page Options :
-- **Partage & synchro** : URL du Google Sheet, fréquence de synchro automatique, récupération manuelle
+- **Fréquence d'actualisation des données** : intervalle entre deux récupérations automatiques depuis le Google Sheet (minutes, 60 par défaut)
 - **Temporisation avant expansion** : délai (ms) après la fin de la frappe avant remplacement (évite qu'un mot plus long contenant un déclencheur ne s'expanse par erreur)
 - **Mise à jour de l'extension** : voir section suivante
 
@@ -123,8 +124,9 @@ Dans l'onglet **"Privacy practices"** du dashboard :
 ```
 snippet-expander/
 ├── manifest.json          # Configuration de l'extension (Manifest V3)
-├── background.js          # Récupération Google Sheets, clic icône, vérification MAJ GitHub
+├── background.js          # Récupération Google Sheets, alarmes, vérification MAJ GitHub
 ├── content.js              # Détection, temporisation et remplacement du texte
+├── popup.html/css/js       # Popup de l'icône (barre d'outils) : actualisation + lien Paramètres
 ├── options.html/css/js     # Page de consultation (lecture seule) et paramètres avancés
 ├── icons/                  # Icônes de l'extension
 ├── CHANGELOG.md             # Historique des versions

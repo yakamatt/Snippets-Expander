@@ -1,6 +1,5 @@
-const BUILD_DATE = '2026-07-24'; // v2.0.0
+const BUILD_DATE = '2026-08-02'; // v2.1.0
 const DEFAULT_GITHUB_URL = 'https://raw.githubusercontent.com/yakamatt/Snippets-Expander/main';
-const DEFAULT_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbwlew8sAl_APmmZS5bpedGnSf6Ukn0Tvs3S93BGGwt6pwUMzg1uwfOWq91zEhTUVJG9/exec';
 
 let snippets = [];
 const collapsedFolders = new Set();
@@ -20,8 +19,7 @@ function load() {
   });
   chrome.storage.sync.get(['syncSettings'], (res) => {
     const s = res.syncSettings || {};
-    document.getElementById('webapp-url').value = s.webAppUrl || DEFAULT_WEBAPP_URL;
-    document.getElementById('autosync').value = String(s.autoSyncMinutes || 0);
+    document.getElementById('autosync-minutes').value = s.autoSyncMinutes ?? 60;
     document.getElementById('expansion-delay').value = s.expansionDelayMs ?? 500;
     document.getElementById('github-url').value = s.githubRepoUrl || DEFAULT_GITHUB_URL;
     document.getElementById('auto-check-updates').checked = !!s.autoCheckUpdates;
@@ -71,7 +69,7 @@ document.getElementById('refresh-btn').addEventListener('click', () => {
   const btn = document.getElementById('refresh-btn');
   const statusEl = document.getElementById('refresh-status');
   btn.disabled = true;
-  statusEl.textContent = '⏳ Mise à jour en cours...';
+  statusEl.textContent = '⏳ Actualisation en cours...';
   chrome.runtime.sendMessage({ type: 'PULL_FROM_SHEET' }, (resp) => {
     btn.disabled = false;
     if (chrome.runtime.lastError) {
@@ -80,7 +78,7 @@ document.getElementById('refresh-btn').addEventListener('click', () => {
     }
     if (resp && resp.ok) {
       load();
-      statusEl.textContent = '✅ Données à jour.';
+      statusEl.textContent = '✅ Données actualisées.';
     } else {
       statusEl.textContent = '❌ Erreur : ' + (resp && resp.error);
     }
@@ -200,38 +198,12 @@ function renderSnippetRow(s) {
 searchEl.addEventListener('input', render);
 folderFilterEl.addEventListener('change', render);
 
-// --- Synchro Google Sheets ---
-
-document.getElementById('save-settings').addEventListener('click', () => {
-  const webAppUrl = document.getElementById('webapp-url').value.trim();
-  const autosyncEl = document.getElementById('autosync');
-  chrome.storage.sync.get(['syncSettings'], (res) => {
-    const wasEmpty = !(res.syncSettings || {}).webAppUrl;
-    let autoSyncMinutes = parseInt(autosyncEl.value, 10);
-    // Première configuration de l'URL Google Sheets : active la synchro auto toutes les heures par défaut
-    if (webAppUrl && wasEmpty && autoSyncMinutes === 0) {
-      autoSyncMinutes = 60;
-      autosyncEl.value = '60';
-    }
-    updateSyncSettings({ webAppUrl, autoSyncMinutes }, () => {
-      document.getElementById('sync-status').textContent = '✅ Paramètres enregistrés.';
-    });
-  });
-});
-
-document.getElementById('pull-btn').addEventListener('click', () => {
-  document.getElementById('sync-status').textContent = '⏳ Récupération en cours...';
-  chrome.runtime.sendMessage({ type: 'PULL_FROM_SHEET' }, (resp) => {
-    if (resp && resp.ok) {
-      load();
-      document.getElementById('sync-status').textContent = '✅ Données mises à jour.';
-    } else {
-      document.getElementById('sync-status').textContent = '❌ Erreur : ' + (resp && resp.error);
-    }
-  });
-});
-
 // --- Paramètres avancés ---
+
+document.getElementById('autosync-minutes').addEventListener('change', (e) => {
+  const autoSyncMinutes = parseInt(e.target.value, 10);
+  updateSyncSettings({ autoSyncMinutes: Number.isFinite(autoSyncMinutes) ? autoSyncMinutes : 60 });
+});
 
 document.getElementById('toggle-advanced').addEventListener('click', () => {
   const panel = document.getElementById('advanced-panel');

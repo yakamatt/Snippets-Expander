@@ -10,9 +10,10 @@
     <h1>⚡ Snippet Expander</h1>
     <p class="subtitle">Vos snippets, en lecture seule, synchronisés depuis un tableau Google Sheets partagé.</p>
     <div class="button-row">
-      <button id="refresh-btn">🔄 Mise à jour des données depuis le tableau Google Sheets</button>
+      <button id="refresh-btn">🔄 Forcer l'actualisation des données depuis le tableau Google Sheets</button>
       <a class="link-btn" href="https://docs.google.com/spreadsheets/d/1H2rBzMQzZk74Bk2Z_Mo8lXAdYea7Mi7WfzVruBahd_I/edit?usp=sharing" target="_blank" rel="noopener noreferrer">📄 Ouvrir le tableau Google Sheets</a>
     </div>
+    <p class="hint">Les données se mettent déjà à jour automatiquement (fréquence réglable dans Paramètres avancés) : ce bouton force une actualisation immédiate.</p>
     <p class="hint" id="refresh-status"></p>
     <div id="update-banner" class="update-banner" hidden>
       <span id="update-banner-text"></span>
@@ -33,7 +34,7 @@
           <input type="text" id="search" placeholder="Rechercher..." />
         </div>
       </div>
-      <p class="hint">Ces données sont en lecture seule : modifiez-les directement dans le tableau Google Sheets (lien ci-dessus), puis cliquez sur "Mise à jour des données" pour les récupérer ici.</p>
+      <p class="hint">Ces données sont en lecture seule : modifiez-les directement dans le tableau Google Sheets (lien ci-dessus). Elles se mettent à jour ici automatiquement, ou immédiatement via "Forcer l'actualisation" ci-dessus.</p>
       <table id="snippets-table">
         <thead>
           <tr><th>Déclencheur</th><th>Contenu</th></tr>
@@ -47,27 +48,14 @@
       <div id="advanced-panel" hidden>
 
         <div class="advanced-block">
-          <h3>Partage &amp; synchro via Google Sheets (gratuit)</h3>
-          <p class="hint">
-            1. Créez un Google Sheet avec un onglet "Snippets" (colonnes trigger / content / folder).<br />
-            2. Déployez le script fourni (voir README) comme "Web App".<br />
-            3. Collez l'URL ci-dessous.
-          </p>
-          <input type="text" id="webapp-url" placeholder="https://script.google.com/macros/s/AKfycb.../exec" />
+          <h3>Fréquence d'actualisation des données</h3>
+          <p class="hint">Intervalle entre deux récupérations automatiques des données depuis le tableau Google Sheets.</p>
           <div class="row-between">
-            <label for="autosync">Synchro automatique (récupération)</label>
-            <select id="autosync">
-              <option value="0">Désactivée</option>
-              <option value="15">Toutes les 15 min</option>
-              <option value="30">Toutes les 30 min</option>
-              <option value="60">Toutes les heures</option>
-            </select>
+            <label for="autosync-minutes">Fréquence</label>
+            <div class="inline-input">
+              <input type="number" id="autosync-minutes" min="0" max="1440" step="5" value="60" /> min
+            </div>
           </div>
-          <div class="button-row">
-            <button id="save-settings">💾 Enregistrer</button>
-            <button id="pull-btn">⬇️ Récupérer depuis Google Sheets</button>
-          </div>
-          <p class="hint" id="sync-status"></p>
         </div>
 
         <div class="advanced-block">

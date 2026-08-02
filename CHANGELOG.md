@@ -1,5 +1,12 @@
 # Changelog — Snippet Expander
 
+## v2.1.0 — 2026-08-02
+- **Ajoute un popup à l'icône de la barre d'outils** (`popup.html`) : le clic sur l'icône ouvre désormais un menu avec un bouton "🔄 Actualiser les données" et un lien vers les Paramètres, au lieu d'ouvrir directement la page complète
+- **Supprime la section "Partage & synchro via Google Sheets"** des Paramètres avancés (URL, synchro auto, récupération manuelle) : l'URL du Sheet n'est plus configurable depuis l'interface (voir README pour la modifier dans le code)
+- **Ajoute un champ "Fréquence d'actualisation des données"** dans Paramètres avancés (en minutes, 60 par défaut), qui remplace l'ancien menu déroulant de synchro automatique
+- **Renomme le bouton principal** "Mise à jour des données..." en **"Forcer l'actualisation des données depuis le tableau Google Sheets"**, avec un texte précisant que la mise à jour est déjà automatique et que ce bouton ne fait que la forcer immédiatement
+- **Corrige l'erreur "Impossible de lire manifest.json sur GitHub (404)"** lors de la vérification de mise à jour : causée par la visibilité privée du dépôt GitHub (`raw.githubusercontent.com` est inaccessible sans authentification sur un dépôt privé) — le dépôt est repassé en public
+
 ## v2.0.0 — 2026-07-24
 - **Simplification majeure : l'extension devient un lecteur en lecture seule.** Les snippets ne se gèrent plus que dans le tableau Google Sheets partagé ; toute la gestion locale est supprimée :
   - Suppression de l'ajout, l'édition directe, la suppression, la duplication et le changement de dossier d'un snippet dans l'extension
