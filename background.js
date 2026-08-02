@@ -1,16 +1,9 @@
-// background.js — synchro Google Sheets (fusion), ouverture des options, vérification de mise à jour
+// background.js — récupération en lecture seule depuis Google Sheets, ouverture des options, vérification de mise à jour
 
 const SYNC_ALARM = 'snippet-sync';
 const UPDATE_ALARM = 'snippet-update-check';
 const DEFAULT_GITHUB_URL = 'https://raw.githubusercontent.com/yakamatt/Snippets-Expander/main';
 const DEFAULT_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbwlew8sAl_APmmZS5bpedGnSf6Ukn0Tvs3S93BGGwt6pwUMzg1uwfOWq91zEhTUVJG9/exec';
-// Un snippet est synchronisé sauf si sa propriété `shared` vaut explicitement false. Le fallback
-// sur l'ancien dossier "Local" couvre les snippets stockés avant l'ajout de ce champ (voir aussi
-// la migration équivalente dans options.js load()).
-function isShared(s) {
-  if (typeof s.shared === 'boolean') return s.shared;
-  return String(s.folder || '').trim().toLowerCase() !== 'local';
-}
 
 chrome.runtime.onInstalled.addListener((details) => {
   // Tout est enchaîné séquentiellement (await) dans une seule chaîne asynchrone : sur une
@@ -25,8 +18,6 @@ chrome.runtime.onInstalled.addListener((details) => {
       webAppUrl: DEFAULT_WEBAPP_URL,
       autoSyncMinutes: 60,
       expansionDelayMs: 500,
-      syncDelaySeconds: 5,
-      syncPriority: 'remote', // 'remote' = Google Sheets écrase les doublons locaux | 'local' = les snippets locaux sont conservés
       githubRepoUrl: DEFAULT_GITHUB_URL,
       autoCheckUpdates: true
     };
@@ -40,9 +31,8 @@ chrome.runtime.onInstalled.addListener((details) => {
     if (!snippets) await chrome.storage.local.set({ snippets: [] });
 
     if (isFreshInstall) {
-      // Première installation : importe les snippets partagés par défaut AVANT d'ouvrir les
-      // paramètres (pour inciter à épingler l'extension), afin que la page affiche déjà les
-      // snippets importés dès son ouverture.
+      // Première installation : importe les snippets partagés AVANT d'ouvrir les paramètres
+      // (pour inciter à épingler l'extension), afin que la page affiche déjà les snippets dès son ouverture.
       await pullFromSheet().catch(() => {});
       chrome.runtime.openOptionsPage();
     }
@@ -82,7 +72,9 @@ chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name === UPDATE_ALARM) checkForUpdates();
 });
 
-// ---------- Synchro Google Sheets avec FUSION (ne supprime jamais les snippets locaux) ----------
+// ---------- Récupération en lecture seule depuis Google Sheets ----------
+// L'extension ne modifie jamais le Sheet : les données affichées remplacent entièrement les
+// snippets locaux à chaque récupération (rien à fusionner, il n'y a plus d'édition locale à préserver).
 
 async function pullFromSheet() {
   const { syncSettings } = await chrome.storage.sync.get(['syncSettings']);
@@ -92,54 +84,14 @@ async function pullFromSheet() {
   const remoteRaw = await res.json();
   if (!Array.isArray(remoteRaw)) throw new Error('Réponse invalide du Web App');
 
-  const remoteSnippets = remoteRaw.map(s => ({
+  const snippets = remoteRaw.map(s => ({
     trigger: s.trigger,
     content: s.content,
-    folder: s.folder || '',
-    origin: 'synced',
-    shared: true
+    folder: s.folder || ''
   }));
 
-  const { snippets: current } = await chrome.storage.local.get(['snippets']);
-  const currentList = current || [];
-  const priority = syncSettings.syncPriority || 'remote';
-
-  const localOnly = currentList.filter(s => s.origin !== 'synced');
-  const remoteTriggersSet = new Set(remoteSnippets.map(s => s.trigger));
-
-  let merged;
-  if (priority === 'local') {
-    // Les triggers locaux gagnent en cas de doublon : on ignore la version distante correspondante
-    const localTriggers = new Set(localOnly.map(s => s.trigger));
-    const remoteFiltered = remoteSnippets.filter(s => !localTriggers.has(s.trigger));
-    merged = [...localOnly, ...remoteFiltered];
-  } else {
-    // Priorité distante (par défaut) : si un trigger local entre en conflit avec un trigger
-    // synchronisé, la version distante remplace la version locale pour ce trigger précis.
-    const localFiltered = localOnly.filter(s => !remoteTriggersSet.has(s.trigger));
-    merged = [...localFiltered, ...remoteSnippets];
-  }
-
-  await chrome.storage.local.set({ snippets: merged, lastSync: new Date().toISOString() });
-  return merged;
-}
-
-async function pushToSheet() {
-  const { syncSettings } = await chrome.storage.sync.get(['syncSettings']);
-  const { snippets } = await chrome.storage.local.get(['snippets']);
-  if (!syncSettings || !syncSettings.webAppUrl) throw new Error('URL du Web App non configurée');
-
-  // Les snippets non partagés (`shared: false`) ne quittent jamais cet appareil : exclus de tout envoi.
-  const payload = (snippets || [])
-    .filter(s => isShared(s))
-    .map(s => ({ trigger: s.trigger, content: s.content, folder: s.folder || '' }));
-
-  const res = await fetch(syncSettings.webAppUrl, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify(payload)
-  });
-  return res.json();
+  await chrome.storage.local.set({ snippets, lastSync: new Date().toISOString() });
+  return snippets;
 }
 
 // ---------- Vérification de mise à jour via GitHub ----------
@@ -197,10 +149,6 @@ function compareVersions(a, b) {
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg.type === 'PULL_FROM_SHEET') {
     pullFromSheet().then(merged => sendResponse({ ok: true, merged })).catch(e => sendResponse({ ok: false, error: e.message }));
-    return true;
-  }
-  if (msg.type === 'PUSH_TO_SHEET') {
-    pushToSheet().then(r => sendResponse({ ok: true, result: r })).catch(e => sendResponse({ ok: false, error: e.message }));
     return true;
   }
   if (msg.type === 'RESCHEDULE_ALARM') {

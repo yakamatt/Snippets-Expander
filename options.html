@@ -8,7 +8,12 @@
 <body>
   <header>
     <h1>⚡ Snippet Expander</h1>
-    <p class="subtitle">Vos snippets, gérés localement et partageables via Google Sheets ou fichier XLSX.</p>
+    <p class="subtitle">Vos snippets, en lecture seule, synchronisés depuis un tableau Google Sheets partagé.</p>
+    <div class="button-row">
+      <button id="refresh-btn">🔄 Mise à jour des données depuis le tableau Google Sheets</button>
+      <a class="link-btn" href="https://docs.google.com/spreadsheets/d/1H2rBzMQzZk74Bk2Z_Mo8lXAdYea7Mi7WfzVruBahd_I/edit?usp=sharing" target="_blank" rel="noopener noreferrer">📄 Ouvrir le tableau Google Sheets</a>
+    </div>
+    <p class="hint" id="refresh-status"></p>
     <div id="update-banner" class="update-banner" hidden>
       <span id="update-banner-text"></span>
       <button id="update-banner-btn" class="update-btn">⬇️ Télécharger la mise à jour</button>
@@ -21,51 +26,17 @@
 
   <main>
     <section class="card">
-      <h2>Ajouter un snippet</h2>
-      <form id="add-form">
-        <table id="add-snippet-table">
-          <thead>
-            <tr><th>Déclencheur</th><th>Contenu</th><th></th></tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td><input type="text" id="new-trigger" placeholder="ex: /GN4" required /></td>
-              <td><textarea id="new-content" placeholder="Texte de remplacement... (utilisez {date}, {time}, {cursor}, et Entrée pour les sauts de ligne)"></textarea></td>
-              <td class="action-cell">
-                <div class="folder-select-wrap">
-                  <select id="new-folder-select">
-                    <option value="">Sans dossier</option>
-                    <option value="__new__">➕ Nouveau dossier...</option>
-                  </select>
-                  <input type="text" id="new-folder-input" placeholder="Nom du nouveau dossier" hidden />
-                </div>
-                <label class="sync-toggle" title="Choisissez si ce nouveau snippet doit être envoyé à Google Sheets (Partagé) ou rester uniquement sur cet appareil (Privé).">
-                  <input type="checkbox" id="new-shared-toggle" />
-                  <span class="sync-toggle-label" id="new-shared-toggle-label">Privé</span>
-                </label>
-                <button type="submit">Ajouter</button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </form>
-      <p class="hint">Choisissez <strong>Partagé</strong> ou <strong>Privé</strong> pour ce nouveau snippet — <strong>Privé</strong> par défaut. Vous pourrez changer son état à tout moment via l'interrupteur sur sa ligne.</p>
-    </section>
-
-    <section class="card">
       <div class="row-between">
         <h2>Mes snippets (<span id="count">0</span>)</h2>
         <div class="filters">
-          <label class="local-only-label"><input type="checkbox" id="local-only-filter" /> Privé uniquement</label>
           <select id="folder-filter"><option value="">Tous les dossiers</option></select>
           <input type="text" id="search" placeholder="Rechercher..." />
         </div>
       </div>
-      <p class="hint">Cliquez directement dans une cellule pour modifier un snippet (enregistrement automatique). Un snippet "Partagé" est synchronisé immédiatement vers Google Sheets, pour tous les utilisateurs ; un snippet "Privé" reste uniquement sur cet appareil. 🔒 = snippet synchronisé.</p>
-      <p class="hint" id="live-sync-status"></p>
+      <p class="hint">Ces données sont en lecture seule : modifiez-les directement dans le tableau Google Sheets (lien ci-dessus), puis cliquez sur "Mise à jour des données" pour les récupérer ici.</p>
       <table id="snippets-table">
         <thead>
-          <tr><th>Déclencheur</th><th>Contenu</th><th></th></tr>
+          <tr><th>Déclencheur</th><th>Contenu</th></tr>
         </thead>
         <tbody id="snippets-body"></tbody>
       </table>
@@ -76,24 +47,11 @@
       <div id="advanced-panel" hidden>
 
         <div class="advanced-block">
-          <h3>Import / Export (Excel XLSX)</h3>
-          <p class="hint">Fichier Excel (.xlsx) natif, colonnes : <code>trigger,content,folder</code></p>
-          <div class="button-row">
-            <button id="export-xlsx">⬇️ Exporter en XLSX</button>
-            <label class="file-btn">
-              ⬆️ Importer un XLSX
-              <input type="file" id="import-xlsx" accept=".xlsx" hidden />
-            </label>
-          </div>
-          <p class="hint" id="import-status"></p>
-        </div>
-
-        <div class="advanced-block">
           <h3>Partage &amp; synchro via Google Sheets (gratuit)</h3>
           <p class="hint">
             1. Créez un Google Sheet avec un onglet "Snippets" (colonnes trigger / content / folder).<br />
             2. Déployez le script fourni (voir README) comme "Web App".<br />
-            3. Collez l'URL ci-dessous. La récupération fusionne avec vos snippets locaux — rien n'est perdu.
+            3. Collez l'URL ci-dessous.
           </p>
           <input type="text" id="webapp-url" placeholder="https://script.google.com/macros/s/AKfycb.../exec" />
           <div class="row-between">
@@ -113,17 +71,6 @@
         </div>
 
         <div class="advanced-block">
-          <h3>Temporisation avant synchronisation</h3>
-          <p class="hint">Délai d'attente après une modification (ajout, édition, suppression, changement de dossier) avant l'envoi vers Google Sheets, pour regrouper plusieurs modifications rapprochées en un seul envoi.</p>
-          <div class="row-between">
-            <label for="sync-delay">Délai</label>
-            <div class="inline-input">
-              <input type="number" id="sync-delay" min="0" max="120" step="1" value="5" /> s
-            </div>
-          </div>
-        </div>
-
-        <div class="advanced-block">
           <h3>Temporisation avant expansion</h3>
           <p class="hint">Délai d'attente après la fin de la frappe du déclencheur avant remplacement, pour éviter une expansion prématurée si vous continuez à taper.</p>
           <div class="row-between">
@@ -132,19 +79,6 @@
               <input type="number" id="expansion-delay" min="0" max="5000" step="100" value="500" /> ms
             </div>
           </div>
-        </div>
-
-        <div class="advanced-block danger-block">
-          <h3>⚠️ Zone à risque</h3>
-
-          <p class="hint">En cas de doublon de déclencheur entre un snippet local et un snippet Google Sheets, qui gagne ?</p>
-          <select id="sync-priority">
-            <option value="remote">Google Sheets a la priorité (par défaut)</option>
-            <option value="local">Mes snippets locaux ont la priorité</option>
-          </select>
-
-          <p class="hint">Envoie tous vos snippets partagés ("Partagé") vers le Google Sheet et <strong>écrase entièrement</strong> son contenu actuel (y compris les modifications d'autres personnes). Inutile en temps normal : la synchro se fait déjà automatiquement et immédiatement à chaque modification.</p>
-          <button id="push-btn" class="danger-btn">🚨 Envoyer vers Google Sheets (écrase les données)</button>
         </div>
 
         <div class="advanced-block" id="update-block-store" hidden>
@@ -179,7 +113,6 @@
     <footer id="version-footer"></footer>
   </main>
 
-  <script src="lib/xlsx.full.min.js"></script>
   <script src="options.js"></script>
 </body>
 </html>

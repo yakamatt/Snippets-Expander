@@ -1,5 +1,17 @@
 # Changelog — Snippet Expander
 
+## v2.0.0 — 2026-07-24
+- **Simplification majeure : l'extension devient un lecteur en lecture seule.** Les snippets ne se gèrent plus que dans le tableau Google Sheets partagé ; toute la gestion locale est supprimée :
+  - Suppression de l'ajout, l'édition directe, la suppression, la duplication et le changement de dossier d'un snippet dans l'extension
+  - Suppression du renommage/de la suppression de dossier
+  - Suppression complète du concept Partagé/Privé (plus de propriété `shared`, plus d'interrupteur)
+  - Suppression de l'import/export XLSX (retrait de la bibliothèque SheetJS, `lib/xlsx.full.min.js`)
+  - Suppression des sections "Zone à risque" (envoi manuel, priorité de synchronisation) et "Temporisation avant synchronisation" : il n'y a plus rien à envoyer vers Google Sheets
+- **Ajoute un bouton "🔄 Mise à jour des données depuis le tableau Google Sheets"** tout en haut de la page, pour récupérer en un clic les dernières données du Sheet
+- **Ajoute un lien direct vers le tableau Google Sheets partagé**, pour modifier les snippets directement à la source
+- La récupération remplace désormais entièrement les snippets locaux par le contenu du Sheet (plus de fusion : il n'y a plus d'édition locale à préserver)
+- Bump v1.9.1 → v2.0.0 (changement de fonctionnement majeur)
+
 ## v1.9.1 — 2026-07-24
 - **Corrige la distinction visuelle Partagé/Privé, quasi invisible** : le seul changement de couleur de texte passait inaperçu sur fond blanc. Une ligne "Privé" a maintenant un fond distinctement teinté (en plus du texte atténué), rendant le changement d'état évident au premier coup d'œil
 
