@@ -1,6 +1,6 @@
 # Snippet Expander — extension Chrome gratuite (alternative à Blaze.Today)
 
-Remplace automatiquement un texte court (ex: `;sig`) par un texte prédéfini, dans n'importe quel champ de texte du navigateur. Snippets illimités, organisés en dossiers, import/export Excel (XLSX natif), et partage d'équipe via Google Sheets avec synchro automatique — **100% gratuit**.
+Remplace automatiquement un texte court (ex: `;sig`) par un texte prédéfini, dans n'importe quel champ de texte du navigateur. Les snippets sont gérés dans un tableau Google Sheets partagé et l'extension les affiche en **lecture seule** — **100% gratuit**.
 
 ## 1. Installer l'extension dans Chrome
 
@@ -13,23 +13,15 @@ Remplace automatiquement un texte court (ex: `;sig`) par un texte prédéfini, d
 
 ## 2. Utiliser l'extension
 
-- Cliquez sur l'icône ⚡ pour ouvrir les paramètres et gérer vos snippets.
-- Un snippet a un **déclencheur** (ex: `;sig`, `/adresse`), un **contenu** et un **dossier** optionnel. Le formulaire d'ajout propose aussi l'interrupteur Partagé/Privé, réglé sur **Privé** par défaut.
+- Cliquez sur l'icône ⚡ pour ouvrir les paramètres et consulter vos snippets.
+- Un snippet a un **déclencheur** (ex: `;sig`, `/adresse`), un **contenu** et un **dossier** optionnel.
 - Tapez le déclencheur dans n'importe quel champ (Gmail, formulaires web, réseaux sociaux, contenteditable...) : après une courte temporisation (1 seconde par défaut, réglable), il se remplace par le contenu — les sauts de ligne et retours à la ligne sont respectés.
 - Placeholders disponibles : `{date}`, `{time}`, `{cursor}` (repositionne le curseur après expansion).
-- **Édition directe** : cliquez dans n'importe quelle cellule du tableau des snippets pour la modifier ; l'enregistrement est automatique dès que vous cliquez ailleurs (blur). Toute modification d'un snippet **partagé** (voir plus bas) est renvoyée vers Google Sheets après un court délai (réglable, 5s par défaut — voir section 5).
-- **Mise en avant automatique** : après la création, la duplication ou le changement de dossier d'un snippet, sa ligne est automatiquement amenée à l'écran (et son dossier déplié si besoin) pour la retrouver immédiatement.
-- **Dossiers** : choisissez un dossier lors de la création d'un snippet, ou changez-le à tout moment via l'icône 📁 à côté de "Dupliquer en privé"/"Supprimer" sur chaque ligne — elle se transforme temporairement en sélecteur de dossier (avec option "Nouveau dossier..."), qui redevient une icône une fois le choix fait. Utilisez le filtre en haut de la liste pour n'afficher qu'un dossier. Chaque en-tête de groupe de dossier propose trois icônes alignées à droite : **+** (ajouter rapidement un snippet dans ce dossier), **✏️** (renommer) et **🗑️** (supprimer le dossier — les snippets ne sont pas supprimés, ils repassent en "Sans dossier"). Les dossiers n'ont plus d'incidence sur la synchro : c'est l'interrupteur Partagé/Privé (voir ci-dessous) qui la détermine, snippet par snippet.
-- **Interrupteur Partagé/Privé** : chaque snippet a sa propre propriété "partagé", indépendante de son dossier, réglée par un interrupteur à bascule sur chaque ligne. Passer un snippet de **Privé à Partagé** le modifie sur place : il rejoint la synchro Google Sheets (après le court délai habituel, voir section 5). Passer un snippet de **Partagé à Privé** ne modifie pas l'original : une **copie indépendante** est créée, marquée "Privé" (jamais envoyée à Google Sheets) — le bouton "Dupliquer en privé" des snippets synchronisés fait exactement la même chose. Une confirmation rappelle la conséquence avant de valider, dans les deux sens. Une case à cocher "Privé uniquement" en haut de la liste permet de n'afficher que ces snippets-là.
-- **Déclencheurs uniques** : à la création d'un snippet, si le déclencheur existe déjà côté synchronisé (Google Sheets), une confirmation s'affiche : votre version locale sera prioritaire et s'affichera à la place de la version en ligne pour ce déclencheur (voir aussi "Priorité de synchronisation" plus bas).
+- **Lecture seule** : les snippets ne se créent, se modifient ou se suppriment plus depuis l'extension. Toute la gestion se fait directement dans le tableau Google Sheets partagé (bouton "📄 Ouvrir le tableau Google Sheets" en haut de la page Options).
+- **Mise à jour des données** : cliquez sur "🔄 Mise à jour des données depuis le tableau Google Sheets" en haut de la page pour récupérer immédiatement vos dernières modifications faites dans le Sheet. Une synchro automatique (réglable, toutes les heures par défaut) s'exécute aussi en arrière-plan.
+- **Dossiers** : les snippets sont groupés par dossier (colonne `folder` du Sheet) pour la navigation ; utilisez le filtre en haut de la liste pour n'afficher qu'un dossier, ou la recherche pour filtrer par texte.
 
-## 3. Import / Export Excel (XLSX)
-
-Dans la page Options > Paramètres avancés :
-- **Exporter en XLSX** : télécharge tous vos snippets (`trigger,content,folder`) dans un vrai fichier `.xlsx`, lisible nativement par Excel ou Google Sheets (via [SheetJS](https://sheetjs.com), incluse localement dans `lib/`, aucune connexion externe requise).
-- **Importer un XLSX** : les snippets importés sont ajoutés comme snippets **locaux** modifiables ; ceux avec un déclencheur déjà existant sont mis à jour.
-
-## 4. Partage en temps réel avec une équipe (Google Sheets, gratuit)
+## 3. Partage en temps réel avec une équipe (Google Sheets, gratuit)
 
 À l'installation, l'extension importe automatiquement les snippets partagés par défaut (URL Google Sheets pré-configurée dans les paramètres, synchro auto activée toutes les heures). Vous pouvez remplacer cette URL par la vôtre à tout moment dans **Paramètres avancés > Partage & synchro**.
 
@@ -49,27 +41,19 @@ Dans la page Options > Paramètres avancés :
 1. Options de l'extension > collez l'URL dans la section "Partage & synchro"
 2. Choisissez une fréquence de synchro automatique (optionnel)
 
-### d. Fusion des données (important)
-Contrairement à la v1.0, **la récupération ne supprime plus jamais vos snippets créés localement**. Au moment de la récupération :
-- vos snippets locaux sont conservés (sauf ceux marqués "Privé" via l'interrupteur, jamais concernés par la synchro)
-- les snippets provenant du Sheet sont ajoutés/mis à jour, marqués 🔒 ; ils restent **modifiables directement** dans le tableau, comme n'importe quel snippet. Pour une copie indépendante qui ne sera plus jamais écrasée par une future récupération, utilisez plutôt "Dupliquer en privé"
-- en cas de déclencheur identique entre un snippet local et un snippet synchronisé, la **priorité de synchronisation** (réglable dans Paramètres avancés) décide qui l'emporte : Google Sheets par défaut, ou vos snippets locaux si vous le préférez
+### d. Mise à jour des données (lecture seule)
+L'extension ne modifie jamais le Sheet : elle se contente de le lire. À chaque récupération (clic sur "🔄 Mise à jour des données" ou synchro automatique en arrière-plan), les snippets affichés dans l'extension sont **entièrement remplacés** par le contenu actuel du Sheet.
 
-**Synchro automatique après modification** : toute modification d'un snippet **partagé** (ajout, édition, changement de dossier, suppression) envoie vers Google Sheets après un court délai (réglable dans Paramètres avancés, 5s par défaut — les modifications rapprochées sont regroupées en un seul envoi), sans confirmation. Seuls les snippets marqués **"Privé"** en sont exclus — tout le reste est synchronisé. Si l'onglet Options est fermé avant la fin du délai, l'envoi est déclenché immédiatement plutôt que d'être perdu.
+Pour ajouter, modifier ou supprimer un snippet : faites-le directement dans le Google Sheet (lien "📄 Ouvrir le tableau Google Sheets" en haut de la page Options), puis cliquez sur "🔄 Mise à jour des données" dans l'extension pour récupérer le résultat.
 
-Le bouton d'envoi manuel **"🚨 Envoyer vers Google Sheets"** (Paramètres avancés > Zone à risque) reste disponible pour forcer une resynchro complète immédiate, mais n'est plus nécessaire en usage normal.
-
-## 5. Paramètres avancés
+## 4. Paramètres avancés
 
 Accessibles via le bouton "⚙️ Paramètres avancés" en bas de la page Options :
-- **Import / Export XLSX** : voir section 3
-- **Temporisation avant synchronisation** : délai (secondes, 5 par défaut) après une modification avant l'envoi vers Google Sheets, pour regrouper plusieurs modifications rapprochées en un seul envoi
+- **Partage & synchro** : URL du Google Sheet, fréquence de synchro automatique, récupération manuelle
 - **Temporisation avant expansion** : délai (ms) après la fin de la frappe avant remplacement (évite qu'un mot plus long contenant un déclencheur ne s'expanse par erreur)
-- **Priorité de synchronisation** : Google Sheets ou snippets locaux en cas de doublon
-- **Envoi vers Google Sheets** : bouton à risque, confirmation obligatoire (resynchro manuelle complète des snippets partagés)
 - **Mise à jour de l'extension** : voir section suivante
 
-## 6. Mettre l'extension sur GitHub
+## 5. Mettre l'extension sur GitHub
 
 ### a. Créer le dépôt
 1. Sur [github.com](https://github.com), créez un compte si nécessaire (gratuit)
@@ -87,7 +71,7 @@ git push -u origin main
 (Remplacez l'URL par celle de votre dépôt. Git vous demandera de vous authentifier — utilisez un token d'accès personnel GitHub si le mot de passe classique est refusé : **Settings > Developer settings > Personal access tokens**.)
 
 ### c. Utiliser GitHub comme source de mise à jour (mode développeur uniquement)
-Cette section ne s'applique que si l'extension reste chargée en **mode développeur** ("non empaquetée"). Si vous l'avez publiée sur le Chrome Web Store (voir section 7), ignorez-la : Chrome gère les mises à jour tout seul et ce bloc de paramètres est automatiquement masqué dans la page Options.
+Cette section ne s'applique que si l'extension reste chargée en **mode développeur** ("non empaquetée"). Si vous l'avez publiée sur le Chrome Web Store (voir section 6), ignorez-la : Chrome gère les mises à jour tout seul et ce bloc de paramètres est automatiquement masqué dans la page Options.
 
 1. Dans les Options > Paramètres avancés > "Mise à jour de l'extension (mode développeur)", renseignez l'URL raw de votre dépôt, par exemple :
    `https://raw.githubusercontent.com/VOTRE-UTILISATEUR/snippet-expander/main`
@@ -101,7 +85,7 @@ Cette section ne s'applique que si l'extension reste chargée en **mode dévelop
 
 Comme `chrome.storage` est lié à l'identifiant de l'extension (dérivé du chemin du dossier), **vos snippets et paramètres sont automatiquement conservés** tant que vous réutilisez le même dossier — aucune perte de données.
 
-## 7. Publier sur le Chrome Web Store
+## 6. Publier sur le Chrome Web Store
 
 Une fois publiée, l'extension se met à jour **automatiquement et silencieusement** — Chrome vérifie et installe les nouvelles versions tout seul, comme pour n'importe quelle extension du Store. La page Options détecte ce mode d'installation (`chrome.management.getSelf()`) et masque alors tout le bloc "mise à jour manuelle via GitHub" décrit ci-dessus, qui ne concerne que le mode développeur.
 
@@ -125,7 +109,7 @@ Une fois publiée, l'extension se met à jour **automatiquement et silencieuseme
 ### d. Déclarer les pratiques de confidentialité (obligatoire)
 Dans l'onglet **"Privacy practices"** du dashboard :
 - **Permission `host_permissions: <all_urls>`** : à justifier — nécessaire pour détecter la frappe et remplacer le texte dans n'importe quel champ, sur n'importe quel site
-- **Usage des données** : l'extension lit/écrit du texte dans les champs des pages visitées (fonctionnalité cœur) et envoie vos snippets à l'URL Google Sheets que *vous* configurez — aucune donnée n'est envoyée à un serveur tiers appartenant au développeur
+- **Usage des données** : l'extension lit du texte dans les champs des pages visitées (fonctionnalité cœur) et récupère vos snippets depuis l'URL Google Sheets que *vous* configurez — aucune donnée n'est envoyée à un serveur tiers appartenant au développeur
 - Fournissez une **URL de politique de confidentialité** (une simple page expliquant les points ci-dessus suffit ; ce README peut servir de base)
 - Cochez la case de certification de conformité au programme développeur
 
@@ -139,10 +123,9 @@ Dans l'onglet **"Privacy practices"** du dashboard :
 ```
 snippet-expander/
 ├── manifest.json          # Configuration de l'extension (Manifest V3)
-├── background.js          # Synchro (fusion), clic icône, vérification MAJ GitHub
+├── background.js          # Récupération Google Sheets, clic icône, vérification MAJ GitHub
 ├── content.js              # Détection, temporisation et remplacement du texte
-├── options.html/css/js     # Page de gestion complète (édition inline, dossiers, avancé)
-├── lib/xlsx.full.min.js   # SheetJS, pour l'export/import XLSX (aucune dépendance réseau)
+├── options.html/css/js     # Page de consultation (lecture seule) et paramètres avancés
 ├── icons/                  # Icônes de l'extension
 ├── CHANGELOG.md             # Historique des versions
 └── google-apps-script/
