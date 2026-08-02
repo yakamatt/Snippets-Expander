@@ -139,7 +139,11 @@ code {
   font-family: var(--font-mono); padding: 1px 6px; border-radius: 4px; font-size: 12px;
 }
 
-.folder-select-wrap { display: flex; flex-direction: column; gap: 6px; }
+.update-steps { margin: 10px 0 0; padding-left: 20px; color: var(--ink); font-size: 13px; line-height: 1.7; }
+.update-steps[hidden] { display: none; }
+.update-steps li { margin-bottom: 2px; }
+.update-steps a { color: var(--accent-hover); font-weight: 600; cursor: pointer; }
+.update-steps a:hover { text-decoration: underline; }
 
 tr.folder-group-header td {
   font-family: var(--font-mono); font-weight: 700; font-size: 12px; letter-spacing: 0.02em;

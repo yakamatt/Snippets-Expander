@@ -18,7 +18,6 @@ chrome.runtime.onInstalled.addListener((details) => {
       webAppUrl: DEFAULT_WEBAPP_URL,
       autoSyncMinutes: 60,
       expansionDelayMs: 500,
-      githubRepoUrl: DEFAULT_GITHUB_URL,
       autoCheckUpdates: true
     };
     const merged = { ...defaults, ...(syncSettings || {}) };
@@ -59,7 +58,7 @@ function scheduleAlarms() {
     // publiée sur le Chrome Web Store, Chrome met à jour l'extension tout seul.
     chrome.management.getSelf((info) => {
       const isDev = info.installType === 'development';
-      if (isDev && settings.autoCheckUpdates && settings.githubRepoUrl) {
+      if (isDev && settings.autoCheckUpdates) {
         chrome.alarms.create(UPDATE_ALARM, { periodInMinutes: 720 }); // 2x/jour
       }
     });
@@ -99,11 +98,7 @@ async function pullFromSheet() {
 // permet pas à une extension de réécrire ses propres fichiers) : on notifie seulement l'utilisateur.
 
 async function checkForUpdates() {
-  const { syncSettings } = await chrome.storage.sync.get(['syncSettings']);
-  if (!syncSettings || !syncSettings.githubRepoUrl) return null;
-
-  const base = syncSettings.githubRepoUrl.replace(/\/$/, '');
-  const manifestUrl = `${base}/manifest.json`;
+  const manifestUrl = `${DEFAULT_GITHUB_URL}/manifest.json`;
   const res = await fetch(manifestUrl, { cache: 'no-store' });
   if (!res.ok) throw new Error('Impossible de lire manifest.json sur GitHub (' + res.status + ')');
   const remoteManifest = await res.json();

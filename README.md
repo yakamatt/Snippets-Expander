@@ -74,15 +74,18 @@ git push -u origin main
 ### c. Utiliser GitHub comme source de mise à jour (mode développeur uniquement)
 Cette section ne s'applique que si l'extension reste chargée en **mode développeur** ("non empaquetée"). Si vous l'avez publiée sur le Chrome Web Store (voir section 6), ignorez-la : Chrome gère les mises à jour tout seul et ce bloc de paramètres est automatiquement masqué dans la page Options.
 
-1. Dans les Options > Paramètres avancés > "Mise à jour de l'extension (mode développeur)", renseignez l'URL raw de votre dépôt, par exemple :
-   `https://raw.githubusercontent.com/VOTRE-UTILISATEUR/snippet-expander/main`
-2. Cochez "Vérifier automatiquement les mises à jour" si souhaité, ou cliquez sur "Vérifier une mise à jour maintenant"
-3. L'extension compare le numéro de version de `manifest.json` sur GitHub avec la version installée
+L'URL du dépôt (`DEFAULT_GITHUB_URL`, dans `background.js` et `options.js`) est fixée dans le code — il n'y a pas de champ à renseigner dans l'interface. Si vous forkez ce dépôt, remplacez cette constante par l'URL raw du vôtre avant de charger l'extension, par exemple :
+`https://raw.githubusercontent.com/VOTRE-UTILISATEUR/snippet-expander/main`
 
-⚠️ **Limite technique importante** : une extension chargée en mode développeur ne peut pas se ré-écrire elle-même — Chrome ne l'autorise pas, pour des raisons de sécurité. La vérification GitHub **notifie** donc qu'une nouvelle version existe (badge rouge sur l'icône + notification), mais la mise à jour reste manuelle :
-1. Cliquez sur le bouton **"⬇️ Télécharger la mise à jour"** (dans la bannière en haut de la page Options, ou dans "Paramètres avancés > Mise à jour de l'extension") — le zip du dépôt se télécharge automatiquement
+Dans Options > Paramètres avancés > "Mise à jour de l'extension (mode développeur)" :
+1. Cochez "Vérifier automatiquement les mises à jour" si souhaité (s'enregistre automatiquement), ou cliquez sur "Vérifier une mise à jour maintenant"
+2. L'extension compare le numéro de version de `manifest.json` sur GitHub avec la version installée
+
+⚠️ **Limite technique importante** : une extension chargée en mode développeur ne peut pas se ré-écrire elle-même — Chrome ne l'autorise pas, pour des raisons de sécurité. Quand une nouvelle version est détectée (badge rouge sur l'icône + notification), l'extension affiche une **marche à suivre détaillée avec liens cliquables** (dans la bannière en haut de la page Options, ou dans "Paramètres avancés > Mise à jour de l'extension") :
+1. Cliquez sur le lien **"⬇️ Télécharger le zip de la version..."** — le téléchargement démarre directement
 2. Décompressez-le et remplacez les fichiers dans le **même dossier** que celui chargé dans Chrome (ne créez pas un nouveau dossier)
-3. Allez sur `chrome://extensions`, cliquez sur l'icône **Actualiser** ⟳ de l'extension
+3. Cliquez sur le lien **"chrome://extensions"** affiché dans la liste (ouvre directement la page)
+4. Cliquez sur l'icône **Actualiser** ⟳ de la carte "Snippet Expander"
 
 Comme `chrome.storage` est lié à l'identifiant de l'extension (dérivé du chemin du dossier), **vos snippets et paramètres sont automatiquement conservés** tant que vous réutilisez le même dossier — aucune perte de données.
 

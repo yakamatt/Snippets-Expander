@@ -1,5 +1,11 @@
 # Changelog — Snippet Expander
 
+## v2.2.0 — 2026-08-02
+- **Ajoute une marche à suivre détaillée pour la mise à jour manuelle** (mode développeur) : quand une nouvelle version est disponible, une liste numérotée avec des liens cliquables apparaît (téléchargement direct du zip, ouverture de `chrome://extensions`) au lieu d'une simple ligne de texte
+- **Supprime le champ modifiable "URL du dépôt GitHub"** : l'URL est désormais fixée dans le code (`DEFAULT_GITHUB_URL`), plus besoin de la configurer ni de l'enregistrer
+- **Supprime le bouton "Enregistrer" de la section mise à jour** : la case "Vérifier automatiquement les mises à jour" s'enregistre désormais automatiquement au clic, comme les autres réglages de Paramètres avancés
+- Le bouton de la bannière "Nouvelle version disponible" ouvre maintenant directement la marche à suivre détaillée (au lieu de lancer le téléchargement sans context)
+
 ## v2.1.0 — 2026-08-02
 - **Ajoute un popup à l'icône de la barre d'outils** (`popup.html`) : le clic sur l'icône ouvre désormais un menu avec un bouton "🔄 Actualiser les données" et un lien vers les Paramètres, au lieu d'ouvrir directement la page complète
 - **Supprime la section "Partage & synchro via Google Sheets"** des Paramètres avancés (URL, synchro auto, récupération manuelle) : l'URL du Sheet n'est plus configurable depuis l'interface (voir README pour la modifier dans le code)

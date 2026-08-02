@@ -17,7 +17,7 @@
     <p class="hint" id="refresh-status"></p>
     <div id="update-banner" class="update-banner" hidden>
       <span id="update-banner-text"></span>
-      <button id="update-banner-btn" class="update-btn">⬇️ Télécharger la mise à jour</button>
+      <button id="update-banner-btn" class="update-btn">👀 Voir comment mettre à jour</button>
     </div>
     <div id="pin-banner" class="pin-banner" hidden>
       <span>📌 Pensez à épingler Snippet Expander dans la barre d'outils : cliquez sur le puzzle 🧩 en haut du navigateur, puis sur l'épingle 📌 à côté de Snippet Expander.</span>
@@ -80,20 +80,23 @@
         <div class="advanced-block" id="update-block-dev" hidden>
           <h3>Mise à jour de l'extension (mode développeur)</h3>
           <p class="hint">
-            Aucune donnée locale n'est perdue lors d'une mise à jour tant que vous remplacez les fichiers dans le <em>même dossier</em> puis cliquez sur "Actualiser" dans <code>chrome://extensions</code>.
+            Aucune donnée locale n'est perdue lors d'une mise à jour tant que vous remplacez les fichiers dans le <em>même dossier</em>.
           </p>
-          <label>URL du dépôt GitHub (raw), ex : https://raw.githubusercontent.com/utilisateur/repo/main</label>
-          <input type="text" id="github-url" placeholder="https://raw.githubusercontent.com/utilisateur/repo/main" />
           <div class="row-between">
             <label for="auto-check-updates">Vérifier automatiquement les mises à jour (2x/jour)</label>
             <input type="checkbox" id="auto-check-updates" checked />
           </div>
           <div class="button-row">
-            <button id="save-github">💾 Enregistrer</button>
             <button id="check-update-btn">🔍 Vérifier une mise à jour maintenant</button>
-            <button id="download-update-btn" hidden>⬇️ Télécharger la mise à jour</button>
           </div>
           <p class="hint" id="update-status"></p>
+          <ol class="update-steps" id="update-steps" hidden>
+            <li><a id="update-download-link" href="#" target="_blank" rel="noopener noreferrer">⬇️ Télécharger le zip de la nouvelle version</a></li>
+            <li>Décompressez le fichier téléchargé</li>
+            <li>Remplacez les fichiers dans le <strong>même dossier</strong> que celui actuellement chargé dans Chrome (ne créez pas un nouveau dossier)</li>
+            <li>Ouvrez <a id="open-extensions-link" href="#">chrome://extensions</a></li>
+            <li>Cliquez sur l'icône <strong>Actualiser</strong> ⟳ de la carte "Snippet Expander"</li>
+          </ol>
         </div>
       </div>
     </section>
