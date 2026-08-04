@@ -1,5 +1,10 @@
 # Changelog — Snippet Expander
 
+## v2.4.0 — 2026-08-04
+- **Ajoute une section "Crédits"** en bas de la page Options, avec un lien vers le dépôt GitHub
+- **Ajoute un champ "Dossier local de l'extension"** (Paramètres avancés, optionnel) : une fois renseigné, l'étape "remplacez les fichiers" de la marche à suivre pour la mise à jour manuelle affiche un lien cliquable direct vers ce dossier (`file://...`) au lieu d'un simple rappel textuel — Chrome ne permettant pas à une extension de connaître automatiquement son propre chemin sur le disque, ce champ doit être renseigné une fois par l'utilisateur
+- **Ajoute une "Zone de test"** : un champ de texte libre dans lequel taper un déclencheur existant pour voir l'expansion se produire en direct, avec une explication pensée pour les débutants — pratique pour vérifier que tout fonctionne sans quitter la page
+
 ## v2.3.0 — 2026-08-04
 - **Nouveau logo** : remplace les icônes de l'extension (16/32/48/128px) par le nouveau logo fourni, et l'affiche dans l'en-tête de la page Options et du popup (à la place de l'emoji ⚡)
 - **Nouvelle palette de couleurs**, dérivée du logo (teinte sarcelle/teal), appliquée à `options.css` et `popup.css` : accent, fond, bordures et ombres repensés en conséquence, pour un rendu plus cohérent avec l'identité visuelle, en clair comme en sombre

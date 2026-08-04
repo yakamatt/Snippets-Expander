@@ -20,6 +20,7 @@ Remplace automatiquement un texte court (ex: `;sig`) par un texte prédéfini, d
 - **Lecture seule** : les snippets ne se créent, se modifient ou se suppriment plus depuis l'extension. Toute la gestion se fait directement dans le tableau Google Sheets partagé (bouton "📄 Ouvrir le tableau Google Sheets" en haut de la page Options).
 - **Mise à jour des données** : les données se mettent à jour automatiquement en arrière-plan (fréquence réglable, toutes les heures par défaut — voir Paramètres avancés). Pour forcer une actualisation immédiate : bouton "🔄 Actualiser les données" dans le popup de l'icône, ou "🔄 Forcer l'actualisation des données depuis le tableau Google Sheets" en haut de la page Options.
 - **Dossiers** : les snippets sont groupés par dossier (colonne `folder` du Sheet) pour la navigation ; utilisez le filtre en haut de la liste pour n'afficher qu'un dossier, ou la recherche pour filtrer par texte.
+- **Zone de test** : sur la page Options, un champ de texte libre permet de taper un déclencheur existant et de voir l'expansion se produire en direct — pratique pour vérifier que tout fonctionne sans avoir à ouvrir un autre site.
 
 ## 3. Partage en temps réel avec une équipe (Google Sheets, gratuit)
 
@@ -78,12 +79,13 @@ L'URL du dépôt (`DEFAULT_GITHUB_URL`, dans `background.js` et `options.js`) es
 `https://raw.githubusercontent.com/VOTRE-UTILISATEUR/snippet-expander/main`
 
 Dans Options > Paramètres avancés > "Mise à jour de l'extension (mode développeur)" :
-1. Cochez "Vérifier automatiquement les mises à jour" si souhaité (s'enregistre automatiquement), ou cliquez sur "Vérifier une mise à jour maintenant"
-2. L'extension compare le numéro de version de `manifest.json` sur GitHub avec la version installée
+1. **Optionnel mais recommandé** : renseignez le chemin absolu du dossier contenant l'extension dans "Dossier local de l'extension" (ex : `/Users/vous/snippet-expander`) — Chrome ne permet pas à une extension de connaître ce chemin automatiquement, ce champ le mémorise une bonne fois pour toutes pour générer un lien direct lors des prochaines mises à jour
+2. Cochez "Vérifier automatiquement les mises à jour" si souhaité (s'enregistre automatiquement), ou cliquez sur "Vérifier une mise à jour maintenant"
+3. L'extension compare le numéro de version de `manifest.json` sur GitHub avec la version installée
 
 ⚠️ **Limite technique importante** : une extension chargée en mode développeur ne peut pas se ré-écrire elle-même — Chrome ne l'autorise pas, pour des raisons de sécurité. Quand une nouvelle version est détectée (badge rouge sur l'icône + notification), l'extension affiche une **marche à suivre détaillée avec liens cliquables** (dans la bannière en haut de la page Options, ou dans "Paramètres avancés > Mise à jour de l'extension") :
 1. Cliquez sur le lien **"⬇️ Télécharger le zip de la version..."** — le téléchargement démarre directement
-2. Décompressez-le et remplacez les fichiers dans le **même dossier** que celui chargé dans Chrome (ne créez pas un nouveau dossier)
+2. Décompressez-le et remplacez les fichiers dans **le dossier de l'extension** — un lien direct est affiché si vous avez renseigné son chemin à l'étape précédente, sinon un rappel générique s'affiche à la place (ne créez pas un nouveau dossier)
 3. Cliquez sur le lien **"chrome://extensions"** affiché dans la liste (ouvre directement la page)
 4. Cliquez sur l'icône **Actualiser** ⟳ de la carte "Snippet Expander"
 
