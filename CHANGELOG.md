@@ -1,5 +1,8 @@
 # Changelog — Snippet Expander
 
+## v2.6.0 — 2026-08-04
+- **Ajoute un bouton "✏️ Modifier les données"** dans le popup de l'icône, juste au-dessus de "🔄 Actualiser les données" : lien direct vers le tableau Google Sheets, pour éditer les snippets sans passer par la page Options
+
 ## v2.5.0 — 2026-08-04
 - **Nouveau logo** : remplace les icônes de l'extension (16/32/48/128px) par le nouveau logo fourni (croix + flèche blanches sur fond bleu)
 - **Nouvelle palette de couleurs**, dérivée du bleu du logo (`#2d51b2`), appliquée à `options.css` et `popup.css` en clair comme en sombre — remplace la palette teal introduite au rebranding précédent
