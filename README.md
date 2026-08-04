@@ -1,4 +1,4 @@
-# Snippet Expander — extension Chrome gratuite (alternative à Blaze.Today)
+# Snippet Expander — extension Chrome gratuite
 
 Remplace automatiquement un texte court (ex: `;sig`) par un texte prédéfini, dans n'importe quel champ de texte du navigateur. Les snippets sont gérés dans un tableau Google Sheets partagé et l'extension les affiche en **lecture seule** — **100% gratuit**.
 
@@ -8,12 +8,12 @@ Remplace automatiquement un texte court (ex: `;sig`) par un texte prédéfini, d
 2. Activez le **Mode développeur** (en haut à droite)
 3. Cliquez sur **Charger l'extension non empaquetée**
 4. Sélectionnez le dossier `snippet-expander` (celui qui contient `manifest.json`)
-5. L'icône ⚡ apparaît dans la barre d'outils — **un clic dessus ouvre un petit menu** avec un bouton "Actualiser les données" et un lien vers les paramètres complets
+5. L'icône de l'extension apparaît dans la barre d'outils — **un clic dessus ouvre un petit menu** avec un bouton "Actualiser les données" et un lien vers les paramètres complets
 6. À la première installation, la page Options s'ouvre automatiquement avec une bannière 📌 vous invitant à épingler l'extension (clic sur le puzzle 🧩 en haut du navigateur, puis sur l'épingle à côté de Snippet Expander) pour l'avoir toujours sous la main
 
 ## 2. Utiliser l'extension
 
-- Cliquez sur l'icône ⚡ pour ouvrir le petit menu ("popup"), avec un bouton **"🔄 Actualiser les données"** et un lien **"⚙️ Paramètres"** vers la page complète (liste des snippets, filtres, réglages avancés).
+- Cliquez sur l'icône de l'extension pour ouvrir le petit menu ("popup"), avec un bouton **"🔄 Actualiser les données"** et un lien **"⚙️ Paramètres"** vers la page complète (liste des snippets, filtres, réglages avancés).
 - Un snippet a un **déclencheur** (ex: `;sig`, `/adresse`), un **contenu** et un **dossier** optionnel.
 - Tapez le déclencheur dans n'importe quel champ (Gmail, formulaires web, réseaux sociaux, contenteditable...) : après une courte temporisation (1 seconde par défaut, réglable), il se remplace par le contenu — les sauts de ligne et retours à la ligne sont respectés.
 - Placeholders disponibles : `{date}`, `{time}`, `{cursor}` (repositionne le curseur après expansion).
