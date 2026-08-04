@@ -1,4 +1,4 @@
-const BUILD_DATE = '2026-08-04'; // v2.3.0
+const BUILD_DATE = '2026-08-04'; // v2.4.0
 const DEFAULT_GITHUB_URL = 'https://raw.githubusercontent.com/yakamatt/Snippets-Expander/main';
 
 let snippets = [];
@@ -21,6 +21,7 @@ function load() {
     const s = res.syncSettings || {};
     document.getElementById('autosync-minutes').value = s.autoSyncMinutes ?? 60;
     document.getElementById('expansion-delay').value = s.expansionDelayMs ?? 500;
+    document.getElementById('local-folder-path').value = s.localFolderPath || '';
     document.getElementById('auto-check-updates').checked = !!s.autoCheckUpdates;
   });
   renderUpdateMode();
@@ -214,6 +215,10 @@ document.getElementById('expansion-delay').addEventListener('change', (e) => {
   updateSyncSettings({ expansionDelayMs: parseInt(e.target.value, 10) || 0 });
 });
 
+document.getElementById('local-folder-path').addEventListener('change', (e) => {
+  updateSyncSettings({ localFolderPath: e.target.value.trim() });
+});
+
 document.getElementById('auto-check-updates').addEventListener('change', (e) => {
   updateSyncSettings({ autoCheckUpdates: e.target.checked });
 });
@@ -243,6 +248,15 @@ function getRepoZipUrl() {
   return `https://codeload.github.com/${user}/${repo}/zip/refs/heads/${branch}`;
 }
 
+// Convertit un chemin local (Unix ou Windows) en URL file:// cliquable. Chrome ouvre ce type de
+// lien en listant le contenu du dossier, ce qui permet de le retrouver en un clic plutôt que de
+// se souvenir de son emplacement exact.
+function pathToFileUrl(path) {
+  const normalized = path.trim().replace(/\\/g, '/');
+  const withLeadingSlash = normalized.startsWith('/') ? normalized : '/' + normalized;
+  return 'file://' + encodeURI(withLeadingSlash);
+}
+
 // Affiche la marche à suivre détaillée pour mettre à jour manuellement l'extension (mode
 // développeur uniquement, voir renderUpdateMode) : lien de téléchargement direct du zip,
 // puis les étapes pour le remplacer et recharger l'extension.
@@ -256,6 +270,15 @@ function populateUpdateSteps(remoteVersion) {
     downloadLink.removeAttribute('href');
     downloadLink.textContent = '⬇️ URL du dépôt GitHub invalide, téléchargement indisponible';
   }
+
+  const folderStep = document.getElementById('update-folder-step');
+  chrome.storage.sync.get(['syncSettings'], (res) => {
+    const path = ((res.syncSettings || {}).localFolderPath || '').trim();
+    folderStep.innerHTML = path
+      ? `Remplacez les fichiers dans <a href="${escapeHtml(pathToFileUrl(path))}" target="_blank" rel="noopener noreferrer">le dossier de l'extension</a> (ne créez pas un nouveau dossier)`
+      : `Remplacez les fichiers dans le <strong>même dossier</strong> que celui actuellement chargé dans Chrome (ne créez pas un nouveau dossier). <em>Astuce : renseignez son chemin ci-dessus pour obtenir un lien direct ici la prochaine fois.</em>`;
+  });
+
   document.getElementById('update-steps').hidden = false;
 }
 
@@ -304,5 +327,61 @@ function renderVersionFooter(lastSync) {
   const syncTxt = lastSync ? `Dernière mise à jour : ${new Date(lastSync).toLocaleString()}` : 'Aucune mise à jour effectuée';
   footer.textContent = `Snippet Expander v${version} — build du ${BUILD_DATE} — ${syncTxt}`;
 }
+
+// ---------- Zone de test ----------
+// Reproduit en simplifié l'expansion de content.js (déclencheur le plus long en cas de
+// conflit, {date}/{time}/{cursor}, temporisation configurable) directement sur ce textarea.
+// Nécessaire car les scripts de contenu ne s'exécutent jamais sur les pages de l'extension
+// elle-même : ce n'est donc pas le vrai content.js qui tourne ici, mais un équivalent local
+// testé contre les snippets réellement chargés, pour un aperçu fidèle.
+let testTimeoutId = null;
+
+function testResolveContent(text) {
+  const now = new Date();
+  return text
+    .replace(/\{date\}/gi, now.toLocaleDateString())
+    .replace(/\{time\}/gi, now.toLocaleTimeString())
+    .replace(/\{cursor\}/gi, '');
+}
+
+function testFindMatch(before) {
+  return snippets
+    .slice()
+    .sort((a, b) => b.trigger.length - a.trigger.length)
+    .find(s => before.endsWith(s.trigger));
+}
+
+document.getElementById('test-area').addEventListener('input', (e) => {
+  const el = e.target;
+  const start = el.selectionStart;
+  if (start == null || start === 0 || !snippets.length) return;
+  const maxTriggerLen = snippets.reduce((m, s) => Math.max(m, s.trigger.length), 1);
+  const before = el.value.substring(Math.max(0, start - maxTriggerLen), start);
+  const match = testFindMatch(before);
+  if (!match) return;
+
+  if (testTimeoutId) clearTimeout(testTimeoutId);
+  chrome.storage.sync.get(['syncSettings'], (res) => {
+    const delay = (res.syncSettings || {}).expansionDelayMs ?? 500;
+    testTimeoutId = setTimeout(() => {
+      testTimeoutId = null;
+      // Revérifie le contexte juste avant d'agir : la frappe a pu continuer entre-temps et invalider le match.
+      const start2 = el.selectionStart;
+      if (start2 == null) return;
+      const before2 = el.value.substring(Math.max(0, start2 - maxTriggerLen), start2);
+      if (!before2.endsWith(match.trigger)) return;
+
+      const cursorMarker = match.content.search(/\{cursor\}/i);
+      const replacement = testResolveContent(match.content);
+      const triggerStart = start2 - match.trigger.length;
+      el.value = el.value.substring(0, triggerStart) + replacement + el.value.substring(start2);
+
+      const newPos = cursorMarker >= 0
+        ? triggerStart + testResolveContent(match.content.substring(0, cursorMarker)).length
+        : triggerStart + replacement.length;
+      el.setSelectionRange(newPos, newPos);
+    }, delay);
+  });
+});
 
 load();

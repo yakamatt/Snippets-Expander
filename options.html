@@ -44,6 +44,12 @@
     </section>
 
     <section class="card">
+      <h2>🧪 Zone de test</h2>
+      <p class="hint">Vous débutez ? Tapez ici un déclencheur de votre liste ci-dessus (par exemple <code>/gn4</code>) : après une courte pause, il se remplace automatiquement par son contenu — exactement comme dans n'importe quel champ de texte du navigateur (Gmail, un formulaire...). Pratique pour vérifier que tout fonctionne, sans quitter cette page.</p>
+      <textarea id="test-area" placeholder="Tapez un déclencheur ici pour le tester..." rows="4"></textarea>
+    </section>
+
+    <section class="card">
       <button id="toggle-advanced" class="link-btn">⚙️ Paramètres avancés ▾</button>
       <div id="advanced-panel" hidden>
 
@@ -82,6 +88,8 @@
           <p class="hint">
             Aucune donnée locale n'est perdue lors d'une mise à jour tant que vous remplacez les fichiers dans le <em>même dossier</em>.
           </p>
+          <label for="local-folder-path">Dossier local de l'extension (optionnel — permet un lien direct lors des mises à jour)</label>
+          <input type="text" id="local-folder-path" placeholder="/Users/vous/snippet-expander" />
           <div class="row-between">
             <label for="auto-check-updates">Vérifier automatiquement les mises à jour (2x/jour)</label>
             <input type="checkbox" id="auto-check-updates" checked />
@@ -93,7 +101,7 @@
           <ol class="update-steps" id="update-steps" hidden>
             <li><a id="update-download-link" href="#" target="_blank" rel="noopener noreferrer">⬇️ Télécharger le zip de la nouvelle version</a></li>
             <li>Décompressez le fichier téléchargé</li>
-            <li>Remplacez les fichiers dans le <strong>même dossier</strong> que celui actuellement chargé dans Chrome (ne créez pas un nouveau dossier)</li>
+            <li id="update-folder-step">Remplacez les fichiers dans le <strong>même dossier</strong> que celui actuellement chargé dans Chrome (ne créez pas un nouveau dossier)</li>
             <li>Ouvrez <a id="open-extensions-link" href="#">chrome://extensions</a></li>
             <li>Cliquez sur l'icône <strong>Actualiser</strong> ⟳ de la carte "Snippet Expander"</li>
           </ol>
@@ -102,6 +110,10 @@
     </section>
 
     <footer id="version-footer"></footer>
+    <footer class="credits">
+      <h3>Crédits</h3>
+      <p><a href="https://github.com/yakamatt/Snippets-Expander" target="_blank" rel="noopener noreferrer">📦 Code source sur GitHub</a></p>
+    </footer>
   </main>
 
   <script src="options.js"></script>
