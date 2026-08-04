@@ -2,26 +2,26 @@
   --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
   --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, "Liberation Mono", monospace;
 
-  --bg: #f2f8f7;
-  --ink: #16262a;
-  --ink-muted: #5c7773;
-  --border: #dbe9e6;
+  --bg: #f2f4fb;
+  --ink: #16213d;
+  --ink-muted: #5b6a8f;
+  --border: #dde3f3;
 
-  --accent: #2f7d78;
-  --accent-hover: #235f5b;
+  --accent: #2d51b2;
+  --accent-hover: #1f3d8f;
   --accent-ink: #ffffff;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #0d1716;
-    --ink: #e9f3f1;
-    --ink-muted: #93aeaa;
-    --border: #223634;
+    --bg: #0d1220;
+    --ink: #e8ecf7;
+    --ink-muted: #8f9ac0;
+    --border: #26304e;
 
-    --accent: #4fa39d;
-    --accent-hover: #6cbab4;
-    --accent-ink: #06120f;
+    --accent: #6a8ce0;
+    --accent-hover: #8aa6ea;
+    --accent-ink: #0b1224;
   }
 }
 
