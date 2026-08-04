@@ -1,5 +1,11 @@
 # Changelog — Snippet Expander
 
+## v2.3.0 — 2026-08-04
+- **Nouveau logo** : remplace les icônes de l'extension (16/32/48/128px) par le nouveau logo fourni, et l'affiche dans l'en-tête de la page Options et du popup (à la place de l'emoji ⚡)
+- **Nouvelle palette de couleurs**, dérivée du logo (teinte sarcelle/teal), appliquée à `options.css` et `popup.css` : accent, fond, bordures et ombres repensés en conséquence, pour un rendu plus cohérent avec l'identité visuelle, en clair comme en sombre
+- Petites retouches "modernes" : coins plus arrondis sur les cartes/boutons/champs, transitions douces sur les boutons et champs
+- **Supprime toute mention de "Blaze.Today"** (`manifest.json`, `README.md`) : l'extension ne se présente plus comme une alternative à un produit tiers
+
 ## v2.2.0 — 2026-08-02
 - **Ajoute une marche à suivre détaillée pour la mise à jour manuelle** (mode développeur) : quand une nouvelle version est disponible, une liste numérotée avec des liens cliquables apparaît (téléchargement direct du zip, ouverture de `chrome://extensions`) au lieu d'une simple ligne de texte
 - **Supprime le champ modifiable "URL du dépôt GitHub"** : l'URL est désormais fixée dans le code (`DEFAULT_GITHUB_URL`), plus besoin de la configurer ni de l'enregistrer

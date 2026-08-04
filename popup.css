@@ -2,26 +2,26 @@
   --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
   --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, "Liberation Mono", monospace;
 
-  --bg: #faf7f1;
-  --ink: #221d14;
-  --ink-muted: #8a7f6e;
-  --border: #e7dfd0;
+  --bg: #f2f8f7;
+  --ink: #16262a;
+  --ink-muted: #5c7773;
+  --border: #dbe9e6;
 
-  --accent: #b5540a;
-  --accent-hover: #9c4708;
+  --accent: #2f7d78;
+  --accent-hover: #235f5b;
   --accent-ink: #ffffff;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #18140d;
-    --ink: #f4eee2;
-    --ink-muted: #a79a85;
-    --border: #3a2f20;
+    --bg: #0d1716;
+    --ink: #e9f3f1;
+    --ink-muted: #93aeaa;
+    --border: #223634;
 
-    --accent: #e08a3c;
-    --accent-hover: #efa05a;
-    --accent-ink: #1a1208;
+    --accent: #4fa39d;
+    --accent-hover: #6cbab4;
+    --accent-ink: #06120f;
   }
 }
 
@@ -44,21 +44,26 @@ body {
 
 h1 {
   margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-family: var(--font-mono);
   font-size: 15px;
   font-weight: 700;
 }
+h1 img { width: 20px; height: 20px; display: block; border-radius: 5px; }
 
 button {
   background: var(--accent);
   color: var(--accent-ink);
   border: none;
   padding: 10px 14px;
-  border-radius: 7px;
+  border-radius: 8px;
   font-size: 13.5px;
   font-weight: 600;
   cursor: pointer;
   font-family: var(--font-sans);
+  transition: background 0.15s ease;
 }
 button:hover { background: var(--accent-hover); }
 button:disabled { opacity: 0.6; cursor: default; }

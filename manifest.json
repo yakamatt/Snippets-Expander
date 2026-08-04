@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Snippet Expander",
-  "version": "2.2.0",
-  "description": "Remplacement automatique de texte par des snippets prédéfinis — alternative gratuite et open-source à Blaze.Today.",
+  "version": "2.3.0",
+  "description": "Remplacement automatique de texte par des snippets prédéfinis — gratuit et open-source.",
   "permissions": ["storage", "activeTab", "alarms", "notifications"],
   "host_permissions": ["<all_urls>"],
   "background": {

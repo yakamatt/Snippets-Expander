@@ -3,42 +3,42 @@
   --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, "Liberation Mono", monospace;
   --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
 
-  --bg: #faf7f1;
+  --bg: #f2f8f7;
   --surface: #ffffff;
-  --ink: #221d14;
-  --ink-muted: #8a7f6e;
-  --ink-faint: #b4a993;
-  --border: #e7dfd0;
-  --border-strong: #d8cdb8;
+  --ink: #16262a;
+  --ink-muted: #5c7773;
+  --ink-faint: #99b3ae;
+  --border: #dbe9e6;
+  --border-strong: #c1d7d2;
 
-  --accent: #b5540a;
-  --accent-hover: #9c4708;
+  --accent: #2f7d78;
+  --accent-hover: #235f5b;
   --accent-ink: #ffffff;
-  --accent-wash: #fbeee0;
+  --accent-wash: #e2f2f0;
 
-  --info: #0e7c86;
-  --info-bg: #e2f2f2;
+  --info: #3b6fa0;
+  --info-bg: #e7f0f8;
 
-  --shadow: 0 1px 2px rgba(43, 32, 10, 0.06), 0 4px 14px rgba(43, 32, 10, 0.05);
+  --shadow: 0 1px 2px rgba(10, 35, 32, 0.06), 0 4px 14px rgba(10, 35, 32, 0.06);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #18140d;
-    --surface: #221c13;
-    --ink: #f4eee2;
-    --ink-muted: #a79a85;
-    --ink-faint: #6f6552;
-    --border: #3a2f20;
-    --border-strong: #4a3d29;
+    --bg: #0d1716;
+    --surface: #142320;
+    --ink: #e9f3f1;
+    --ink-muted: #93aeaa;
+    --ink-faint: #587471;
+    --border: #223634;
+    --border-strong: #304844;
 
-    --accent: #e08a3c;
-    --accent-hover: #efa05a;
-    --accent-ink: #1a1208;
-    --accent-wash: #3a2c16;
+    --accent: #4fa39d;
+    --accent-hover: #6cbab4;
+    --accent-ink: #06120f;
+    --accent-wash: #1b2f2c;
 
-    --info: #3fb8bd;
-    --info-bg: #1a2c2d;
+    --info: #6fa3cf;
+    --info-bg: #172733;
 
     --shadow: 0 1px 2px rgba(0, 0, 0, 0.35), 0 4px 16px rgba(0, 0, 0, 0.3);
   }
@@ -56,12 +56,16 @@ body {
 }
 
 header h1 {
+  display: flex;
+  align-items: center;
+  gap: 9px;
   margin: 0 0 6px;
   font-family: var(--font-mono);
   font-size: 21px;
   font-weight: 700;
   letter-spacing: -0.01em;
 }
+header h1 img { width: 24px; height: 24px; display: block; border-radius: 6px; }
 .subtitle { color: var(--ink-muted); margin: 0 0 4px; font-size: 13.5px; }
 
 main { max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
@@ -69,7 +73,7 @@ main { max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; 
 .card {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: 12px;
   padding: 22px 24px;
   box-shadow: var(--shadow);
 }
@@ -89,9 +93,10 @@ input[type=text], input[type=number], select {
   border: 1px solid var(--border-strong);
   background: var(--surface);
   color: var(--ink);
-  border-radius: 7px;
+  border-radius: 8px;
   font-size: 14px;
   font-family: var(--font-sans);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 input:focus, select:focus {
   outline: none;
@@ -104,11 +109,12 @@ button {
   color: var(--accent-ink);
   border: none;
   padding: 9px 16px;
-  border-radius: 7px;
+  border-radius: 8px;
   font-size: 13.5px;
   cursor: pointer;
   font-weight: 600;
   font-family: var(--font-sans);
+  transition: background 0.15s ease;
 }
 button:hover { background: var(--accent-hover); }
 button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
@@ -172,7 +178,7 @@ tr.folder-group-hidden { display: none; }
 .inline-input input { width: 90px; }
 
 .update-banner {
-  background: var(--accent-wash); color: var(--accent-hover); border-radius: 8px; padding: 10px 14px;
+  background: var(--accent-wash); color: var(--accent-hover); border-radius: 10px; padding: 10px 14px;
   font-size: 13px; margin-top: 14px; display: flex; justify-content: space-between; align-items: center; gap: 10px;
   border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent);
 }
@@ -182,7 +188,7 @@ tr.folder-group-hidden { display: none; }
 .update-btn:hover { background: var(--accent-hover); }
 
 .pin-banner {
-  background: var(--info-bg); color: var(--info); border-radius: 8px; padding: 10px 14px;
+  background: var(--info-bg); color: var(--info); border-radius: 10px; padding: 10px 14px;
   font-size: 13px; margin-top: 12px; display: flex; justify-content: space-between; align-items: center; gap: 10px;
   border: 1px solid color-mix(in srgb, var(--info) 25%, transparent);
 }
