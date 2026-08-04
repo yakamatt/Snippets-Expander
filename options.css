@@ -3,42 +3,42 @@
   --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, "Liberation Mono", monospace;
   --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
 
-  --bg: #f2f8f7;
+  --bg: #f2f4fb;
   --surface: #ffffff;
-  --ink: #16262a;
-  --ink-muted: #5c7773;
-  --ink-faint: #99b3ae;
-  --border: #dbe9e6;
-  --border-strong: #c1d7d2;
+  --ink: #16213d;
+  --ink-muted: #5b6a8f;
+  --ink-faint: #97a3c2;
+  --border: #dde3f3;
+  --border-strong: #c3cdea;
 
-  --accent: #2f7d78;
-  --accent-hover: #235f5b;
+  --accent: #2d51b2;
+  --accent-hover: #1f3d8f;
   --accent-ink: #ffffff;
-  --accent-wash: #e2f2f0;
+  --accent-wash: #e6ebfa;
 
-  --info: #3b6fa0;
-  --info-bg: #e7f0f8;
+  --info: #1c8a92;
+  --info-bg: #e2f4f5;
 
-  --shadow: 0 1px 2px rgba(10, 35, 32, 0.06), 0 4px 14px rgba(10, 35, 32, 0.06);
+  --shadow: 0 1px 2px rgba(15, 25, 55, 0.06), 0 4px 14px rgba(15, 25, 55, 0.06);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #0d1716;
-    --surface: #142320;
-    --ink: #e9f3f1;
-    --ink-muted: #93aeaa;
-    --ink-faint: #587471;
-    --border: #223634;
-    --border-strong: #304844;
+    --bg: #0d1220;
+    --surface: #161d33;
+    --ink: #e8ecf7;
+    --ink-muted: #8f9ac0;
+    --ink-faint: #576088;
+    --border: #26304e;
+    --border-strong: #333f63;
 
-    --accent: #4fa39d;
-    --accent-hover: #6cbab4;
-    --accent-ink: #06120f;
-    --accent-wash: #1b2f2c;
+    --accent: #6a8ce0;
+    --accent-hover: #8aa6ea;
+    --accent-ink: #0b1224;
+    --accent-wash: #1c2647;
 
-    --info: #6fa3cf;
-    --info-bg: #172733;
+    --info: #4fc2c9;
+    --info-bg: #123033;
 
     --shadow: 0 1px 2px rgba(0, 0, 0, 0.35), 0 4px 16px rgba(0, 0, 0, 0.3);
   }
