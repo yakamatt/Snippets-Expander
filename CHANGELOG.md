@@ -1,5 +1,8 @@
 # Changelog — Snippet Expander
 
+## v2.6.1 — 2026-08-04
+- **Corrige `Uncaught (in promise) TypeError: Failed to fetch`** dans `background.js` : les alarmes périodiques (`snippet-sync`, `snippet-update-check`) appelaient `pullFromSheet()`/`checkForUpdates()` sans intercepter les rejets, transformant toute erreur réseau normale (hors ligne, Web App ou GitHub temporairement injoignable) en promesse rejetée non gérée. Ces échecs sont désormais interceptés et simplement journalisés dans la console
+
 ## v2.6.0 — 2026-08-04
 - **Ajoute un bouton "✏️ Modifier les données"** dans le popup de l'icône, juste au-dessus de "🔄 Actualiser les données" : lien direct vers le tableau Google Sheets, pour éditer les snippets sans passer par la page Options
 

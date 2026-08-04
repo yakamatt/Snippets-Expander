@@ -65,9 +65,16 @@ function scheduleAlarms() {
   });
 }
 
+// Les erreurs (réseau hors ligne, Web App inaccessible, dépôt GitHub injoignable...) sont
+// attendues de temps en temps sur un déclenchement en arrière-plan : sans .catch() ici, un
+// simple "Failed to fetch" devenait une promesse rejetée non gérée ("Uncaught (in promise)").
 chrome.alarms.onAlarm.addListener((alarm) => {
-  if (alarm.name === SYNC_ALARM) pullFromSheet();
-  if (alarm.name === UPDATE_ALARM) checkForUpdates();
+  if (alarm.name === SYNC_ALARM) {
+    pullFromSheet().catch(e => console.error('[Snippet Expander] Échec de la synchro automatique :', e.message));
+  }
+  if (alarm.name === UPDATE_ALARM) {
+    checkForUpdates().catch(e => console.error('[Snippet Expander] Échec de la vérification de mise à jour :', e.message));
+  }
 });
 
 // ---------- Récupération en lecture seule depuis Google Sheets ----------
