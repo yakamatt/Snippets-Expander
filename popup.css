@@ -10,6 +10,7 @@
   --accent: #2d51b2;
   --accent-hover: #1f3d8f;
   --accent-ink: #ffffff;
+  --accent-wash: #e6ebfa;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -22,6 +23,7 @@
     --accent: #6a8ce0;
     --accent-hover: #8aa6ea;
     --accent-ink: #0b1224;
+    --accent-wash: #1c2647;
   }
 }
 
@@ -67,6 +69,23 @@ button {
 }
 button:hover { background: var(--accent-hover); }
 button:disabled { opacity: 0.6; cursor: default; }
+
+.btn-secondary {
+  display: block;
+  text-align: center;
+  background: var(--accent-wash);
+  color: var(--accent-hover);
+  border: none;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  text-decoration: none;
+  transition: filter 0.15s ease;
+}
+.btn-secondary:hover { filter: brightness(0.95); }
 
 .hint { margin: 0; color: var(--ink-muted); font-size: 12px; line-height: 1.5; min-height: 1.5em; }
 
