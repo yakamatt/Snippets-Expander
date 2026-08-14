@@ -10,8 +10,8 @@
     <h1><img src="icons/icon32.png" alt="" /> Snippet Expander</h1>
     <p class="subtitle">Vos snippets, en lecture seule, synchronisés depuis un tableau Google Sheets partagé.</p>
     <div class="button-row">
-      <button id="refresh-btn">🔄 Forcer l'actualisation des données depuis le tableau Google Sheets</button>
       <a class="link-btn" href="https://docs.google.com/spreadsheets/d/1H2rBzMQzZk74Bk2Z_Mo8lXAdYea7Mi7WfzVruBahd_I/edit?usp=sharing" target="_blank" rel="noopener noreferrer">📄 Ouvrir le tableau Google Sheets</a>
+      <button id="refresh-btn">🔄 Forcer l'actualisation des données depuis le tableau Google Sheets</button>
     </div>
     <p class="hint">Les données se mettent déjà à jour automatiquement (fréquence réglable dans Paramètres avancés) : ce bouton force une actualisation immédiate.</p>
     <p class="hint" id="refresh-status"></p>
@@ -61,6 +61,15 @@
             <div class="inline-input">
               <input type="number" id="autosync-minutes" min="0" max="1440" step="5" value="60" /> min
             </div>
+          </div>
+        </div>
+
+        <div class="advanced-block">
+          <h3>Intégration Aviso</h3>
+          <p class="hint">Sur aviso2.bureauveritas.com, affiche une icône à côté de "Dispositions réalisées" quand un snippet correspond au Référentiel de la ligne.</p>
+          <div class="row-between">
+            <label for="aviso-icon-enabled">Afficher l'icône de suggestion</label>
+            <input type="checkbox" id="aviso-icon-enabled" />
           </div>
         </div>
 

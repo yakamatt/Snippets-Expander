@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Snippet Expander",
-  "version": "2.6.1",
+  "version": "2.8.1",
   "description": "Remplacement automatique de texte par des snippets prédéfinis — gratuit et open-source.",
   "permissions": ["storage", "activeTab", "alarms", "notifications"],
   "host_permissions": ["<all_urls>"],

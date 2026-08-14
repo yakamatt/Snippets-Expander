@@ -1,5 +1,16 @@
 # Changelog — Snippet Expander
 
+## v2.8.1 — 2026-08-14
+- **Supprime toute mention de "Bureau Veritas"** dans les titres/commentaires (le domaine technique `aviso2.bureauveritas.com`, nécessaire au fonctionnement, est conservé)
+- **La case "Afficher l'icône de suggestion" (Intégration Aviso) est désormais décochée par défaut** : il faut l'activer explicitement dans Paramètres avancés pour voir apparaître les icônes sur aviso2.bureauveritas.com
+
+## v2.8.0 — 2026-08-14
+- **Inverse l'ordre** des liens/boutons en haut de la page Options : "📄 Ouvrir le tableau Google Sheets" apparaît maintenant avant "🔄 Forcer l'actualisation..."
+- **Ajoute une case à cocher "Afficher l'icône de suggestion"** (Paramètres avancés > Intégration Aviso), pour activer/désactiver l'icône de suggestion de snippet sur aviso2.bureauveritas.com sans avoir à désinstaller l'extension. Désactivée par défaut ; il faut l'activer explicitement pour voir apparaître les icônes
+
+## v2.7.0 — 2026-08-14
+- **Intégration Aviso** : sur `aviso2.bureauveritas.com`, quand le code du "Référentiel" d'une ligne (ex: "GN 4" dans "GN 4 - Procédure d'adaptation...") correspond au déclencheur d'un snippet, une icône apparaît à côté de "Dispositions réalisées". Un clic **ajoute** le contenu du snippet à la suite du texte déjà présent, sans jamais l'écraser. N'a aucun effet en dehors de ce site
+
 ## v2.6.1 — 2026-08-04
 - **Corrige `Uncaught (in promise) TypeError: Failed to fetch`** dans `background.js` : les alarmes périodiques (`snippet-sync`, `snippet-update-check`) appelaient `pullFromSheet()`/`checkForUpdates()` sans intercepter les rejets, transformant toute erreur réseau normale (hors ligne, Web App ou GitHub temporairement injoignable) en promesse rejetée non gérée. Ces échecs sont désormais interceptés et simplement journalisés dans la console
 
