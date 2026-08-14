@@ -5,10 +5,21 @@ let MAX_TRIGGER_LEN = 1;
 let EXPANSION_DELAY_MS = 1000;
 let pendingTimeoutId = null;
 
+// Déclarés avant loadSnippets() car référencés depuis son callback : chrome.storage est
+// documenté comme toujours asynchrone, mais ces déclarations restent en TDZ tant que le script
+// ne les a pas atteintes — les placer ici évite toute fragilité d'ordre d'exécution.
+const AVISO_HOSTNAME = 'aviso2.bureauveritas.com';
+const AVISO_ICON_CLASS = 'snippet-expander-aviso-icon';
+
+function isAvisoSite() {
+  return location.hostname === AVISO_HOSTNAME;
+}
+
 function loadSnippets() {
   chrome.storage.local.get(['snippets'], (res) => {
     SNIPPETS = res.snippets || [];
     MAX_TRIGGER_LEN = SNIPPETS.reduce((m, s) => Math.max(m, s.trigger.length), 1);
+    if (isAvisoSite()) scheduleAvisoScan();
   });
 }
 function loadSettings() {
@@ -24,6 +35,7 @@ chrome.storage.onChanged.addListener((changes, area) => {
   if (area === 'local' && changes.snippets) {
     SNIPPETS = changes.snippets.newValue || [];
     MAX_TRIGGER_LEN = SNIPPETS.reduce((m, s) => Math.max(m, s.trigger.length), 1);
+    if (isAvisoSite()) scheduleAvisoScan();
   }
   if (area === 'sync' && changes.syncSettings) {
     const s = changes.syncSettings.newValue || {};
@@ -198,3 +210,109 @@ document.addEventListener('input', (e) => {
     tryExpandInContentEditable();
   }
 }, true);
+
+// ---------- Intégration Aviso (Bureau Veritas) ----------
+// Sur les tableaux de saisie de rapport (colonnes "Référentiel" / "Dispositions réalisées"),
+// affiche une icône à côté de "Dispositions réalisées" quand le code du Référentiel (la partie
+// avant le premier " - ", ex: "GN 4" dans "GN 4 - Procédure d'adaptation...") correspond au
+// déclencheur d'un snippet. Un clic AJOUTE le contenu du snippet à la suite du texte déjà
+// présent (jamais d'écrasement). Limité à ce site : aucun effet sur les autres pages visitées.
+// (AVISO_HOSTNAME, AVISO_ICON_CLASS et isAvisoSite() sont déclarés en haut du fichier.)
+
+function normalizeRefCode(str) {
+  return String(str || '').replace(/\s+/g, '').toUpperCase();
+}
+
+// "GN 4 - Procédure d'adaptation..." -> "GN4"
+function extractRefCode(referentielText) {
+  const text = String(referentielText || '').trim();
+  const sepIndex = text.indexOf(' - ');
+  const code = sepIndex >= 0 ? text.slice(0, sepIndex) : text;
+  return normalizeRefCode(code);
+}
+
+// "/GN4" -> "GN4" (retire un préfixe usuel de déclencheur avant comparaison)
+function triggerToRefCode(trigger) {
+  return normalizeRefCode(String(trigger || '').replace(/^[/;:!]+/, ''));
+}
+
+function escapeHtmlAviso(str) {
+  const div = document.createElement('div');
+  div.textContent = str ?? '';
+  return div.innerHTML;
+}
+
+function appendAvisoSnippet(dispoCell, snippet) {
+  const textarea = dispoCell.querySelector('textarea.verification');
+  const displayDiv = dispoCell.querySelector('div.verification');
+  if (!textarea) return;
+
+  const addition = resolveContent(snippet.content);
+  const hasExisting = textarea.value.trim().length > 0;
+  const separator = hasExisting && !textarea.value.endsWith('\n') ? '\n' : '';
+  setNativeValue(textarea, textarea.value + separator + addition);
+  textarea.dispatchEvent(new Event('input', { bubbles: true }));
+  textarea.dispatchEvent(new Event('change', { bubbles: true }));
+
+  // Le <div> d'affichage et le <textarea> partagent le même id/name (probable bascule
+  // "lecture" <-> "édition" au clic) : on met les deux à jour pour rester cohérent quel que
+  // soit celui visible au moment du clic.
+  if (displayDiv) {
+    const escaped = escapeHtmlAviso(addition).replace(/\n/g, '<br>');
+    const currentHtml = displayDiv.innerHTML.trim();
+    displayDiv.innerHTML = currentHtml ? currentHtml + '<br>' + escaped : escaped;
+  }
+}
+
+function insertAvisoIcon(dispoCell, snippet) {
+  const container = dispoCell.querySelector('.dispositions.verif');
+  if (!container || container.querySelector('.' + AVISO_ICON_CLASS)) return;
+
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = AVISO_ICON_CLASS;
+  btn.title = `Ajouter le contenu du snippet "${snippet.trigger}"`;
+  btn.style.cssText = 'all:unset;cursor:pointer;display:inline-flex;vertical-align:middle;margin:0 6px 4px 0;';
+
+  const img = document.createElement('img');
+  img.src = chrome.runtime.getURL('icons/icon16.png');
+  img.alt = 'Snippet Expander';
+  img.style.cssText = 'width:16px;height:16px;display:block;';
+  btn.appendChild(img);
+
+  btn.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    appendAvisoSnippet(dispoCell, snippet);
+  });
+
+  container.insertBefore(btn, container.firstChild);
+}
+
+function scanAvisoTable() {
+  if (!SNIPPETS.length) return;
+  document.querySelectorAll('td.referentiel.content').forEach(refCell => {
+    const tr = refCell.closest('tr');
+    const dispoCell = tr && tr.querySelector('td.dispositions');
+    if (!dispoCell || !dispoCell.querySelector('textarea.verification')) return;
+
+    const refCode = extractRefCode(refCell.textContent);
+    if (!refCode) return;
+
+    const match = SNIPPETS.find(s => triggerToRefCode(s.trigger) === refCode);
+    if (match) insertAvisoIcon(dispoCell, match);
+  });
+}
+
+let avisoScanTimeoutId = null;
+function scheduleAvisoScan() {
+  if (avisoScanTimeoutId) clearTimeout(avisoScanTimeoutId);
+  avisoScanTimeoutId = setTimeout(scanAvisoTable, 150);
+}
+
+if (isAvisoSite()) {
+  // Les lignes se chargent/déplient dynamiquement (boutons d'expansion, AJAX) : on réagit à
+  // toute modification du DOM plutôt qu'à un seul passage au chargement de la page.
+  new MutationObserver(scheduleAvisoScan).observe(document.body, { childList: true, subtree: true });
+  scheduleAvisoScan();
+}

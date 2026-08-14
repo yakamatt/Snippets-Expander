@@ -1,5 +1,8 @@
 # Changelog — Snippet Expander
 
+## v2.7.0 — 2026-08-14
+- **Intégration Aviso (Bureau Veritas)** : sur `aviso2.bureauveritas.com`, quand le code du "Référentiel" d'une ligne (ex: "GN 4" dans "GN 4 - Procédure d'adaptation...") correspond au déclencheur d'un snippet, une icône apparaît à côté de "Dispositions réalisées". Un clic **ajoute** le contenu du snippet à la suite du texte déjà présent, sans jamais l'écraser. N'a aucun effet en dehors de ce site
+
 ## v2.6.1 — 2026-08-04
 - **Corrige `Uncaught (in promise) TypeError: Failed to fetch`** dans `background.js` : les alarmes périodiques (`snippet-sync`, `snippet-update-check`) appelaient `pullFromSheet()`/`checkForUpdates()` sans intercepter les rejets, transformant toute erreur réseau normale (hors ligne, Web App ou GitHub temporairement injoignable) en promesse rejetée non gérée. Ces échecs sont désormais interceptés et simplement journalisés dans la console
 
