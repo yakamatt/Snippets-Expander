@@ -3,7 +3,7 @@
 let SNIPPETS = [];
 let MAX_TRIGGER_LEN = 1;
 let EXPANSION_DELAY_MS = 1000;
-let AVISO_ICON_ENABLED = true;
+let AVISO_ICON_ENABLED = false;
 let pendingTimeoutId = null;
 
 // Déclarés avant loadSnippets() car référencés depuis son callback : chrome.storage est
@@ -27,7 +27,7 @@ function loadSettings() {
   chrome.storage.sync.get(['syncSettings'], (res) => {
     const s = res.syncSettings || {};
     EXPANSION_DELAY_MS = Number.isFinite(s.expansionDelayMs) ? s.expansionDelayMs : 1000;
-    AVISO_ICON_ENABLED = s.avisoIconEnabled !== false;
+    AVISO_ICON_ENABLED = s.avisoIconEnabled === true;
     if (isAvisoSite()) applyAvisoIconSetting();
   });
 }
@@ -43,7 +43,7 @@ chrome.storage.onChanged.addListener((changes, area) => {
   if (area === 'sync' && changes.syncSettings) {
     const s = changes.syncSettings.newValue || {};
     EXPANSION_DELAY_MS = Number.isFinite(s.expansionDelayMs) ? s.expansionDelayMs : 1000;
-    AVISO_ICON_ENABLED = s.avisoIconEnabled !== false;
+    AVISO_ICON_ENABLED = s.avisoIconEnabled === true;
     if (isAvisoSite()) applyAvisoIconSetting();
   }
 });
@@ -216,7 +216,7 @@ document.addEventListener('input', (e) => {
   }
 }, true);
 
-// ---------- Intégration Aviso (Bureau Veritas) ----------
+// ---------- Intégration Aviso ----------
 // Sur les tableaux de saisie de rapport (colonnes "Référentiel" / "Dispositions réalisées"),
 // affiche une icône à côté de "Dispositions réalisées" quand le code du Référentiel (la partie
 // avant le premier " - ", ex: "GN 4" dans "GN 4 - Procédure d'adaptation...") correspond au
