@@ -1,4 +1,4 @@
-const BUILD_DATE = '2026-08-14'; // v2.8.1
+const BUILD_DATE = '2026-08-14'; // v2.8.2
 const DEFAULT_GITHUB_URL = 'https://raw.githubusercontent.com/yakamatt/Snippets-Expander/main';
 
 let snippets = [];

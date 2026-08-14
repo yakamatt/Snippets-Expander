@@ -1,5 +1,9 @@
 # Changelog — Snippet Expander
 
+## v2.8.2 — 2026-08-14
+- **Retire l'affichage du domaine "aviso2.bureauveritas.com"** dans Paramètres avancés > Intégration Aviso (texte reformulé en "l'application Aviso")
+- **Réduit de moitié la taille de l'icône de suggestion** affichée sur Aviso (16px → 8px)
+
 ## v2.8.1 — 2026-08-14
 - **Supprime toute mention de "Bureau Veritas"** dans les titres/commentaires (le domaine technique `aviso2.bureauveritas.com`, nécessaire au fonctionnement, est conservé)
 - **La case "Afficher l'icône de suggestion" (Intégration Aviso) est désormais décochée par défaut** : il faut l'activer explicitement dans Paramètres avancés pour voir apparaître les icônes sur aviso2.bureauveritas.com

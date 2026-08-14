@@ -282,7 +282,7 @@ function insertAvisoIcon(dispoCell, snippet) {
   const img = document.createElement('img');
   img.src = chrome.runtime.getURL('icons/icon16.png');
   img.alt = 'Snippet Expander';
-  img.style.cssText = 'width:16px;height:16px;display:block;';
+  img.style.cssText = 'width:8px;height:8px;display:block;';
   btn.appendChild(img);
 
   btn.addEventListener('click', (e) => {
