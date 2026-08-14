@@ -3,6 +3,7 @@
 let SNIPPETS = [];
 let MAX_TRIGGER_LEN = 1;
 let EXPANSION_DELAY_MS = 1000;
+let AVISO_ICON_ENABLED = true;
 let pendingTimeoutId = null;
 
 // Déclarés avant loadSnippets() car référencés depuis son callback : chrome.storage est
@@ -26,6 +27,8 @@ function loadSettings() {
   chrome.storage.sync.get(['syncSettings'], (res) => {
     const s = res.syncSettings || {};
     EXPANSION_DELAY_MS = Number.isFinite(s.expansionDelayMs) ? s.expansionDelayMs : 1000;
+    AVISO_ICON_ENABLED = s.avisoIconEnabled !== false;
+    if (isAvisoSite()) applyAvisoIconSetting();
   });
 }
 loadSnippets();
@@ -40,6 +43,8 @@ chrome.storage.onChanged.addListener((changes, area) => {
   if (area === 'sync' && changes.syncSettings) {
     const s = changes.syncSettings.newValue || {};
     EXPANSION_DELAY_MS = Number.isFinite(s.expansionDelayMs) ? s.expansionDelayMs : 1000;
+    AVISO_ICON_ENABLED = s.avisoIconEnabled !== false;
+    if (isAvisoSite()) applyAvisoIconSetting();
   }
 });
 
@@ -290,7 +295,7 @@ function insertAvisoIcon(dispoCell, snippet) {
 }
 
 function scanAvisoTable() {
-  if (!SNIPPETS.length) return;
+  if (!AVISO_ICON_ENABLED || !SNIPPETS.length) return;
   document.querySelectorAll('td.referentiel.content').forEach(refCell => {
     const tr = refCell.closest('tr');
     const dispoCell = tr && tr.querySelector('td.dispositions');
@@ -308,6 +313,16 @@ let avisoScanTimeoutId = null;
 function scheduleAvisoScan() {
   if (avisoScanTimeoutId) clearTimeout(avisoScanTimeoutId);
   avisoScanTimeoutId = setTimeout(scanAvisoTable, 150);
+}
+
+// Réagit immédiatement à un changement du réglage "Afficher l'icône de suggestion" (Paramètres
+// avancés) : active un scan si on vient de le réactiver, ou retire les icônes déjà posées sinon.
+function applyAvisoIconSetting() {
+  if (AVISO_ICON_ENABLED) {
+    scheduleAvisoScan();
+  } else {
+    document.querySelectorAll('.' + AVISO_ICON_CLASS).forEach(el => el.remove());
+  }
 }
 
 if (isAvisoSite()) {

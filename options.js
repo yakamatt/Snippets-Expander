@@ -1,4 +1,4 @@
-const BUILD_DATE = '2026-08-14'; // v2.7.0
+const BUILD_DATE = '2026-08-14'; // v2.8.0
 const DEFAULT_GITHUB_URL = 'https://raw.githubusercontent.com/yakamatt/Snippets-Expander/main';
 
 let snippets = [];
@@ -22,6 +22,7 @@ function load() {
     document.getElementById('autosync-minutes').value = s.autoSyncMinutes ?? 60;
     document.getElementById('expansion-delay').value = s.expansionDelayMs ?? 500;
     document.getElementById('local-folder-path').value = s.localFolderPath || '';
+    document.getElementById('aviso-icon-enabled').checked = s.avisoIconEnabled !== false;
     document.getElementById('auto-check-updates').checked = !!s.autoCheckUpdates;
   });
   renderUpdateMode();
@@ -217,6 +218,10 @@ document.getElementById('expansion-delay').addEventListener('change', (e) => {
 
 document.getElementById('local-folder-path').addEventListener('change', (e) => {
   updateSyncSettings({ localFolderPath: e.target.value.trim() });
+});
+
+document.getElementById('aviso-icon-enabled').addEventListener('change', (e) => {
+  updateSyncSettings({ avisoIconEnabled: e.target.checked });
 });
 
 document.getElementById('auto-check-updates').addEventListener('change', (e) => {

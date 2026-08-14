@@ -1,5 +1,9 @@
 # Changelog — Snippet Expander
 
+## v2.8.0 — 2026-08-14
+- **Inverse l'ordre** des liens/boutons en haut de la page Options : "📄 Ouvrir le tableau Google Sheets" apparaît maintenant avant "🔄 Forcer l'actualisation..."
+- **Ajoute une case à cocher "Afficher l'icône de suggestion"** (Paramètres avancés > Intégration Aviso), pour activer/désactiver l'icône de suggestion de snippet sur aviso2.bureauveritas.com sans avoir à désinstaller l'extension. Activée par défaut ; la désactiver retire immédiatement les icônes déjà affichées
+
 ## v2.7.0 — 2026-08-14
 - **Intégration Aviso (Bureau Veritas)** : sur `aviso2.bureauveritas.com`, quand le code du "Référentiel" d'une ligne (ex: "GN 4" dans "GN 4 - Procédure d'adaptation...") correspond au déclencheur d'un snippet, une icône apparaît à côté de "Dispositions réalisées". Un clic **ajoute** le contenu du snippet à la suite du texte déjà présent, sans jamais l'écraser. N'a aucun effet en dehors de ce site
 
