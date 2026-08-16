@@ -3,7 +3,7 @@
 let SNIPPETS = [];
 let MAX_TRIGGER_LEN = 1;
 let EXPANSION_DELAY_MS = 1000;
-let AVISO_ICON_ENABLED = false;
+let AVISO_ICON_ENABLED = true;
 let pendingTimeoutId = null;
 
 // Déclarés avant loadSnippets() car référencés depuis son callback : chrome.storage est
@@ -27,7 +27,7 @@ function loadSettings() {
   chrome.storage.sync.get(['syncSettings'], (res) => {
     const s = res.syncSettings || {};
     EXPANSION_DELAY_MS = Number.isFinite(s.expansionDelayMs) ? s.expansionDelayMs : 1000;
-    AVISO_ICON_ENABLED = s.avisoIconEnabled === true;
+    AVISO_ICON_ENABLED = s.avisoIconEnabled !== false;
     if (isAvisoSite()) applyAvisoIconSetting();
   });
 }
@@ -43,7 +43,7 @@ chrome.storage.onChanged.addListener((changes, area) => {
   if (area === 'sync' && changes.syncSettings) {
     const s = changes.syncSettings.newValue || {};
     EXPANSION_DELAY_MS = Number.isFinite(s.expansionDelayMs) ? s.expansionDelayMs : 1000;
-    AVISO_ICON_ENABLED = s.avisoIconEnabled === true;
+    AVISO_ICON_ENABLED = s.avisoIconEnabled !== false;
     if (isAvisoSite()) applyAvisoIconSetting();
   }
 });
@@ -282,7 +282,7 @@ function insertAvisoIcon(dispoCell, snippet) {
   const img = document.createElement('img');
   img.src = chrome.runtime.getURL('icons/icon16.png');
   img.alt = 'Snippet Expander';
-  img.style.cssText = 'width:8px;height:8px;display:block;';
+  img.style.cssText = 'width:16px;height:16px;display:block;';
   btn.appendChild(img);
 
   btn.addEventListener('click', (e) => {

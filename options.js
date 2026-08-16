@@ -1,4 +1,4 @@
-const BUILD_DATE = '2026-08-14'; // v2.8.3
+const BUILD_DATE = '2026-08-16'; // v2.9.0
 const DEFAULT_GITHUB_URL = 'https://raw.githubusercontent.com/yakamatt/Snippets-Expander/main';
 
 let snippets = [];
@@ -22,7 +22,7 @@ function load() {
     document.getElementById('autosync-minutes').value = s.autoSyncMinutes ?? 60;
     document.getElementById('expansion-delay').value = s.expansionDelayMs ?? 500;
     document.getElementById('local-folder-path').value = s.localFolderPath || '';
-    document.getElementById('aviso-icon-enabled').checked = s.avisoIconEnabled === true;
+    document.getElementById('aviso-icon-enabled').checked = s.avisoIconEnabled !== false;
     document.getElementById('auto-check-updates').checked = !!s.autoCheckUpdates;
   });
   renderUpdateMode();

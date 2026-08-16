@@ -18,7 +18,7 @@ chrome.runtime.onInstalled.addListener((details) => {
       webAppUrl: DEFAULT_WEBAPP_URL,
       autoSyncMinutes: 60,
       expansionDelayMs: 500,
-      avisoIconEnabled: false,
+      avisoIconEnabled: true,
       autoCheckUpdates: true
     };
     const merged = { ...defaults, ...(syncSettings || {}) };
