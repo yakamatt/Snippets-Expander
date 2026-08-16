@@ -1,5 +1,9 @@
 # Changelog — Snippet Expander
 
+## v2.9.0 — 2026-08-16
+- **Agrandit l'icône de suggestion Aviso** : 8px → 16px
+- **La case "Afficher l'icône de suggestion" (Intégration Aviso) est de nouveau cochée par défaut**
+
 ## v2.8.3 — 2026-08-14
 - **Corrige l'icône de suggestion Aviso qui ne s'affichait pas** (carré gris à la place) : `icons/icon16.png` n'était pas déclarée comme ressource accessible aux pages web (`web_accessible_resources`), une exigence de Manifest V3 pour qu'un script de contenu puisse injecter une image de l'extension dans une page. Ajoutée, restreinte à `aviso2.bureauveritas.com` uniquement
 
