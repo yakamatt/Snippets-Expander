@@ -1,5 +1,8 @@
 # Changelog — Snippet Expander
 
+## v2.8.3 — 2026-08-14
+- **Corrige l'icône de suggestion Aviso qui ne s'affichait pas** (carré gris à la place) : `icons/icon16.png` n'était pas déclarée comme ressource accessible aux pages web (`web_accessible_resources`), une exigence de Manifest V3 pour qu'un script de contenu puisse injecter une image de l'extension dans une page. Ajoutée, restreinte à `aviso2.bureauveritas.com` uniquement
+
 ## v2.8.2 — 2026-08-14
 - **Retire l'affichage du domaine "aviso2.bureauveritas.com"** dans Paramètres avancés > Intégration Aviso (texte reformulé en "l'application Aviso")
 - **Réduit de moitié la taille de l'icône de suggestion** affichée sur Aviso (16px → 8px)
