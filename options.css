@@ -168,6 +168,9 @@ tr.folder-group-hidden { display: none; }
 .link-btn { background: none; color: var(--accent-hover); padding: 4px 0; font-weight: 600; }
 .link-btn:hover { background: none; text-decoration: underline; }
 
+.folder-controls { display: flex; gap: 14px; margin: 2px 0 8px; }
+.folder-controls .link-btn { font-size: 12px; padding: 2px 0; }
+
 #advanced-panel { margin-top: 14px; display: flex; flex-direction: column; gap: 18px; }
 #advanced-panel[hidden] { display: none; }
 .advanced-block { border-top: 1px solid var(--border); padding-top: 14px; }
