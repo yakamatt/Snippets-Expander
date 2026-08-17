@@ -1,8 +1,9 @@
-const BUILD_DATE = '2026-08-16'; // v2.9.0
+const BUILD_DATE = '2026-08-17'; // v2.10.0
 const DEFAULT_GITHUB_URL = 'https://raw.githubusercontent.com/yakamatt/Snippets-Expander/main';
 
 let snippets = [];
-const collapsedFolders = new Set();
+// Dossiers explicitement dépliés : vide par défaut, donc tous les dossiers démarrent fermés.
+const expandedFolders = new Set();
 
 const bodyEl = document.getElementById('snippets-body');
 const countEl = document.getElementById('count');
@@ -149,7 +150,7 @@ function render() {
 
     const headerTr = document.createElement('tr');
     headerTr.className = 'folder-group-header';
-    const isCollapsed = collapsedFolders.has(folderName);
+    const isCollapsed = !expandedFolders.has(folderName);
     if (isCollapsed) headerTr.classList.add('collapsed');
     const color = folderName
       ? folderColor(folderName)
@@ -169,8 +170,8 @@ function render() {
 
     headerTr.appendChild(headerTd);
     headerTr.addEventListener('click', () => {
-      if (collapsedFolders.has(folderName)) collapsedFolders.delete(folderName);
-      else collapsedFolders.add(folderName);
+      if (expandedFolders.has(folderName)) expandedFolders.delete(folderName);
+      else expandedFolders.add(folderName);
       render();
     });
     bodyEl.appendChild(headerTr);
@@ -198,6 +199,17 @@ function renderSnippetRow(s) {
 
 searchEl.addEventListener('input', render);
 folderFilterEl.addEventListener('change', render);
+
+document.getElementById('expand-all-btn').addEventListener('click', () => {
+  expandedFolders.clear();
+  ['', ...getFolders()].forEach(f => expandedFolders.add(f));
+  render();
+});
+
+document.getElementById('collapse-all-btn').addEventListener('click', () => {
+  expandedFolders.clear();
+  render();
+});
 
 // --- Paramètres avancés ---
 

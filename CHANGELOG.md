@@ -1,5 +1,9 @@
 # Changelog — Snippet Expander
 
+## v2.10.0 — 2026-08-17
+- **Les dossiers de "Mes snippets" démarrent désormais fermés par défaut** (auparavant tous ouverts)
+- **Ajoute deux boutons discrets "▾ Tout ouvrir" / "▸ Tout fermer"** au-dessus du tableau, pour déplier/replier tous les dossiers en un clic
+
 ## v2.9.0 — 2026-08-16
 - **Agrandit l'icône de suggestion Aviso** : 8px → 16px
 - **La case "Afficher l'icône de suggestion" (Intégration Aviso) est de nouveau cochée par défaut**
