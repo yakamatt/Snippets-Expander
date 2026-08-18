@@ -3,6 +3,7 @@
 ## v2.10.0 — 2026-08-17
 - **Les dossiers de "Mes snippets" démarrent désormais fermés par défaut** (auparavant tous ouverts)
 - **Ajoute deux boutons discrets "▾ Tout ouvrir" / "▸ Tout fermer"** au-dessus du tableau, pour déplier/replier tous les dossiers en un clic
+- **Corrige le contenu ajouté en double** au clic sur l'icône de suggestion Aviso : l'évènement `input` émis après l'insertion réveillait l'expansion automatique de l'extension (qui réécrivait le snippet), et le `<div>` d'affichage, déjà resynchronisé par Aviso, recevait une seconde copie de notre côté
 
 ## v2.9.0 — 2026-08-16
 - **Agrandit l'icône de suggestion Aviso** : 8px → 16px

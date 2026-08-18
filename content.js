@@ -258,13 +258,14 @@ function appendAvisoSnippet(dispoCell, snippet) {
   setNativeValue(textarea, textarea.value + separator + addition);
   textarea.dispatchEvent(new Event('change', { bubbles: true }));
 
-  // Le <div> d'affichage et le <textarea> partagent le même id/name (probable bascule
-  // "lecture" <-> "édition" au clic) : on met les deux à jour pour rester cohérent quel que
-  // soit celui visible au moment du clic.
+  // Le <div> d'affichage et le <textarea> partagent le même id/name (bascule "lecture" <->
+  // "édition" au clic) : on recopie la valeur complète du textarea, plutôt que d'y ajouter le
+  // snippet. Aviso resynchronise déjà ce <div> depuis le textarea sur l'évènement 'change'
+  // ci-dessus (dispatchEvent est synchrone, son handler a donc fini de s'exécuter ici) : un
+  // ajout de notre côté afficherait le snippet en double. Recopier reste correct dans tous les
+  // cas, y compris si Aviso ne resynchronise rien.
   if (displayDiv) {
-    const escaped = escapeHtmlAviso(addition).replace(/\n/g, '<br>');
-    const currentHtml = displayDiv.innerHTML.trim();
-    displayDiv.innerHTML = currentHtml ? currentHtml + '<br>' + escaped : escaped;
+    displayDiv.innerHTML = escapeHtmlAviso(textarea.value).replace(/\n/g, '<br>');
   }
 }
 
