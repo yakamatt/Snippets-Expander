@@ -256,7 +256,6 @@ function appendAvisoSnippet(dispoCell, snippet) {
   const hasExisting = textarea.value.trim().length > 0;
   const separator = hasExisting && !textarea.value.endsWith('\n') ? '\n' : '';
   setNativeValue(textarea, textarea.value + separator + addition);
-  textarea.dispatchEvent(new Event('input', { bubbles: true }));
   textarea.dispatchEvent(new Event('change', { bubbles: true }));
 
   // Le <div> d'affichage et le <textarea> partagent le même id/name (probable bascule
