@@ -21,9 +21,9 @@ Remplace automatiquement un texte court (ex: `;sig`) par un texte prédéfini, d
 - **Mise à jour des données** : les données se mettent à jour automatiquement en arrière-plan (fréquence réglable, toutes les heures par défaut — voir Paramètres avancés). Pour forcer une actualisation immédiate : bouton "🔄 Actualiser les données" dans le popup de l'icône, ou "🔄 Forcer l'actualisation des données depuis le tableau Google Sheets" en haut de la page Options.
 - **Dossiers** : les snippets sont groupés par dossier (colonne `folder` du Sheet) pour la navigation ; utilisez le filtre en haut de la liste pour n'afficher qu'un dossier, ou la recherche pour filtrer par texte.
 - **Zone de test** : sur la page Options, un champ de texte libre permet de taper un déclencheur existant et de voir l'expansion se produire en direct — pratique pour vérifier que tout fonctionne sans avoir à ouvrir un autre site.
-- **Intégration Aviso** : sur l'application Aviso, deux icônes apparaissent automatiquement à côté de "Dispositions réalisées" dès que le code du "Référentiel" de la ligne (ex: "GN 4") correspond au déclencheur d'un snippet :
-  - la **première** (logo de l'extension) **ajoute** le contenu du snippet à la suite du texte déjà saisi, sans jamais l'écraser ;
-  - la **seconde** (favicon de sitesecurite.com) ouvre dans un nouvel onglet l'article du règlement de sécurité ERP correspondant, ancré directement sur l'article visé. Elle n'apparaît que si le code correspond à un article ERP connu (voir `sitesecurite-articles.js`).
+- **Intégration Aviso** : sur l'application Aviso, des icônes apparaissent automatiquement à côté de "Dispositions réalisées", selon le code du "Référentiel" de la ligne (ex: "GN 4") :
+  - l'icône **Snippet Expander** **ajoute** le contenu du snippet à la suite du texte déjà saisi, sans jamais l'écraser. Elle n'apparaît que si le code correspond au déclencheur d'un snippet ;
+  - l'icône **sitesecurite.com** ouvre dans un nouvel onglet l'article du règlement de sécurité ERP correspondant, ancré directement sur l'article visé. Elle s'affiche dès que le code est un article ERP connu (voir `sitesecurite-articles.js`), **y compris sur les lignes sans snippet** — consulter le texte reste utile quand il n'y a rien à insérer.
 
   Désactivable via le réglage **Intégration Aviso**, accessible depuis le popup de l'icône ou dans Paramètres avancés. Sans effet sur les autres sites.
 
