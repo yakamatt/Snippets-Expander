@@ -273,9 +273,8 @@ function appendAvisoSnippet(dispoCell, snippet) {
 const AVISO_BTN_STYLE = 'all:unset;cursor:pointer;display:inline-flex;vertical-align:middle;margin:0 6px 4px 0;';
 const AVISO_IMG_STYLE = 'width:16px;height:16px;display:block;';
 
-function insertAvisoIcon(dispoCell, snippet, refCode) {
-  const container = dispoCell.querySelector('.dispositions.verif');
-  if (!container || container.querySelector('.' + AVISO_ICON_CLASS)) return;
+function insertAvisoIcon(container, dispoCell, snippet) {
+  if (container.querySelector('.' + AVISO_ICON_CLASS)) return;
 
   const btn = document.createElement('button');
   btn.type = 'button';
@@ -296,14 +295,17 @@ function insertAvisoIcon(dispoCell, snippet, refCode) {
   });
 
   container.insertBefore(btn, container.firstChild);
-  insertAvisoLawLink(container, btn, refCode);
 }
 
-// Second bouton, juste après celui d'insertion : ouvre le texte réglementaire correspondant sur
-// sitesecurite.com, dans un nouvel onglet. Un vrai <a> (plutôt qu'un window.open au clic) pour
-// conserver les usages du navigateur : clic milieu, Ctrl+clic, "ouvrir dans un nouvel onglet".
+// Lien vers le texte réglementaire correspondant sur sitesecurite.com, ouvert dans un nouvel
+// onglet. Indépendant du bouton d'insertion : il ne dépend que du Référentiel de la ligne, et
+// s'affiche donc aussi sur les lignes sans snippet (consulter l'article reste utile même quand
+// il n'y a rien à insérer). Un vrai <a> (plutôt qu'un window.open au clic) pour conserver les
+// usages du navigateur : clic milieu, Ctrl+clic, "ouvrir dans un nouvel onglet".
 // Absent si le code ne correspond à aucun article ERP connu, plutôt que de mener à une 404.
-function insertAvisoLawLink(container, afterEl, refCode) {
+function insertAvisoLawLink(container, refCode) {
+  if (container.querySelector('.' + AVISO_LAW_CLASS)) return;
+
   const url = sitesecuriteUrlForCode(refCode);
   if (!url) return;
 
@@ -325,11 +327,16 @@ function insertAvisoLawLink(container, afterEl, refCode) {
   // lieu — on empêche juste Aviso de réagir au clic (bascule lecture/édition de la cellule).
   link.addEventListener('click', (e) => e.stopPropagation());
 
-  afterEl.insertAdjacentElement('afterend', link);
+  // Le bouton d'insertion est toujours posé en tête de conteneur : se placer juste après lui
+  // quand il existe garde l'ordre [insertion, texte réglementaire], quel que soit celui des
+  // deux qui a été inséré en premier (les snippets peuvent arriver après un premier scan).
+  const snippetBtn = container.querySelector('.' + AVISO_ICON_CLASS);
+  if (snippetBtn) snippetBtn.insertAdjacentElement('afterend', link);
+  else container.insertBefore(link, container.firstChild);
 }
 
 function scanAvisoTable() {
-  if (!AVISO_ICON_ENABLED || !SNIPPETS.length) return;
+  if (!AVISO_ICON_ENABLED) return;
   document.querySelectorAll('td.referentiel.content').forEach(refCell => {
     const tr = refCell.closest('tr');
     const dispoCell = tr && tr.querySelector('td.dispositions');
@@ -338,8 +345,12 @@ function scanAvisoTable() {
     const refCode = extractRefCode(refCell.textContent);
     if (!refCode) return;
 
+    const container = dispoCell.querySelector('.dispositions.verif');
+    if (!container) return;
+
     const match = SNIPPETS.find(s => triggerToRefCode(s.trigger) === refCode);
-    if (match) insertAvisoIcon(dispoCell, match, refCode);
+    if (match) insertAvisoIcon(container, dispoCell, match);
+    insertAvisoLawLink(container, refCode);
   });
 }
 

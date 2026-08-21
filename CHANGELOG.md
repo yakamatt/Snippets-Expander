@@ -1,5 +1,8 @@
 # Changelog — Snippet Expander
 
+## v2.12.0 — 2026-08-21
+- **L'icône "texte réglementaire" s'affiche désormais même sans snippet correspondant** : elle ne dépend plus que du Référentiel de la ligne. Une ligne "AM 13", sans snippet `/AM13` défini, propose donc quand même le lien vers l'article — consulter le texte reste utile quand il n'y a rien à insérer. L'icône d'insertion, elle, continue de n'apparaître que si un snippet correspond
+
 ## v2.11.0 — 2026-08-21
 - **Nouveau bouton "texte réglementaire" sur Aviso** : à côté de l'icône d'insertion, une seconde icône (la favicon de sitesecurite.com, même taille de 16 px) ouvre dans un nouvel onglet l'article du règlement de sécurité ERP correspondant au Référentiel de la ligne — par exemple `GN 4` renvoie vers `sitesecurite.com/contenu/_erp/erpgn/gn04a10.php?id=GN4`, ancré directement sur l'article
 - Le bouton n'apparaît que si le code correspond à un article ERP connu : un Référentiel hors règlement ERP n'affiche aucun lien, plutôt qu'un lien menant à une page inexistante
