@@ -1,5 +1,11 @@
 # Changelog — Snippet Expander
 
+## v2.11.0 — 2026-08-21
+- **Nouveau bouton "texte réglementaire" sur Aviso** : à côté de l'icône d'insertion, une seconde icône (la favicon de sitesecurite.com, même taille de 16 px) ouvre dans un nouvel onglet l'article du règlement de sécurité ERP correspondant au Référentiel de la ligne — par exemple `GN 4` renvoie vers `sitesecurite.com/contenu/_erp/erpgn/gn04a10.php?id=GN4`, ancré directement sur l'article
+- Le bouton n'apparaît que si le code correspond à un article ERP connu : un Référentiel hors règlement ERP n'affiche aucun lien, plutôt qu'un lien menant à une page inexistante
+- **Renomme le réglage "Afficher l'icône de suggestion" en "Intégration Aviso"** (il commande désormais les deux icônes)
+- **Ce réglage est aussi accessible depuis le popup de l'icône** de la barre d'outils, pour l'activer/désactiver en un clic sans ouvrir la page Paramètres
+
 ## v2.10.0 — 2026-08-17
 - **Les dossiers de "Mes snippets" démarrent désormais fermés par défaut** (auparavant tous ouverts)
 - **Ajoute deux boutons discrets "▾ Tout ouvrir" / "▸ Tout fermer"** au-dessus du tableau, pour déplier/replier tous les dossiers en un clic
