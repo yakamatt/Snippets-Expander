@@ -11,6 +11,7 @@ let pendingTimeoutId = null;
 // ne les a pas atteintes — les placer ici évite toute fragilité d'ordre d'exécution.
 const AVISO_HOSTNAME = 'aviso2.bureauveritas.com';
 const AVISO_ICON_CLASS = 'snippet-expander-aviso-icon';
+const AVISO_LAW_CLASS = 'snippet-expander-aviso-law';
 
 function isAvisoSite() {
   return location.hostname === AVISO_HOSTNAME;
@@ -269,7 +270,10 @@ function appendAvisoSnippet(dispoCell, snippet) {
   }
 }
 
-function insertAvisoIcon(dispoCell, snippet) {
+const AVISO_BTN_STYLE = 'all:unset;cursor:pointer;display:inline-flex;vertical-align:middle;margin:0 6px 4px 0;';
+const AVISO_IMG_STYLE = 'width:16px;height:16px;display:block;';
+
+function insertAvisoIcon(dispoCell, snippet, refCode) {
   const container = dispoCell.querySelector('.dispositions.verif');
   if (!container || container.querySelector('.' + AVISO_ICON_CLASS)) return;
 
@@ -277,12 +281,12 @@ function insertAvisoIcon(dispoCell, snippet) {
   btn.type = 'button';
   btn.className = AVISO_ICON_CLASS;
   btn.title = `Ajouter le contenu du snippet "${snippet.trigger}"`;
-  btn.style.cssText = 'all:unset;cursor:pointer;display:inline-flex;vertical-align:middle;margin:0 6px 4px 0;';
+  btn.style.cssText = AVISO_BTN_STYLE;
 
   const img = document.createElement('img');
   img.src = chrome.runtime.getURL('icons/icon16.png');
   img.alt = 'Snippet Expander';
-  img.style.cssText = 'width:16px;height:16px;display:block;';
+  img.style.cssText = AVISO_IMG_STYLE;
   btn.appendChild(img);
 
   btn.addEventListener('click', (e) => {
@@ -292,6 +296,36 @@ function insertAvisoIcon(dispoCell, snippet) {
   });
 
   container.insertBefore(btn, container.firstChild);
+  insertAvisoLawLink(container, btn, refCode);
+}
+
+// Second bouton, juste après celui d'insertion : ouvre le texte réglementaire correspondant sur
+// sitesecurite.com, dans un nouvel onglet. Un vrai <a> (plutôt qu'un window.open au clic) pour
+// conserver les usages du navigateur : clic milieu, Ctrl+clic, "ouvrir dans un nouvel onglet".
+// Absent si le code ne correspond à aucun article ERP connu, plutôt que de mener à une 404.
+function insertAvisoLawLink(container, afterEl, refCode) {
+  const url = sitesecuriteUrlForCode(refCode);
+  if (!url) return;
+
+  const link = document.createElement('a');
+  link.className = AVISO_LAW_CLASS;
+  link.href = url;
+  link.target = '_blank';
+  link.rel = 'noopener noreferrer';
+  link.title = `Consulter le texte réglementaire ${refCode} sur sitesecurite.com`;
+  link.style.cssText = AVISO_BTN_STYLE;
+
+  const img = document.createElement('img');
+  img.src = chrome.runtime.getURL('icons/sitesecurite32.png');
+  img.alt = `Texte réglementaire ${refCode}`;
+  img.style.cssText = AVISO_IMG_STYLE;
+  link.appendChild(img);
+
+  // Seulement stopPropagation : sans preventDefault, la navigation par défaut du lien a bien
+  // lieu — on empêche juste Aviso de réagir au clic (bascule lecture/édition de la cellule).
+  link.addEventListener('click', (e) => e.stopPropagation());
+
+  afterEl.insertAdjacentElement('afterend', link);
 }
 
 function scanAvisoTable() {
@@ -305,7 +339,7 @@ function scanAvisoTable() {
     if (!refCode) return;
 
     const match = SNIPPETS.find(s => triggerToRefCode(s.trigger) === refCode);
-    if (match) insertAvisoIcon(dispoCell, match);
+    if (match) insertAvisoIcon(dispoCell, match, refCode);
   });
 }
 
@@ -315,13 +349,14 @@ function scheduleAvisoScan() {
   avisoScanTimeoutId = setTimeout(scanAvisoTable, 150);
 }
 
-// Réagit immédiatement à un changement du réglage "Afficher l'icône de suggestion" (Paramètres
-// avancés) : active un scan si on vient de le réactiver, ou retire les icônes déjà posées sinon.
+// Réagit immédiatement à un changement du réglage "Intégration Aviso" (page Paramètres ou popup
+// de l'icône) : relance un scan si on vient de le réactiver, ou retire les icônes déjà posées.
 function applyAvisoIconSetting() {
   if (AVISO_ICON_ENABLED) {
     scheduleAvisoScan();
   } else {
-    document.querySelectorAll('.' + AVISO_ICON_CLASS).forEach(el => el.remove());
+    document.querySelectorAll('.' + AVISO_ICON_CLASS + ', .' + AVISO_LAW_CLASS)
+      .forEach(el => el.remove());
   }
 }
 

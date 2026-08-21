@@ -17,6 +17,23 @@ document.getElementById('refresh-btn').addEventListener('click', () => {
   });
 });
 
+// Réglage "Intégration Aviso", dupliqué ici depuis la page Paramètres : c'est le seul réglage
+// qu'on active/désactive au fil de la journée selon qu'on travaille ou non sur Aviso, d'où sa
+// place dans le popup. Le content script écoute chrome.storage.onChanged et applique le
+// changement immédiatement, sans rechargement de la page Aviso.
+const avisoEl = document.getElementById('aviso-icon-enabled');
+
+chrome.storage.sync.get(['syncSettings'], (res) => {
+  avisoEl.checked = (res.syncSettings || {}).avisoIconEnabled !== false;
+});
+
+avisoEl.addEventListener('change', (e) => {
+  chrome.storage.sync.get(['syncSettings'], (res) => {
+    const merged = { ...(res.syncSettings || {}), avisoIconEnabled: e.target.checked };
+    chrome.storage.sync.set({ syncSettings: merged });
+  });
+});
+
 document.getElementById('open-options').addEventListener('click', (e) => {
   e.preventDefault();
   chrome.runtime.openOptionsPage();
