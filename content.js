@@ -265,7 +265,7 @@ function appendAvisoSnippet(dispoCell, snippet) {
 }
 
 // Ajout à la suite du contenu existant, jamais d'écrasement. Partagé par le bouton snippet et
-// par celui des données importées : c'est la même écriture dans la cellule Aviso.
+// par celui des données DatAviso : c'est la même écriture dans la cellule Aviso.
 function appendAvisoText(dispoCell, addition) {
   const textarea = dispoCell.querySelector('textarea.verification');
   const displayDiv = dispoCell.querySelector('div.verification');
@@ -352,29 +352,39 @@ function insertAvisoLawLink(container, refCode) {
   else container.insertBefore(link, container.firstChild);
 }
 
-// Troisième icône : ajoute les données de dossier importées pour cet article (tous ses champs,
-// sans la ligne de titre). Même comportement d'ajout que le bouton snippet — rien n'est écrasé.
-// Posée en dernier des trois, l'ordre affiché étant [snippet, texte réglementaire, données].
+// Longueur maximale de l'infobulle de prévisualisation. Les infobulles natives ne défilent pas :
+// au-delà, le texte déborderait de l'écran et deviendrait illisible. Le contenu inséré, lui,
+// n'est jamais tronqué.
+const AVISO_TOOLTIP_MAX = 700;
+
+// Troisième icône : ajoute les données DatAviso de cet article (tous ses champs, sans la ligne
+// de titre). Même comportement d'ajout que le bouton snippet — rien n'est écrasé.
+// Posée en dernier des trois, l'ordre affiché étant [snippet, texte réglementaire, DatAviso].
 function insertAvisoImportIcon(container, dispoCell, article) {
   if (container.querySelector('.' + AVISO_IMPORT_CLASS)) return;
+
+  const texte = importedArticleToText(article);
 
   const btn = document.createElement('button');
   btn.type = 'button';
   btn.className = AVISO_IMPORT_CLASS;
-  const nb = article.champs.length;
-  btn.title = `Ajouter les données importées pour ${article.code} (${nb} champ${nb > 1 ? 's' : ''})`;
+  // L'infobulle montre le texte qui sera réellement inséré, pour pouvoir le relire avant de
+  // cliquer plutôt que de découvrir le contenu une fois dans la cellule.
+  btn.title = texte.length > AVISO_TOOLTIP_MAX
+    ? texte.slice(0, AVISO_TOOLTIP_MAX).trimEnd() + '…'
+    : texte;
   btn.style.cssText = AVISO_BTN_STYLE;
 
   const img = document.createElement('img');
   img.src = chrome.runtime.getURL('icons/imported16.svg');
-  img.alt = `Données importées ${article.code}`;
+  img.alt = `Données DatAviso ${article.code}`;
   img.style.cssText = AVISO_IMG_STYLE;
   btn.appendChild(img);
 
   btn.addEventListener('click', (e) => {
     e.preventDefault();
     e.stopPropagation();
-    appendAvisoText(dispoCell, importedArticleToText(article));
+    appendAvisoText(dispoCell, texte);
   });
 
   const previous = container.querySelector('.' + AVISO_LAW_CLASS)

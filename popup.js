@@ -34,7 +34,7 @@ avisoEl.addEventListener('change', (e) => {
   });
 });
 
-// ---------- Import des données de dossier ----------
+// ---------- DatAviso : import des données de dossier ----------
 // Chaque import REMPLACE entièrement les données précédentes : le texte importé fait foi, ce qui
 // évite de laisser traîner des articles d'un dossier précédent qui réapparaîtraient dans Aviso.
 
@@ -45,8 +45,9 @@ const importCountEl = document.getElementById('import-count');
 function renderImportCount() {
   chrome.storage.local.get(['importedArticles', 'importedMeta'], (res) => {
     const articles = res.importedArticles || [];
+    document.getElementById('import-clear').hidden = !articles.length;
     if (!articles.length) {
-      importCountEl.textContent = 'Aucune donnée importée pour le moment.';
+      importCountEl.textContent = 'Aucune donnée DatAviso pour le moment.';
       return;
     }
     const meta = res.importedMeta || {};
@@ -83,6 +84,20 @@ document.getElementById('import-btn').addEventListener('click', () => {
     return;
   }
   runImport(text, 'le presse-papiers');
+});
+
+// Effacement complet, confirmé : les données DatAviso ne se retrouvent pas d'un clic, il faut
+// réimporter le texte source.
+document.getElementById('import-clear').addEventListener('click', () => {
+  chrome.storage.local.get(['importedArticles'], (res) => {
+    const nb = (res.importedArticles || []).length;
+    if (!nb) return;
+    if (!confirm(`Effacer les ${nb} article${nb > 1 ? 's' : ''} DatAviso ?`)) return;
+    chrome.storage.local.set({ importedArticles: [], importedMeta: null }, () => {
+      importStatusEl.textContent = '🗑️ Données DatAviso effacées.';
+      renderImportCount();
+    });
+  });
 });
 
 document.getElementById('import-file').addEventListener('change', (e) => {

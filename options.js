@@ -1,4 +1,4 @@
-const BUILD_DATE = '2026-08-24'; // v2.13.0
+const BUILD_DATE = '2026-08-24'; // v2.14.0
 const DEFAULT_GITHUB_URL = 'https://raw.githubusercontent.com/yakamatt/Snippets-Expander/main';
 
 let snippets = [];
@@ -212,7 +212,7 @@ document.getElementById('collapse-all-btn').addEventListener('click', () => {
   render();
 });
 
-// ---------- Données de dossier importées ----------
+// ---------- DatAviso (données de dossier importées) ----------
 // Aperçu ligne par ligne (un champ = une ligne) des données importées depuis le popup, dans le
 // même esprit que le tableau des snippets. Suppression article par article, ou en bloc.
 
@@ -235,7 +235,7 @@ function renderImportedMeta(meta) {
   const quand = meta.importedAt ? new Date(meta.importedAt).toLocaleString() : null;
   if (!quand) return;
   const el = document.getElementById('imported-meta');
-  el.textContent = `Dernier import : ${quand}${meta.source ? ` (${meta.source})` : ''}. ` +
+  el.textContent = `Dernier import DatAviso : ${quand}${meta.source ? ` (${meta.source})` : ''}. ` +
     `Sur Aviso, une icône verte apparaît sur les lignes dont le Référentiel figure ci-dessous et ajoute ces champs dans "Dispositions réalisées" — sans le titre de l'article.`;
 }
 
@@ -258,7 +258,7 @@ function renderImported() {
     td.className = 'hint';
     td.textContent = importedArticles.length
       ? 'Aucun article ne correspond à cette recherche.'
-      : 'Aucune donnée importée. Utilisez le popup de l\'icône pour coller un texte ou choisir un fichier .txt.';
+      : 'Aucune donnée DatAviso. Utilisez le popup de l\'icône pour coller un texte ou choisir un fichier .txt.';
     tr.appendChild(td);
     importedBodyEl.appendChild(tr);
     return;
@@ -308,7 +308,7 @@ importedSearchEl.addEventListener('input', renderImported);
 
 document.getElementById('imported-clear').addEventListener('click', () => {
   if (!importedArticles.length) return;
-  if (!confirm(`Supprimer les ${importedArticles.length} articles importés ?`)) return;
+  if (!confirm(`Supprimer les ${importedArticles.length} articles DatAviso ?`)) return;
   importedArticles = [];
   chrome.storage.local.set({ importedArticles: [], importedMeta: null }, renderImported);
 });
