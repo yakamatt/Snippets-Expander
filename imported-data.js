@@ -18,11 +18,26 @@
 // que sitesecurite-articles.js, pour que les trois se recoupent sans conversion).
 const IMPORT_HEADER_RE = /^\s*([A-Za-z]{1,4})\s*(\d+)\s*[—–-]\s*(.+?)\s*$/;
 
-// Ligne de champ : libellé court, puis ':' puis la valeur. La découpe se fait au PREMIER ':'
+// Ligne de champ : libellé, puis ':' puis la valeur. La découpe se fait au PREMIER ':'
 // uniquement — les valeurs en contiennent ("... en présence du public : le chantier précède ...").
-// Le libellé est borné à 28 caractères et exclut ':' pour ne pas confondre une phrase de
-// continuation ponctuée avec un nouveau champ.
-const IMPORT_FIELD_RE = /^\s+([A-Za-zÀ-Ý][^:\n]{0,28}?)\s*:\s*(.*)$/;
+const IMPORT_FIELD_RE = /^\s*([^:\n]{1,80}?)\s*:\s*(.*)$/;
+
+// Reconnaît une ligne "Libellé : valeur", ou renvoie null si la ligne n'en est pas une.
+// Deux garde-fous, volontairement larges : un libellé réaliste peut être long ("Travaux prévus
+// dans le cadre du projet" fait 38 caractères), mais il ne contient pas de point — c'est ce qui
+// distingue un vrai champ d'une phrase qui se poursuit et comporte un ':'.
+// Se tromper ici ne fait jamais perdre de texte : une ligne non reconnue est rattachée au champ
+// précédent (voir parseImportedData), elle reste donc intégralement présente.
+function splitImportedField(line) {
+  const m = IMPORT_FIELD_RE.exec(line);
+  if (!m) return null;
+
+  const label = m[1].trim();
+  if (!label || label.includes('.')) return null;
+  if (!/^[A-Za-zÀ-ÿ0-9]/.test(label)) return null;
+
+  return { label, valeur: m[2].trim() };
+}
 
 function parseImportedData(text) {
   const articles = [];
@@ -44,13 +59,18 @@ function parseImportedData(text) {
 
     if (!current) continue; // texte avant le premier en-tête : ignoré
 
-    const field = IMPORT_FIELD_RE.exec(rawLine);
+    const field = splitImportedField(rawLine);
     if (field) {
-      current.champs.push({ label: field[1].trim(), valeur: field[2].trim() });
+      current.champs.push(field);
     } else if (current.champs.length) {
       // Ligne sans libellé : suite de la valeur précédente (valeur repliée sur plusieurs lignes).
       const last = current.champs[current.champs.length - 1];
       last.valeur = (last.valeur + ' ' + rawLine.trim()).trim();
+    } else {
+      // Ligne non reconnue, et aucun champ auquel la rattacher : on la conserve telle quelle,
+      // sans libellé. Tout le texte situé sous l'en-tête doit se retrouver dans l'article —
+      // une ligne écartée ici serait perdue sans que rien ne le signale.
+      current.champs.push({ label: '', valeur: rawLine.trim() });
     }
   }
 
@@ -63,6 +83,6 @@ function parseImportedData(text) {
 // la ligne Aviso porte déjà son Référentiel, le répéter n'apporterait rien.
 function importedArticleToText(article) {
   return (article && article.champs ? article.champs : [])
-    .map(c => `${c.label} : ${c.valeur}`)
+    .map(c => (c.label ? `${c.label} : ${c.valeur}` : c.valeur))
     .join('\n');
 }

@@ -1,5 +1,10 @@
 # Changelog — Snippet Expander
 
+## v2.14.1 — 2026-08-24
+- **Corrige des lignes perdues à l'import DatAviso.** Le libellé d'un champ était limité à 29 caractères : une ligne comme `Travaux prévus dans le cadre du projet : …` (38 caractères) n'était pas reconnue comme un champ et, s'agissant de la première ligne du bloc, elle n'était rattachée à rien — elle disparaissait purement et simplement. La limite passe à 80 caractères
+- **Plus aucune ligne ne peut être perdue** : une ligne située sous un en-tête d'article et non reconnue comme "Libellé : valeur" est désormais conservée telle quelle, sans libellé, au lieu d'être écartée. C'est le vrai correctif — le plafond de longueur n'était que le déclencheur
+- Un libellé contenant un point n'est plus traité comme un champ : c'est ce qui distingue un vrai libellé d'une phrase qui se poursuit et comporte un `:`
+
 ## v2.14.0 — 2026-08-24
 - **Les zones d'import de données s'appellent désormais "DatAviso"** (popup et page Paramètres)
 - **L'infobulle de l'icône verte sur Aviso affiche le texte qui sera inséré**, au lieu de "Ajouter les données importées pour…" — de quoi le relire avant de cliquer. Tronquée à 700 caractères, les infobulles natives ne défilant pas ; le texte inséré, lui, n'est jamais tronqué

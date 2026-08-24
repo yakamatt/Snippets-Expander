@@ -43,7 +43,8 @@ GN 12 — Justification des classements de comportement au feu
 ```
 
 - La **ligne d'en-tête** donne le code de l'article (`GN 12` → `GN12`, la même normalisation que le Référentiel Aviso) et son titre.
-- Les **lignes de champ** sont de la forme `Libellé : valeur`. Les libellés ne sont pas figés dans le code : toute rubrique est reconnue. Une valeur peut contenir des `:` (la découpe se fait au premier), et se poursuivre sur les lignes suivantes.
+- Les **lignes de champ** sont de la forme `Libellé : valeur`. Les libellés ne sont pas figés dans le code : toute rubrique est reconnue, jusqu'à 80 caractères et sans point. Une valeur peut contenir des `:` (la découpe se fait au premier), et se poursuivre sur les lignes suivantes.
+- **Aucune ligne n'est perdue** : une ligne qui ne ressemble pas à `Libellé : valeur` est rattachée au champ précédent, ou conservée telle quelle si elle ouvre le bloc. Tout le texte situé sous l'en-tête se retrouve donc dans l'article.
 
 **Importer** : cliquez sur l'icône de l'extension, collez le texte dans "📥 DatAviso" (ou choisissez un fichier `.txt`), puis "Importer". Chaque import **remplace entièrement** les données précédentes. Le bouton "🗑️ Effacer les données DatAviso", juste en dessous, vide tout après confirmation.
 

@@ -1,4 +1,4 @@
-const BUILD_DATE = '2026-08-24'; // v2.14.0
+const BUILD_DATE = '2026-08-24'; // v2.14.1
 const DEFAULT_GITHUB_URL = 'https://raw.githubusercontent.com/yakamatt/Snippets-Expander/main';
 
 let snippets = [];
@@ -292,10 +292,15 @@ function renderImported() {
     article.champs.forEach(c => {
       const line = document.createElement('div');
       line.className = 'imported-champ';
-      const label = document.createElement('span');
-      label.className = 'imported-label';
-      label.textContent = c.label + ' : ';
-      line.append(label, document.createTextNode(c.valeur));
+      // Une ligne conservée sans libellé (non reconnue comme "Libellé : valeur") s'affiche telle
+      // quelle, sans deux-points orphelins.
+      if (c.label) {
+        const label = document.createElement('span');
+        label.className = 'imported-label';
+        label.textContent = c.label + ' : ';
+        line.appendChild(label);
+      }
+      line.appendChild(document.createTextNode(c.valeur));
       champsTd.appendChild(line);
     });
 
