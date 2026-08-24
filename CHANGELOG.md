@@ -1,5 +1,12 @@
 # Changelog — Snippet Expander
 
+## v2.13.0 — 2026-08-24
+- **Import de données de dossier par article** : depuis le popup de l'icône, collez un texte (ou choisissez un fichier `.txt`) décrivant les articles sous la forme `GN 12 — Titre` suivie de lignes `Libellé : valeur`. Les libellés ne sont pas figés : toute rubrique est reconnue
+- **Nouvelle carte "Données de dossier importées"** dans la page Paramètres : aperçu ligne par ligne (un champ par ligne), recherche, suppression article par article ou en bloc
+- **Troisième icône sur Aviso** (verte) sur les lignes dont le Référentiel correspond à un article importé : un clic **ajoute** tous ses champs dans "Dispositions réalisées", à la suite du texte existant et **sans le titre de l'article**
+- Chaque import **remplace entièrement** les données précédentes, pour éviter que des articles d'un dossier antérieur ne réapparaissent dans Aviso
+- Les trois icônes Aviso (snippet, texte réglementaire, données importées) restent commandées par le même réglage "Intégration Aviso"
+
 ## v2.12.0 — 2026-08-21
 - **L'icône "texte réglementaire" s'affiche désormais même sans snippet correspondant** : elle ne dépend plus que du Référentiel de la ligne. Une ligne "AM 13", sans snippet `/AM13` défini, propose donc quand même le lien vers l'article — consulter le texte reste utile quand il n'y a rien à insérer. L'icône d'insertion, elle, continue de n'apparaître que si un snippet correspond
 

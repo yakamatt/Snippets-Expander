@@ -15,8 +15,22 @@
       <label for="aviso-icon-enabled">Intégration Aviso</label>
       <input type="checkbox" id="aviso-icon-enabled" />
     </div>
+
+    <section class="import">
+      <h2>📥 Données de dossier</h2>
+      <p class="hint" id="import-count"></p>
+      <textarea id="import-text" rows="4" placeholder="Collez ici le texte des articles (GN 12 — …)"></textarea>
+      <div class="import-actions">
+        <button id="import-btn">Importer le texte collé</button>
+        <label class="file-btn" for="import-file">📄 Ou choisir un fichier .txt</label>
+        <input type="file" id="import-file" accept=".txt,text/plain" hidden />
+      </div>
+      <p class="hint" id="import-status"></p>
+    </section>
+
     <a href="#" id="open-options" class="link-btn">⚙️ Paramètres</a>
   </div>
+  <script src="imported-data.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" role="img">
+  <!-- Icône des données de dossier importées, posée dans Aviso à côté des deux autres.
+       Vert franc : se distingue au premier coup d'œil du bleu de l'extension et de l'orange
+       de sitesecurite.com, les trois pouvant apparaître côte à côte sur une même ligne. -->
+  <rect x="2" y="1" width="12" height="14" rx="2.5" fill="#0f8a5f"/>
+  <path d="M5 5.25h6M5 8h6M5 10.75h3.5" stroke="#ffffff" stroke-width="1.4" stroke-linecap="round"/>
+</svg>

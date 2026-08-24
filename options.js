@@ -1,4 +1,4 @@
-const BUILD_DATE = '2026-08-21'; // v2.12.0
+const BUILD_DATE = '2026-08-24'; // v2.13.0
 const DEFAULT_GITHUB_URL = 'https://raw.githubusercontent.com/yakamatt/Snippets-Expander/main';
 
 let snippets = [];
@@ -27,6 +27,7 @@ function load() {
     document.getElementById('auto-check-updates').checked = !!s.autoCheckUpdates;
   });
   renderUpdateMode();
+  loadImported();
 }
 
 // Rafraîchit automatiquement le tableau si les snippets changent en arrière-plan (synchro auto
@@ -209,6 +210,115 @@ document.getElementById('expand-all-btn').addEventListener('click', () => {
 document.getElementById('collapse-all-btn').addEventListener('click', () => {
   expandedFolders.clear();
   render();
+});
+
+// ---------- Données de dossier importées ----------
+// Aperçu ligne par ligne (un champ = une ligne) des données importées depuis le popup, dans le
+// même esprit que le tableau des snippets. Suppression article par article, ou en bloc.
+
+let importedArticles = [];
+
+const importedBodyEl = document.getElementById('imported-body');
+const importedCountEl = document.getElementById('imported-count');
+const importedSearchEl = document.getElementById('imported-search');
+
+function loadImported() {
+  chrome.storage.local.get(['importedArticles', 'importedMeta'], (res) => {
+    importedArticles = res.importedArticles || [];
+    renderImported();
+    renderImportedMeta(res.importedMeta);
+  });
+}
+
+function renderImportedMeta(meta) {
+  if (!meta || !importedArticles.length) return;
+  const quand = meta.importedAt ? new Date(meta.importedAt).toLocaleString() : null;
+  if (!quand) return;
+  const el = document.getElementById('imported-meta');
+  el.textContent = `Dernier import : ${quand}${meta.source ? ` (${meta.source})` : ''}. ` +
+    `Sur Aviso, une icône verte apparaît sur les lignes dont le Référentiel figure ci-dessous et ajoute ces champs dans "Dispositions réalisées" — sans le titre de l'article.`;
+}
+
+function renderImported() {
+  const filter = (importedSearchEl.value || '').toLowerCase();
+  importedCountEl.textContent = importedArticles.length;
+  importedBodyEl.innerHTML = '';
+
+  const rows = importedArticles.filter(a => {
+    if (!filter) return true;
+    return a.code.toLowerCase().includes(filter) ||
+           (a.titre || '').toLowerCase().includes(filter) ||
+           a.champs.some(c => (c.label + ' ' + c.valeur).toLowerCase().includes(filter));
+  });
+
+  if (!rows.length) {
+    const tr = document.createElement('tr');
+    const td = document.createElement('td');
+    td.colSpan = 2;
+    td.className = 'hint';
+    td.textContent = importedArticles.length
+      ? 'Aucun article ne correspond à cette recherche.'
+      : 'Aucune donnée importée. Utilisez le popup de l\'icône pour coller un texte ou choisir un fichier .txt.';
+    tr.appendChild(td);
+    importedBodyEl.appendChild(tr);
+    return;
+  }
+
+  rows.forEach(article => {
+    const tr = document.createElement('tr');
+
+    const codeTd = document.createElement('td');
+    codeTd.className = 'trigger';
+    const codeLine = document.createElement('div');
+    codeLine.textContent = article.code;
+    const delBtn = document.createElement('button');
+    delBtn.className = 'link-btn imported-del';
+    delBtn.textContent = 'Supprimer';
+    delBtn.addEventListener('click', () => {
+      importedArticles = importedArticles.filter(a => a !== article);
+      chrome.storage.local.set({ importedArticles }, renderImported);
+    });
+    codeTd.append(codeLine, delBtn);
+
+    // Le titre de l'article est affiché ici pour se repérer, mais jamais inséré dans Aviso.
+    const champsTd = document.createElement('td');
+    champsTd.className = 'content';
+    if (article.titre) {
+      const titre = document.createElement('div');
+      titre.className = 'imported-titre';
+      titre.textContent = article.titre;
+      champsTd.appendChild(titre);
+    }
+    article.champs.forEach(c => {
+      const line = document.createElement('div');
+      line.className = 'imported-champ';
+      const label = document.createElement('span');
+      label.className = 'imported-label';
+      label.textContent = c.label + ' : ';
+      line.append(label, document.createTextNode(c.valeur));
+      champsTd.appendChild(line);
+    });
+
+    tr.append(codeTd, champsTd);
+    importedBodyEl.appendChild(tr);
+  });
+}
+
+importedSearchEl.addEventListener('input', renderImported);
+
+document.getElementById('imported-clear').addEventListener('click', () => {
+  if (!importedArticles.length) return;
+  if (!confirm(`Supprimer les ${importedArticles.length} articles importés ?`)) return;
+  importedArticles = [];
+  chrome.storage.local.set({ importedArticles: [], importedMeta: null }, renderImported);
+});
+
+// Un import fait depuis le popup doit se voir immédiatement si cette page est déjà ouverte.
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area === 'local' && changes.importedArticles) {
+    importedArticles = changes.importedArticles.newValue || [];
+    renderImported();
+  }
 });
 
 // --- Paramètres avancés ---
