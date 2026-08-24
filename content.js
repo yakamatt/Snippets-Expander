@@ -1,6 +1,7 @@
 // content.js — détecte et remplace les snippets, avec temporisation et mise en forme
 
 let SNIPPETS = [];
+let IMPORTED_ARTICLES = [];
 let MAX_TRIGGER_LEN = 1;
 let EXPANSION_DELAY_MS = 1000;
 let AVISO_ICON_ENABLED = true;
@@ -12,14 +13,16 @@ let pendingTimeoutId = null;
 const AVISO_HOSTNAME = 'aviso2.bureauveritas.com';
 const AVISO_ICON_CLASS = 'snippet-expander-aviso-icon';
 const AVISO_LAW_CLASS = 'snippet-expander-aviso-law';
+const AVISO_IMPORT_CLASS = 'snippet-expander-aviso-import';
 
 function isAvisoSite() {
   return location.hostname === AVISO_HOSTNAME;
 }
 
 function loadSnippets() {
-  chrome.storage.local.get(['snippets'], (res) => {
+  chrome.storage.local.get(['snippets', 'importedArticles'], (res) => {
     SNIPPETS = res.snippets || [];
+    IMPORTED_ARTICLES = res.importedArticles || [];
     MAX_TRIGGER_LEN = SNIPPETS.reduce((m, s) => Math.max(m, s.trigger.length), 1);
     if (isAvisoSite()) scheduleAvisoScan();
   });
@@ -40,6 +43,15 @@ chrome.storage.onChanged.addListener((changes, area) => {
     SNIPPETS = changes.snippets.newValue || [];
     MAX_TRIGGER_LEN = SNIPPETS.reduce((m, s) => Math.max(m, s.trigger.length), 1);
     if (isAvisoSite()) scheduleAvisoScan();
+  }
+  // Un import depuis le popup doit se voir tout de suite sur l'onglet Aviso déjà ouvert : les
+  // icônes obsolètes sont retirées, puis un scan les repose d'après les nouvelles données.
+  if (area === 'local' && changes.importedArticles) {
+    IMPORTED_ARTICLES = changes.importedArticles.newValue || [];
+    if (isAvisoSite()) {
+      document.querySelectorAll('.' + AVISO_IMPORT_CLASS).forEach(el => el.remove());
+      scheduleAvisoScan();
+    }
   }
   if (area === 'sync' && changes.syncSettings) {
     const s = changes.syncSettings.newValue || {};
@@ -249,11 +261,16 @@ function escapeHtmlAviso(str) {
 }
 
 function appendAvisoSnippet(dispoCell, snippet) {
+  appendAvisoText(dispoCell, resolveContent(snippet.content));
+}
+
+// Ajout à la suite du contenu existant, jamais d'écrasement. Partagé par le bouton snippet et
+// par celui des données importées : c'est la même écriture dans la cellule Aviso.
+function appendAvisoText(dispoCell, addition) {
   const textarea = dispoCell.querySelector('textarea.verification');
   const displayDiv = dispoCell.querySelector('div.verification');
-  if (!textarea) return;
+  if (!textarea || !addition) return;
 
-  const addition = resolveContent(snippet.content);
   const hasExisting = textarea.value.trim().length > 0;
   const separator = hasExisting && !textarea.value.endsWith('\n') ? '\n' : '';
   setNativeValue(textarea, textarea.value + separator + addition);
@@ -335,6 +352,37 @@ function insertAvisoLawLink(container, refCode) {
   else container.insertBefore(link, container.firstChild);
 }
 
+// Troisième icône : ajoute les données de dossier importées pour cet article (tous ses champs,
+// sans la ligne de titre). Même comportement d'ajout que le bouton snippet — rien n'est écrasé.
+// Posée en dernier des trois, l'ordre affiché étant [snippet, texte réglementaire, données].
+function insertAvisoImportIcon(container, dispoCell, article) {
+  if (container.querySelector('.' + AVISO_IMPORT_CLASS)) return;
+
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = AVISO_IMPORT_CLASS;
+  const nb = article.champs.length;
+  btn.title = `Ajouter les données importées pour ${article.code} (${nb} champ${nb > 1 ? 's' : ''})`;
+  btn.style.cssText = AVISO_BTN_STYLE;
+
+  const img = document.createElement('img');
+  img.src = chrome.runtime.getURL('icons/imported16.svg');
+  img.alt = `Données importées ${article.code}`;
+  img.style.cssText = AVISO_IMG_STYLE;
+  btn.appendChild(img);
+
+  btn.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    appendAvisoText(dispoCell, importedArticleToText(article));
+  });
+
+  const previous = container.querySelector('.' + AVISO_LAW_CLASS)
+    || container.querySelector('.' + AVISO_ICON_CLASS);
+  if (previous) previous.insertAdjacentElement('afterend', btn);
+  else container.insertBefore(btn, container.firstChild);
+}
+
 function scanAvisoTable() {
   if (!AVISO_ICON_ENABLED) return;
   document.querySelectorAll('td.referentiel.content').forEach(refCell => {
@@ -351,6 +399,9 @@ function scanAvisoTable() {
     const match = SNIPPETS.find(s => triggerToRefCode(s.trigger) === refCode);
     if (match) insertAvisoIcon(container, dispoCell, match);
     insertAvisoLawLink(container, refCode);
+
+    const article = IMPORTED_ARTICLES.find(a => a.code === refCode);
+    if (article) insertAvisoImportIcon(container, dispoCell, article);
   });
 }
 
@@ -366,8 +417,9 @@ function applyAvisoIconSetting() {
   if (AVISO_ICON_ENABLED) {
     scheduleAvisoScan();
   } else {
-    document.querySelectorAll('.' + AVISO_ICON_CLASS + ', .' + AVISO_LAW_CLASS)
-      .forEach(el => el.remove());
+    document.querySelectorAll(
+      '.' + AVISO_ICON_CLASS + ', .' + AVISO_LAW_CLASS + ', .' + AVISO_IMPORT_CLASS
+    ).forEach(el => el.remove());
   }
 }
 

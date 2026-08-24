@@ -54,6 +54,23 @@
     </section>
 
     <section class="card">
+      <div class="row-between">
+        <h2>📥 Données de dossier importées (<span id="imported-count">0</span>)</h2>
+        <div class="filters">
+          <input type="text" id="imported-search" placeholder="Rechercher..." />
+          <button id="imported-clear" class="link-btn">Tout supprimer</button>
+        </div>
+      </div>
+      <p class="hint" id="imported-meta">Importez vos données depuis le popup de l'icône (collage ou fichier .txt). Sur Aviso, une icône verte apparaît sur les lignes dont le Référentiel figure ci-dessous et ajoute ces champs dans "Dispositions réalisées" — sans le titre de l'article.</p>
+      <table id="imported-table">
+        <thead>
+          <tr><th>Article</th><th>Champs</th></tr>
+        </thead>
+        <tbody id="imported-body"></tbody>
+      </table>
+    </section>
+
+    <section class="card">
       <button id="toggle-advanced" class="link-btn">⚙️ Paramètres avancés ▾</button>
       <div id="advanced-panel" hidden>
 
@@ -129,6 +146,7 @@
     </footer>
   </main>
 
+  <script src="imported-data.js"></script>
   <script src="options.js"></script>
 </body>
 </html>
