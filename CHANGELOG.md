@@ -1,5 +1,10 @@
 # Changelog — Snippet Expander
 
+## v2.14.0 — 2026-08-24
+- **Les zones d'import de données s'appellent désormais "DatAviso"** (popup et page Paramètres)
+- **L'infobulle de l'icône verte sur Aviso affiche le texte qui sera inséré**, au lieu de "Ajouter les données importées pour…" — de quoi le relire avant de cliquer. Tronquée à 700 caractères, les infobulles natives ne défilant pas ; le texte inséré, lui, n'est jamais tronqué
+- **Nouveau bouton "🗑️ Effacer les données DatAviso"** dans le popup, sous "Ou choisir un fichier .txt". Masqué tant qu'il n'y a rien à effacer, et confirmé avant suppression
+
 ## v2.13.0 — 2026-08-24
 - **Import de données de dossier par article** : depuis le popup de l'icône, collez un texte (ou choisissez un fichier `.txt`) décrivant les articles sous la forme `GN 12 — Titre` suivie de lignes `Libellé : valeur`. Les libellés ne sont pas figés : toute rubrique est reconnue
 - **Nouvelle carte "Données de dossier importées"** dans la page Paramètres : aperçu ligne par ligne (un champ par ligne), recherche, suppression article par article ou en bloc

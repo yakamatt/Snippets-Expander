@@ -24,13 +24,13 @@ Remplace automatiquement un texte court (ex: `;sig`) par un texte prédéfini, d
 - **Intégration Aviso** : sur l'application Aviso, des icônes apparaissent automatiquement à côté de "Dispositions réalisées", selon le code du "Référentiel" de la ligne (ex: "GN 4") :
   - l'icône **Snippet Expander** **ajoute** le contenu du snippet à la suite du texte déjà saisi, sans jamais l'écraser. Elle n'apparaît que si le code correspond au déclencheur d'un snippet ;
   - l'icône **sitesecurite.com** ouvre dans un nouvel onglet l'article du règlement de sécurité ERP correspondant, ancré directement sur l'article visé. Elle s'affiche dès que le code est un article ERP connu (voir `sitesecurite-articles.js`), **y compris sur les lignes sans snippet** — consulter le texte reste utile quand il n'y a rien à insérer ;
-  - l'icône **verte** ajoute les données de dossier importées pour cet article (voir ci-dessous). Elle n'apparaît que si un article importé porte le même code.
+  - l'icône **verte** ajoute les données **DatAviso** de cet article (voir ci-dessous), et affiche au survol le texte qui sera inséré. Elle n'apparaît que si un article importé porte le même code.
 
   Désactivable via le réglage **Intégration Aviso**, accessible depuis le popup de l'icône ou dans Paramètres avancés. Sans effet sur les autres sites.
 
-## 2 bis. Importer des données de dossier par article
+## 2 bis. DatAviso — importer des données de dossier par article
 
-Indépendamment des snippets (qui viennent du Google Sheet), l'extension peut mémoriser des **données propres à un dossier**, article par article, pour les réinjecter dans Aviso.
+Indépendamment des snippets (qui viennent du Google Sheet), l'extension peut mémoriser des **données propres à un dossier**, article par article, pour les réinjecter dans Aviso. Ces données et les zones qui les gèrent sont regroupées sous le nom **DatAviso**.
 
 **Format attendu** — un bloc par article, séparés par une ligne vide :
 
@@ -45,11 +45,11 @@ GN 12 — Justification des classements de comportement au feu
 - La **ligne d'en-tête** donne le code de l'article (`GN 12` → `GN12`, la même normalisation que le Référentiel Aviso) et son titre.
 - Les **lignes de champ** sont de la forme `Libellé : valeur`. Les libellés ne sont pas figés dans le code : toute rubrique est reconnue. Une valeur peut contenir des `:` (la découpe se fait au premier), et se poursuivre sur les lignes suivantes.
 
-**Importer** : cliquez sur l'icône de l'extension, collez le texte dans "📥 Données de dossier" (ou choisissez un fichier `.txt`), puis "Importer". Chaque import **remplace entièrement** les données précédentes.
+**Importer** : cliquez sur l'icône de l'extension, collez le texte dans "📥 DatAviso" (ou choisissez un fichier `.txt`), puis "Importer". Chaque import **remplace entièrement** les données précédentes. Le bouton "🗑️ Effacer les données DatAviso", juste en dessous, vide tout après confirmation.
 
-**Consulter / supprimer** : page Paramètres, carte "📥 Données de dossier importées" — aperçu ligne par ligne, recherche, suppression article par article ou en bloc.
+**Consulter / supprimer** : page Paramètres, carte "📥 DatAviso" — aperçu ligne par ligne, recherche, suppression article par article ou en bloc.
 
-**Utiliser dans Aviso** : sur une ligne dont le Référentiel correspond à un article importé, une icône verte apparaît ; un clic ajoute **tous ses champs** dans "Dispositions réalisées", à la suite du texte existant et **sans le titre de l'article** (la ligne Aviso porte déjà son Référentiel).
+**Utiliser dans Aviso** : sur une ligne dont le Référentiel correspond à un article importé, une icône verte apparaît. La survoler affiche **le texte exact qui sera inséré** (tronqué à 700 caractères dans l'infobulle uniquement) ; un clic ajoute **tous ses champs** dans "Dispositions réalisées", à la suite du texte existant et **sans le titre de l'article** (la ligne Aviso porte déjà son Référentiel).
 
 ## 3. Partage en temps réel avec une équipe (Google Sheets, gratuit)
 

@@ -12,6 +12,10 @@
   --accent-hover: #1f3d8f;
   --accent-ink: #ffffff;
   --accent-wash: #e6ebfa;
+
+  --danger: #b3261e;
+  --danger-border: #eccbc8;
+  --danger-wash: #fbeceb;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -26,6 +30,10 @@
     --accent-hover: #8aa6ea;
     --accent-ink: #0b1224;
     --accent-wash: #1c2647;
+
+    --danger: #f2938c;
+    --danger-border: #5c2a27;
+    --danger-wash: #2a1614;
   }
 }
 
@@ -152,6 +160,18 @@ button:disabled { opacity: 0.6; cursor: default; }
   transition: filter 0.15s ease;
 }
 .file-btn:hover { filter: brightness(0.95); }
+
+/* Action destructrice : teinte rouge discrète, pour ne pas la confondre au clic avec les deux
+   boutons d'import juste au-dessus. Masquée tant qu'il n'y a rien à effacer. */
+.danger-btn {
+  background: none;
+  color: var(--danger);
+  border: 1px solid var(--danger-border);
+  padding: 7px 12px;
+  font-size: 12px;
+}
+.danger-btn:hover { background: var(--danger-wash); }
+.danger-btn[hidden] { display: none; }
 
 .link-btn {
   color: var(--accent-hover);
