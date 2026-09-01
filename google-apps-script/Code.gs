@@ -10,6 +10,75 @@
 // ⚠️ Après toute modification de ce fichier : Déployer > Gérer les déploiements > (crayon) >
 // Version : "Nouvelle version" > Déployer. Sans nouvelle version, l'URL /exec continue de
 // servir l'ancien code.
+//
+// ============================================================================
+// GUIDE DE DÉPLOIEMENT COMPLET
+// ============================================================================
+//
+// Le script Apps Script doit être déployé en tant qu'application web, accessible via une URL
+// /exec. Sans redéploiement après chaque modification, l'extension utilise l'ancienne version.
+// C'est critique, car le bouton "+" de l'extension vérifie la version du script AVANT d'écrire
+// (v2.15.1) : si le script n'a pas été redéployé, le bouton refuse proprement plutôt que de
+// risquer d'écraser le tableau.
+//
+// ÉTAPES POUR DÉPLOYER (première fois, ou après modification du code)
+// ==================================================================
+//
+// 1. ACCÉDER À L'ÉDITEUR APPS SCRIPT
+//    └─ Dans Google Sheets, ouvrir ton tableau de snippets
+//    └─ Menu : Extensions > Apps Script
+//    └─ L'éditeur s'ouvre dans un nouvel onglet
+//
+// 2. COPIER-COLLER LE CODE (première fois)
+//    └─ Copier tout ce fichier (Code.gs)
+//    └─ Dans l'éditeur Apps Script, effacer le contenu par défaut
+//    └─ Coller le code de ce fichier
+//    └─ Ctrl+S (ou Cmd+S) pour enregistrer
+//
+// 3. CRÉER UN PREMIER DÉPLOIEMENT
+//    └─ Bouton "Déployer" (en haut à droite) > Nouveau déploiement
+//    └─ Type : "Application web"
+//    └─ Exécuter en tant que : [ton compte Google]
+//    └─ Accès : "N'importe quel utilisateur"
+//    └─ Cliquer "Déployer"
+//    └─ Copier l'URL de l'application web (format : https://script.google.com/macros/s/[ID]/exec)
+//    └─ Cette URL est celle à coller dans les Paramètres avancés de l'extension
+//
+// 4. APRÈS CHAQUE MODIFICATION DU CODE
+//    └─ Enregistrer le code (Ctrl+S)
+//    └─ Cliquer sur "Déployer" > "Gérer les déploiements"
+//    └─ Un déploiement "Application web" est listé
+//    └─ Cliquer sur l'icône crayon (modifier)
+//    └─ Dans "Version", sélectionner "Nouvelle version" (pas "Version la plus récente")
+//    └─ Cliquer "Déployer"
+//    └─ La même URL /exec sert maintenant le nouveau code
+//    └─ Recharger l'extension Chrome (chrome://extensions > Actualiser ⟳)
+//
+// ⚠️ ERREUR COURANTE : choisir "Version la plus récente" au lieu de "Nouvelle version"
+//    └─ L'URL ne change pas, mais elle continue de servir l'ANCIEN code
+//    └─ L'extension s'en protège (v2.15.1+) : elle vérifie la version avant d'écrire
+//    └─ Si le script n'a pas été redéployé, le bouton "+" refusera proprement
+//
+// DÉPANNAGE
+// =========
+//
+// Q: Pourquoi le bouton "+" me dit "Script Google Sheets obsolète" ?
+// R: Le script n'a pas été redéployé en "Nouvelle version" après sa modification.
+//    Suis les étapes 4 ci-dessus, puis recharge l'extension Chrome.
+//
+// Q: L'URL que j'ai collée dans les Paramètres a changé après le déploiement ?
+// R: Non — l'URL reste la même (elle continue de finir par /exec).
+//    Ce qui change, c'est la version du code qu'elle sert.
+//
+// Q: Comment savoir si mon script fonctionne correctement ?
+// R: Dans l'extension, cliquer le bouton "+" sur une ligne Aviso.
+//    Si le tableau Google Sheets s'ouvre sur la ligne créée, c'est bon.
+//    S'il affiche "Script Google Sheets obsolète", c'est qu'il faut redéployer.
+//
+// Q: Puis-je utiliser la même URL /exec pour plusieurs tableaux ?
+// R: Non. Chaque tableau (chaque projet Apps Script) a sa propre URL.
+//    Si tu crées un nouveau tableau, tu dois créer un nouveau script et en copier
+//    la nouvelle URL dans les Paramètres avancés de l'extension.
 
 const SHEET_NAME = 'Snippets';
 
