@@ -1,5 +1,11 @@
 # Changelog — Snippet Expander
 
+## v2.15.0 — 2026-08-25
+- **Nouveau bloc "Tableau de référence"** dans Paramètres avancés : deux champs pour pointer l'extension vers un autre tableau Google Sheets (adresse du tableau, et adresse de l'application Web Apps Script qui sert les données). Les adresses sont validées avant enregistrement ; les liens "Ouvrir le tableau" du popup et de la page Paramètres suivent désormais ce réglage au lieu d'être figés
+- **Nouvelle icône "+" sur Aviso**, sur les lignes dont le Référentiel n'a **pas** encore de snippet : elle crée la ligne correspondante dans le tableau Google Sheets (déclencheur `/GN13` par exemple, contenu laissé vide), actualise les données de l'extension, puis ouvre le tableau directement sur la cellule à saisir. Une fois le snippet créé, le "+" s'efface au profit de l'icône bleue habituelle
+- **`google-apps-script/Code.gs` : le `doPost` destructif est remplacé par un ajout de ligne.** L'ancienne version vidait tout le tableau avant de le réécrire — un héritage d'avant le passage en lecture seule de l'extension, qui ne l'appelait plus. Un appel inattendu aurait effacé tous les snippets. Le nouveau `doPost` n'ajoute qu'une ligne, et renvoie la ligne existante si le déclencheur est déjà présent plutôt que de créer un doublon
+- ⚠️ **Le script Apps Script doit être redéployé en "Nouvelle version"** pour que le bouton "+" fonctionne. Sans cela, l'extension signale un script obsolète au lieu d'ouvrir le tableau à tort
+
 ## v2.14.1 — 2026-08-24
 - **Corrige des lignes perdues à l'import DatAviso.** Le libellé d'un champ était limité à 29 caractères : une ligne comme `Travaux prévus dans le cadre du projet : …` (38 caractères) n'était pas reconnue comme un champ et, s'agissant de la première ligne du bloc, elle n'était rattachée à rien — elle disparaissait purement et simplement. La limite passe à 80 caractères
 - **Plus aucune ligne ne peut être perdue** : une ligne située sous un en-tête d'article et non reconnue comme "Libellé : valeur" est désormais conservée telle quelle, sans libellé, au lieu d'être écartée. C'est le vrai correctif — le plafond de longueur n'était que le déclencheur

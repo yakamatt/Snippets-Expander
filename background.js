@@ -4,6 +4,7 @@ const SYNC_ALARM = 'snippet-sync';
 const UPDATE_ALARM = 'snippet-update-check';
 const DEFAULT_GITHUB_URL = 'https://raw.githubusercontent.com/yakamatt/Snippets-Expander/main';
 const DEFAULT_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbwlew8sAl_APmmZS5bpedGnSf6Ukn0Tvs3S93BGGwt6pwUMzg1uwfOWq91zEhTUVJG9/exec';
+const DEFAULT_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1H2rBzMQzZk74Bk2Z_Mo8lXAdYea7Mi7WfzVruBahd_I/edit';
 
 chrome.runtime.onInstalled.addListener((details) => {
   // Tout est enchaîné séquentiellement (await) dans une seule chaîne asynchrone : sur une
@@ -16,6 +17,7 @@ chrome.runtime.onInstalled.addListener((details) => {
 
     const defaults = {
       webAppUrl: DEFAULT_WEBAPP_URL,
+      sheetUrl: DEFAULT_SHEET_URL,
       autoSyncMinutes: 60,
       expansionDelayMs: 500,
       avisoIconEnabled: true,
@@ -100,6 +102,45 @@ async function pullFromSheet() {
   return snippets;
 }
 
+// ---------- Création d'un snippet depuis Aviso (bouton "+") ----------
+// Ajoute une ligne au tableau avec le seul déclencheur, récupère les données mises à jour, puis
+// ouvre le tableau positionné sur la cellule "content" à remplir.
+//
+// La requête part du service worker et non du script de contenu : les permissions d'hôte de
+// l'extension s'y appliquent, la requête n'est donc pas soumise au CORS de la page Aviso.
+// Content-Type en text/plain — Apps Script lit e.postData.contents tel quel, et ce type évite
+// la requête de pré-vérification CORS.
+
+async function createSnippetRow(trigger) {
+  const { syncSettings } = await chrome.storage.sync.get(['syncSettings']);
+  const settings = syncSettings || {};
+  if (!settings.webAppUrl) throw new Error('URL du Web App non configurée (Paramètres avancés)');
+
+  const res = await fetch(settings.webAppUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ action: 'append', trigger })
+  });
+  if (!res.ok) throw new Error(`Le tableau a répondu ${res.status}`);
+
+  const data = await res.json().catch(() => null);
+  if (!data) throw new Error('Réponse illisible du tableau');
+  if (!data.ok) throw new Error(data.error || 'Ajout refusé par le tableau');
+  // Le script déployé peut être une version antérieure, qui ignore l'action "append" : sans
+  // numéro de ligne en retour, rien n'a été créé — mieux vaut le dire que d'ouvrir le tableau
+  // au hasard en laissant croire que c'est fait.
+  if (!data.row) throw new Error('Script Apps Script obsolète : redéployez-le en nouvelle version');
+
+  await pullFromSheet().catch(e => console.error('[Snippet Expander] Synchro après ajout :', e.message));
+
+  const base = (data.sheetUrl || settings.sheetUrl || DEFAULT_SHEET_URL).split('#')[0];
+  // Colonne B = "content" : l'utilisateur arrive directement sur la cellule à saisir.
+  const url = `${base}#gid=${data.gid || 0}&range=B${data.row}`;
+  chrome.tabs.create({ url });
+
+  return { created: data.created !== false, row: data.row };
+}
+
 // ---------- Vérification de mise à jour via GitHub ----------
 // Compare le "version" du manifest.json publié sur GitHub (raw) à la version installée.
 // Auto-update silencieux impossible pour une extension chargée en mode développeur (Chrome ne
@@ -156,6 +197,12 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg.type === 'RESCHEDULE_ALARM') {
     scheduleAlarms();
     sendResponse({ ok: true });
+    return true;
+  }
+  if (msg.type === 'CREATE_SNIPPET_ROW') {
+    createSnippetRow(msg.trigger)
+      .then(r => sendResponse({ ok: true, ...r }))
+      .catch(e => sendResponse({ ok: false, error: e.message }));
     return true;
   }
   if (msg.type === 'CHECK_FOR_UPDATES') {

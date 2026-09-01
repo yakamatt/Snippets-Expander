@@ -24,7 +24,8 @@ Remplace automatiquement un texte court (ex: `;sig`) par un texte prédéfini, d
 - **Intégration Aviso** : sur l'application Aviso, des icônes apparaissent automatiquement à côté de "Dispositions réalisées", selon le code du "Référentiel" de la ligne (ex: "GN 4") :
   - l'icône **Snippet Expander** **ajoute** le contenu du snippet à la suite du texte déjà saisi, sans jamais l'écraser. Elle n'apparaît que si le code correspond au déclencheur d'un snippet ;
   - l'icône **sitesecurite.com** ouvre dans un nouvel onglet l'article du règlement de sécurité ERP correspondant, ancré directement sur l'article visé. Elle s'affiche dès que le code est un article ERP connu (voir `sitesecurite-articles.js`), **y compris sur les lignes sans snippet** — consulter le texte reste utile quand il n'y a rien à insérer ;
-  - l'icône **verte** ajoute les données **DatAviso** de cet article (voir ci-dessous), et affiche au survol le texte qui sera inséré. Elle n'apparaît que si un article importé porte le même code.
+  - l'icône **verte** ajoute les données **DatAviso** de cet article (voir ci-dessous), et affiche au survol le texte qui sera inséré. Elle n'apparaît que si un article importé porte le même code ;
+  - l'icône **"+"** (grise) crée le snippet manquant : elle ajoute au tableau Google Sheets une ligne dont le déclencheur reprend le Référentiel (`/GN13`), actualise les données puis ouvre le tableau sur la cellule de contenu à saisir. Elle n'apparaît que sur les lignes **sans** snippet, et s'efface au profit de l'icône bleue une fois celui-ci créé. Nécessite un script Apps Script à jour (voir section 3).
 
   Désactivable via le réglage **Intégration Aviso**, accessible depuis le popup de l'icône ou dans Paramètres avancés. Sans effet sur les autres sites.
 
@@ -69,12 +70,19 @@ GN 12 — Justification des classements de comportement au feu
 5. Déployez, autorisez les permissions, copiez l'**URL de l'application Web** (`.../exec`)
 
 ### c. Configurer l'extension
-1. Dans `background.js`, remplacez la valeur de la constante `DEFAULT_WEBAPP_URL` par l'URL de votre application Web
-2. Rechargez l'extension (`chrome://extensions` > icône **Actualiser** ⟳)
-3. Ajustez si besoin la fréquence d'actualisation automatique dans **Paramètres avancés > Fréquence d'actualisation des données** (optionnel, toutes les heures par défaut)
+1. Ouvrez **Paramètres avancés > Tableau de référence** et renseignez les deux adresses :
+   - **Adresse du tableau Google Sheets** : l'URL du Sheet lui-même (`https://docs.google.com/spreadsheets/d/.../edit`), utilisée pour l'ouvrir depuis l'extension
+   - **Adresse de l'application Web** : l'URL `.../exec` obtenue à l'étape b, celle qui sert réellement les données
 
-### d. Mise à jour des données (lecture seule)
-L'extension ne modifie jamais le Sheet : elle se contente de le lire. À chaque récupération (bouton "🔄 Actualiser les données" du popup, "🔄 Forcer l'actualisation..." de la page Options, ou synchro automatique en arrière-plan), les snippets affichés dans l'extension sont **entièrement remplacés** par le contenu actuel du Sheet.
+   (Les valeurs par défaut restent celles définies dans le code, `DEFAULT_WEBAPP_URL` et `DEFAULT_SHEET_URL` ; ces champs permettent d'en changer sans toucher aux fichiers.)
+2. Ajustez si besoin la fréquence d'actualisation automatique dans **Paramètres avancés > Fréquence d'actualisation des données** (optionnel, toutes les heures par défaut)
+
+⚠️ **Après toute modification de `Code.gs`**, redéployez : **Déployer > Gérer les déploiements > (crayon) > Version : "Nouvelle version" > Déployer**. Sans nouvelle version, l'URL `/exec` continue de servir l'ancien code — le bouton "+" de l'intégration Aviso signalera alors un script obsolète.
+
+### d. Mise à jour des données
+L'extension lit le Sheet à chaque récupération (bouton "🔄 Actualiser les données" du popup, "🔄 Forcer l'actualisation..." de la page Options, ou synchro automatique en arrière-plan) : les snippets affichés sont alors **entièrement remplacés** par le contenu actuel du Sheet.
+
+La **seule** écriture possible est l'ajout d'une ligne par le bouton "+" de l'intégration Aviso, qui crée un déclencheur au contenu vide. L'extension ne modifie ni ne supprime jamais une ligne existante.
 
 Pour ajouter, modifier ou supprimer un snippet : faites-le directement dans le Google Sheet (lien "📄 Ouvrir le tableau Google Sheets" en haut de la page Options), puis actualisez les données dans l'extension pour récupérer le résultat.
 
