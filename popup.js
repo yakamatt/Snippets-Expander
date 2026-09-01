@@ -22,9 +22,13 @@ document.getElementById('refresh-btn').addEventListener('click', () => {
 // place dans le popup. Le content script écoute chrome.storage.onChanged et applique le
 // changement immédiatement, sans rechargement de la page Aviso.
 const avisoEl = document.getElementById('aviso-icon-enabled');
+const DEFAULT_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1H2rBzMQzZk74Bk2Z_Mo8lXAdYea7Mi7WfzVruBahd_I/edit';
 
 chrome.storage.sync.get(['syncSettings'], (res) => {
-  avisoEl.checked = (res.syncSettings || {}).avisoIconEnabled !== false;
+  const s = res.syncSettings || {};
+  avisoEl.checked = s.avisoIconEnabled !== false;
+  // Le tableau visé est configurable (Paramètres avancés) : le lien suit ce réglage.
+  document.getElementById('open-sheet-link').href = s.sheetUrl || DEFAULT_SHEET_URL;
 });
 
 avisoEl.addEventListener('change', (e) => {

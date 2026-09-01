@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Snippet Expander",
-  "version": "2.14.1",
+  "version": "2.15.0",
   "description": "Remplacement automatique de texte par des snippets prédéfinis — gratuit et open-source.",
   "permissions": ["storage", "activeTab", "alarms", "notifications"],
   "host_permissions": ["<all_urls>"],
@@ -28,7 +28,7 @@
   "options_page": "options.html",
   "web_accessible_resources": [
     {
-      "resources": ["icons/icon16.png", "icons/sitesecurite32.png", "icons/imported16.svg"],
+      "resources": ["icons/icon16.png", "icons/sitesecurite32.png", "icons/imported16.svg", "icons/add16.svg"],
       "matches": ["https://aviso2.bureauveritas.com/*"]
     }
   ],

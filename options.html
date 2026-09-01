@@ -10,7 +10,7 @@
     <h1><img src="icons/icon32.png" alt="" /> Snippet Expander</h1>
     <p class="subtitle">Vos snippets, en lecture seule, synchronisés depuis un tableau Google Sheets partagé.</p>
     <div class="button-row">
-      <a class="link-btn" href="https://docs.google.com/spreadsheets/d/1H2rBzMQzZk74Bk2Z_Mo8lXAdYea7Mi7WfzVruBahd_I/edit?usp=sharing" target="_blank" rel="noopener noreferrer">📄 Ouvrir le tableau Google Sheets</a>
+      <a class="link-btn" id="open-sheet-link" href="#" target="_blank" rel="noopener noreferrer">📄 Ouvrir le tableau Google Sheets</a>
       <button id="refresh-btn">🔄 Forcer l'actualisation des données depuis le tableau Google Sheets</button>
     </div>
     <p class="hint">Les données se mettent déjà à jour automatiquement (fréquence réglable dans Paramètres avancés) : ce bouton force une actualisation immédiate.</p>
@@ -73,6 +73,16 @@
     <section class="card">
       <button id="toggle-advanced" class="link-btn">⚙️ Paramètres avancés ▾</button>
       <div id="advanced-panel" hidden>
+
+        <div class="advanced-block">
+          <h3>Tableau de référence</h3>
+          <p class="hint">Pour pointer l'extension vers un autre tableau Google Sheets. Les deux adresses vont ensemble : l'application Web est l'URL du script Apps Script déployé sur ce tableau (<code>.../exec</code>), c'est elle qui sert réellement les données. Voir le README, section 3, pour le déploiement.</p>
+          <label for="sheet-url">Adresse du tableau Google Sheets</label>
+          <input type="text" id="sheet-url" placeholder="https://docs.google.com/spreadsheets/d/.../edit" />
+          <label for="webapp-url">Adresse de l'application Web (Apps Script)</label>
+          <input type="text" id="webapp-url" placeholder="https://script.google.com/macros/s/.../exec" />
+          <p class="hint" id="sheet-url-status"></p>
+        </div>
 
         <div class="advanced-block">
           <h3>Fréquence d'actualisation des données</h3>

@@ -1,5 +1,6 @@
-const BUILD_DATE = '2026-08-24'; // v2.14.1
+const BUILD_DATE = '2026-08-25'; // v2.15.0
 const DEFAULT_GITHUB_URL = 'https://raw.githubusercontent.com/yakamatt/Snippets-Expander/main';
+const DEFAULT_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1H2rBzMQzZk74Bk2Z_Mo8lXAdYea7Mi7WfzVruBahd_I/edit';
 
 let snippets = [];
 // Dossiers explicitement dépliés : vide par défaut, donc tous les dossiers démarrent fermés.
@@ -25,6 +26,9 @@ function load() {
     document.getElementById('local-folder-path').value = s.localFolderPath || '';
     document.getElementById('aviso-icon-enabled').checked = s.avisoIconEnabled !== false;
     document.getElementById('auto-check-updates').checked = !!s.autoCheckUpdates;
+    document.getElementById('sheet-url').value = s.sheetUrl || '';
+    document.getElementById('webapp-url').value = s.webAppUrl || '';
+    document.getElementById('open-sheet-link').href = s.sheetUrl || DEFAULT_SHEET_URL;
   });
   renderUpdateMode();
   loadImported();
@@ -342,6 +346,41 @@ document.getElementById('toggle-advanced').addEventListener('click', () => {
 document.getElementById('expansion-delay').addEventListener('change', (e) => {
   updateSyncSettings({ expansionDelayMs: parseInt(e.target.value, 10) || 0 });
 });
+
+// Les deux adresses du tableau de référence. Enregistrées telles quelles après une validation
+// de forme : une URL mal formée est signalée immédiatement plutôt que de faire échouer
+// silencieusement la prochaine synchro.
+function validerUrl(valeur, motAttendu) {
+  const v = valeur.trim();
+  if (!v) return null;
+  let u;
+  try { u = new URL(v); } catch { return 'adresse invalide'; }
+  if (u.protocol !== 'https:') return 'l\'adresse doit commencer par https://';
+  if (!u.hostname.endsWith('google.com')) return 'ce n\'est pas une adresse Google';
+  if (motAttendu && !v.includes(motAttendu)) return `l'adresse devrait contenir "${motAttendu}"`;
+  return null;
+}
+
+function brancherChampUrl(id, cle, motAttendu, apresEnregistrement) {
+  document.getElementById(id).addEventListener('change', (e) => {
+    const statusEl = document.getElementById('sheet-url-status');
+    const valeur = e.target.value.trim();
+    const erreur = validerUrl(valeur, motAttendu);
+    if (erreur) {
+      statusEl.textContent = `❌ ${erreur}`;
+      return;
+    }
+    updateSyncSettings({ [cle]: valeur }, () => {
+      statusEl.textContent = valeur ? '✅ Adresse enregistrée.' : '✅ Adresse effacée (valeur par défaut utilisée).';
+      if (apresEnregistrement) apresEnregistrement(valeur);
+    });
+  });
+}
+
+brancherChampUrl('sheet-url', 'sheetUrl', '/spreadsheets/', (v) => {
+  document.getElementById('open-sheet-link').href = v || DEFAULT_SHEET_URL;
+});
+brancherChampUrl('webapp-url', 'webAppUrl', '/exec');
 
 document.getElementById('local-folder-path').addEventListener('change', (e) => {
   updateSyncSettings({ localFolderPath: e.target.value.trim() });

@@ -14,6 +14,7 @@ const AVISO_HOSTNAME = 'aviso2.bureauveritas.com';
 const AVISO_ICON_CLASS = 'snippet-expander-aviso-icon';
 const AVISO_LAW_CLASS = 'snippet-expander-aviso-law';
 const AVISO_IMPORT_CLASS = 'snippet-expander-aviso-import';
+const AVISO_ADD_CLASS = 'snippet-expander-aviso-add';
 
 function isAvisoSite() {
   return location.hostname === AVISO_HOSTNAME;
@@ -42,7 +43,12 @@ chrome.storage.onChanged.addListener((changes, area) => {
   if (area === 'local' && changes.snippets) {
     SNIPPETS = changes.snippets.newValue || [];
     MAX_TRIGGER_LEN = SNIPPETS.reduce((m, s) => Math.max(m, s.trigger.length), 1);
-    if (isAvisoSite()) scheduleAvisoScan();
+    if (isAvisoSite()) {
+      // Un snippet vient peut-être d'être créé depuis le bouton "+" : les icônes "+" devenues
+      // sans objet sont retirées, le scan repose ensuite l'icône bleue là où il faut.
+      document.querySelectorAll('.' + AVISO_ADD_CLASS).forEach(el => el.remove());
+      scheduleAvisoScan();
+    }
   }
   // Un import depuis le popup doit se voir tout de suite sur l'onglet Aviso déjà ouvert : les
   // icônes obsolètes sont retirées, puis un scan les repose d'après les nouvelles données.
@@ -393,6 +399,54 @@ function insertAvisoImportIcon(container, dispoCell, article) {
   else container.insertBefore(btn, container.firstChild);
 }
 
+// Bouton "+" : crée dans le tableau Google Sheets une ligne dont le déclencheur reprend le
+// Référentiel, puis ouvre le tableau sur la cellule de contenu à saisir. N'apparaît que sur les
+// lignes sans snippet — créer un second snippet au même déclencheur rendrait l'expansion de
+// texte imprévisible (findMatch départage à la longueur, donc arbitrairement à égalité).
+function insertAvisoAddIcon(container, refCode) {
+  if (container.querySelector('.' + AVISO_ADD_CLASS)) return;
+
+  const trigger = '/' + refCode;
+
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = AVISO_ADD_CLASS;
+  btn.title = `Créer le snippet "${trigger}" dans le tableau Google Sheets`;
+  btn.style.cssText = AVISO_BTN_STYLE;
+
+  const img = document.createElement('img');
+  img.src = chrome.runtime.getURL('icons/add16.svg');
+  img.alt = `Créer le snippet ${trigger}`;
+  img.style.cssText = AVISO_IMG_STYLE;
+  btn.appendChild(img);
+
+  btn.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (btn.disabled) return;
+    btn.disabled = true;
+    btn.style.opacity = '0.45';
+
+    chrome.runtime.sendMessage({ type: 'CREATE_SNIPPET_ROW', trigger }, (resp) => {
+      const erreur = chrome.runtime.lastError ? chrome.runtime.lastError.message
+        : (resp && resp.ok ? null : (resp && resp.error) || 'Erreur inconnue');
+      if (!erreur) return; // succès : la synchro retire ce bouton et pose l'icône du snippet
+      btn.disabled = false;
+      btn.style.opacity = '';
+      // Pas de bandeau injecté dans la page d'Aviso : l'échec est rare et l'infobulle suffit à
+      // le signaler sans perturber la mise en page du rapport.
+      btn.title = `Création impossible : ${erreur}`;
+      console.error('[Snippet Expander] Création du snippet impossible :', erreur);
+    });
+  });
+
+  const previous = container.querySelector('.' + AVISO_IMPORT_CLASS)
+    || container.querySelector('.' + AVISO_LAW_CLASS)
+    || container.querySelector('.' + AVISO_ICON_CLASS);
+  if (previous) previous.insertAdjacentElement('afterend', btn);
+  else container.insertBefore(btn, container.firstChild);
+}
+
 function scanAvisoTable() {
   if (!AVISO_ICON_ENABLED) return;
   document.querySelectorAll('td.referentiel.content').forEach(refCell => {
@@ -412,6 +466,8 @@ function scanAvisoTable() {
 
     const article = IMPORTED_ARTICLES.find(a => a.code === refCode);
     if (article) insertAvisoImportIcon(container, dispoCell, article);
+
+    if (!match) insertAvisoAddIcon(container, refCode);
   });
 }
 
@@ -428,7 +484,8 @@ function applyAvisoIconSetting() {
     scheduleAvisoScan();
   } else {
     document.querySelectorAll(
-      '.' + AVISO_ICON_CLASS + ', .' + AVISO_LAW_CLASS + ', .' + AVISO_IMPORT_CLASS
+      '.' + AVISO_ICON_CLASS + ', .' + AVISO_LAW_CLASS + ', .' +
+      AVISO_IMPORT_CLASS + ', .' + AVISO_ADD_CLASS
     ).forEach(el => el.remove());
   }
 }
