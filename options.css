@@ -198,6 +198,15 @@ tr.folder-group-hidden { display: none; }
 .update-btn { background: var(--accent); color: var(--accent-ink); white-space: nowrap; }
 .update-btn:hover { background: var(--accent-hover); }
 
+.sync-warning {
+  background: #fbeceb; color: #8c1d18; border: 1px solid #eccbc8;
+  border-radius: 10px; padding: 10px 14px; font-size: 13px; margin-top: 12px; line-height: 1.5;
+}
+.sync-warning[hidden] { display: none; }
+@media (prefers-color-scheme: dark) {
+  .sync-warning { background: #2a1614; color: #f2b8b5; border-color: #5c2a27; }
+}
+
 .pin-banner {
   background: var(--info-bg); color: var(--info); border-radius: 10px; padding: 10px 14px;
   font-size: 13px; margin-top: 12px; display: flex; justify-content: space-between; align-items: center; gap: 10px;

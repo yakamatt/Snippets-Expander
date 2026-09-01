@@ -29,7 +29,17 @@ function json_(obj) {
     .setMimeType(ContentService.MimeType.JSON);
 }
 
+// Version de l'API exposée par ce script. L'extension la vérifie AVANT tout POST : une version
+// antérieure de ce fichier réécrivait le tableau entier sur n'importe quel POST, et un client
+// récent parlant à un script ancien effaçait donc tous les snippets. Le POST n'est plus émis
+// tant que cette signature n'a pas été obtenue.
+const API_VERSION = 2;
+
 function doGet(e) {
+  if (e && e.parameter && e.parameter.probe === 'append') {
+    return json_({ ok: true, api: 'append', version: API_VERSION });
+  }
+
   const sheet = getSheet_();
   const data = sheet.getDataRange().getValues();
   data.shift(); // enlève l'en-tête

@@ -98,7 +98,25 @@ async function pullFromSheet() {
     folder: s.folder || ''
   }));
 
-  await chrome.storage.local.set({ snippets, lastSync: new Date().toISOString() });
+  // Garde-fou : un tableau distant vide n'écrase jamais une liste locale non vide. Sans cela, un
+  // tableau accidentellement vidé se propage à l'extension à la synchro suivante, et la dernière
+  // copie des snippets disparaît avec. La copie locale est conservée et l'anomalie signalée dans
+  // la page Paramètres ; vider délibérément le tableau reste possible en supprimant d'abord les
+  // snippets locaux, ou en réinstallant l'extension.
+  const { snippets: locaux } = await chrome.storage.local.get(['snippets']);
+  if (!snippets.length && locaux && locaux.length) {
+    await chrome.storage.local.set({
+      syncWarning: {
+        at: new Date().toISOString(),
+        kept: locaux.length,
+        message: `Le tableau Google Sheets est revenu vide alors que ${locaux.length} snippets étaient enregistrés. ` +
+                 `Ils ont été conservés et n'ont pas été écrasés : vérifiez le tableau (Fichier > Historique des versions).`
+      }
+    });
+    throw new Error('Tableau distant vide : synchro ignorée pour ne pas perdre les snippets locaux');
+  }
+
+  await chrome.storage.local.set({ snippets, lastSync: new Date().toISOString(), syncWarning: null });
   return snippets;
 }
 
@@ -111,10 +129,35 @@ async function pullFromSheet() {
 // Content-Type en text/plain — Apps Script lit e.postData.contents tel quel, et ce type évite
 // la requête de pré-vérification CORS.
 
+// Vérifie que le script déployé expose bien l'ajout de ligne, AVANT de lui envoyer quoi que ce
+// soit. Indispensable : une version antérieure de Code.gs réécrivait le tableau entier sur
+// n'importe quel POST (clearContents puis réécriture), si bien qu'un POST vers un script pas
+// encore redéployé effaçait tous les snippets. Le script récent répond ici un objet signé ;
+// l'ancien, qui ignore le paramètre, renvoie le tableau des snippets — ce qui suffit à le
+// reconnaître et à ne rien lui envoyer.
+async function verifierApiAjout(webAppUrl) {
+  const url = webAppUrl + (webAppUrl.includes('?') ? '&' : '?') + 'probe=append';
+  let data;
+  try {
+    const res = await fetch(url, { cache: 'no-store' });
+    data = await res.json();
+  } catch {
+    throw new Error('Script Google Sheets injoignable ou réponse illisible');
+  }
+  if (Array.isArray(data) || !data || data.api !== 'append') {
+    throw new Error(
+      'Script Google Sheets obsolète : redéployez-le en "Nouvelle version" avant de créer un snippet ' +
+      '(Déployer > Gérer les déploiements > crayon > Nouvelle version).'
+    );
+  }
+}
+
 async function createSnippetRow(trigger) {
   const { syncSettings } = await chrome.storage.sync.get(['syncSettings']);
   const settings = syncSettings || {};
   if (!settings.webAppUrl) throw new Error('URL du Web App non configurée (Paramètres avancés)');
+
+  await verifierApiAjout(settings.webAppUrl);
 
   const res = await fetch(settings.webAppUrl, {
     method: 'POST',

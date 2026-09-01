@@ -1,5 +1,10 @@
 # Changelog — Snippet Expander
 
+## v2.15.1 — 2026-08-25
+- **Correctif critique : le bouton "+" pouvait effacer tout le tableau Google Sheets.** Si le script Apps Script n'avait pas encore été redéployé, le POST atteignait l'ancienne version, qui commençait par `sheet.clearContents()` avant d'échouer sur le nouveau format de requête. Le tableau était vidé et aucun snippet n'était créé
+- **L'extension vérifie désormais le script AVANT d'écrire** : une requête de contrôle (`?probe=append`) confirme que la version déployée gère l'ajout de ligne. Sans cette confirmation, **aucun POST n'est émis** et l'utilisateur est invité à redéployer. La consigne de redéploiement, en v2.15.0, ne reposait que sur la documentation — elle est maintenant appliquée par le code
+- **Une synchro ne peut plus remplacer des snippets par un tableau vide** : si le tableau distant revient vide alors que des snippets sont enregistrés localement, la synchro est refusée, la copie locale conservée, et un bandeau d'alerte s'affiche dans la page Paramètres. Un tableau accidentellement vidé ne se propage donc plus à l'extension, qui garde la dernière copie utilisable
+
 ## v2.15.0 — 2026-08-25
 - **Nouveau bloc "Tableau de référence"** dans Paramètres avancés : deux champs pour pointer l'extension vers un autre tableau Google Sheets (adresse du tableau, et adresse de l'application Web Apps Script qui sert les données). Les adresses sont validées avant enregistrement ; les liens "Ouvrir le tableau" du popup et de la page Paramètres suivent désormais ce réglage au lieu d'être figés
 - **Nouvelle icône "+" sur Aviso**, sur les lignes dont le Référentiel n'a **pas** encore de snippet : elle crée la ligne correspondante dans le tableau Google Sheets (déclencheur `/GN13` par exemple, contenu laissé vide), actualise les données de l'extension, puis ouvre le tableau directement sur la cellule à saisir. Une fois le snippet créé, le "+" s'efface au profit de l'icône bleue habituelle
