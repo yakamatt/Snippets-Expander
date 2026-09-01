@@ -1,4 +1,4 @@
-const BUILD_DATE = '2026-08-25'; // v2.15.0
+const BUILD_DATE = '2026-08-25'; // v2.15.1
 const DEFAULT_GITHUB_URL = 'https://raw.githubusercontent.com/yakamatt/Snippets-Expander/main';
 const DEFAULT_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1H2rBzMQzZk74Bk2Z_Mo8lXAdYea7Mi7WfzVruBahd_I/edit';
 
@@ -12,11 +12,12 @@ const searchEl = document.getElementById('search');
 const folderFilterEl = document.getElementById('folder-filter');
 
 function load() {
-  chrome.storage.local.get(['snippets', 'lastSync', 'updateCheck', 'pinBannerDismissed'], (res) => {
+  chrome.storage.local.get(['snippets', 'lastSync', 'updateCheck', 'pinBannerDismissed', 'syncWarning'], (res) => {
     snippets = res.snippets || [];
     render();
     renderVersionFooter(res.lastSync);
     renderUpdateBanner(res.updateCheck);
+    renderSyncWarning(res.syncWarning);
     document.getElementById('pin-banner').hidden = !!res.pinBannerDismissed;
   });
   chrome.storage.sync.get(['syncSettings'], (res) => {
@@ -490,6 +491,19 @@ function renderUpdateBanner(updateCheck) {
   } else {
     banner.hidden = true;
   }
+}
+
+// Signale qu'une synchro a été refusée parce que le tableau distant était vide : les snippets
+// locaux sont alors la dernière copie existante, il faut le dire clairement plutôt que de
+// laisser croire à une simple erreur réseau.
+function renderSyncWarning(warning) {
+  const el = document.getElementById('sync-warning');
+  if (!warning || !warning.message) {
+    el.hidden = true;
+    return;
+  }
+  el.hidden = false;
+  el.textContent = `⚠️ ${warning.message}`;
 }
 
 function renderVersionFooter(lastSync) {

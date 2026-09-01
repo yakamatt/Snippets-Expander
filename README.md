@@ -77,12 +77,16 @@ GN 12 — Justification des classements de comportement au feu
    (Les valeurs par défaut restent celles définies dans le code, `DEFAULT_WEBAPP_URL` et `DEFAULT_SHEET_URL` ; ces champs permettent d'en changer sans toucher aux fichiers.)
 2. Ajustez si besoin la fréquence d'actualisation automatique dans **Paramètres avancés > Fréquence d'actualisation des données** (optionnel, toutes les heures par défaut)
 
-⚠️ **Après toute modification de `Code.gs`**, redéployez : **Déployer > Gérer les déploiements > (crayon) > Version : "Nouvelle version" > Déployer**. Sans nouvelle version, l'URL `/exec` continue de servir l'ancien code — le bouton "+" de l'intégration Aviso signalera alors un script obsolète.
+⚠️ **Après toute modification de `Code.gs`**, redéployez : **Déployer > Gérer les déploiements > (crayon) > Version : "Nouvelle version" > Déployer**. Sans nouvelle version, l'URL `/exec` continue de servir l'ancien code.
+
+L'extension s'en protège : avant toute écriture, elle interroge le script (`?probe=append`) pour vérifier qu'il gère l'ajout de ligne. Si la réponse ne le confirme pas, **aucune requête d'écriture n'est envoyée** et le bouton "+" signale un script obsolète. Cette vérification existe parce qu'une version antérieure de `Code.gs` réécrivait le tableau entier sur n'importe quel POST : un client récent parlant à un script ancien effaçait tous les snippets.
 
 ### d. Mise à jour des données
 L'extension lit le Sheet à chaque récupération (bouton "🔄 Actualiser les données" du popup, "🔄 Forcer l'actualisation..." de la page Options, ou synchro automatique en arrière-plan) : les snippets affichés sont alors **entièrement remplacés** par le contenu actuel du Sheet.
 
 La **seule** écriture possible est l'ajout d'une ligne par le bouton "+" de l'intégration Aviso, qui crée un déclencheur au contenu vide. L'extension ne modifie ni ne supprime jamais une ligne existante.
+
+**Garde-fou** : si le tableau distant revient vide alors que des snippets sont enregistrés localement, la synchro est refusée et la copie locale conservée — un bandeau d'alerte s'affiche alors dans la page Paramètres. Un tableau vidé par accident ne fait donc pas disparaître la dernière copie des snippets. Pour vider délibérément le tableau, supprimez d'abord les snippets locaux (ou réinstallez l'extension).
 
 Pour ajouter, modifier ou supprimer un snippet : faites-le directement dans le Google Sheet (lien "📄 Ouvrir le tableau Google Sheets" en haut de la page Options), puis actualisez les données dans l'extension pour récupérer le résultat.
 
