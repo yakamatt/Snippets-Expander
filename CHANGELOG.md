@@ -1,5 +1,11 @@
 # Changelog — Snippet Expander
 
+## v2.16.0 — 2026-09-02
+- **Le bouton "+" reprend le texte déjà saisi dans "Dispositions réalisées"** pour remplir la colonne `content` du tableau Google Sheets. C'est le geste courant : la disposition est rédigée une fois dans Aviso, puis capitalisée en snippet réutilisable d'un clic, sans copier-coller. La cellule vide donne, comme avant, une ligne au contenu à saisir
+- Le texte est lu **au moment du clic**, pas à l'affichage de l'icône : la saisie en cours est bien celle qui part dans le tableau. L'infobulle du "+" indique laquelle des deux situations s'applique
+- **Un contenu déjà présent dans le tableau n'est jamais remplacé** : si le déclencheur existe déjà avec un contenu, la ligne est renvoyée telle quelle. Le pré-remplissage ne s'applique qu'à une cellule `content` vide
+- ⚠️ **Le script Apps Script doit être redéployé en "Nouvelle version"** (API v3) pour que le pré-remplissage fonctionne. Un script resté en v2 crée la ligne sans contenu — dégradé, mais sans perte : le tableau s'ouvre de toute façon sur la cellule à saisir
+
 ## v2.15.1 — 2026-08-25
 - **Correctif critique : le bouton "+" pouvait effacer tout le tableau Google Sheets.** Si le script Apps Script n'avait pas encore été redéployé, le POST atteignait l'ancienne version, qui commençait par `sheet.clearContents()` avant d'échouer sur le nouveau format de requête. Le tableau était vidé et aucun snippet n'était créé
 - **L'extension vérifie désormais le script AVANT d'écrire** : une requête de contrôle (`?probe=append`) confirme que la version déployée gère l'ajout de ligne. Sans cette confirmation, **aucun POST n'est émis** et l'utilisateur est invité à redéployer. La consigne de redéploiement, en v2.15.0, ne reposait que sur la documentation — elle est maintenant appliquée par le code

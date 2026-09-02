@@ -25,7 +25,7 @@ Remplace automatiquement un texte court (ex: `;sig`) par un texte prédéfini, d
   - l'icône **Snippet Expander** **ajoute** le contenu du snippet à la suite du texte déjà saisi, sans jamais l'écraser. Elle n'apparaît que si le code correspond au déclencheur d'un snippet ;
   - l'icône **sitesecurite.com** ouvre dans un nouvel onglet l'article du règlement de sécurité ERP correspondant, ancré directement sur l'article visé. Elle s'affiche dès que le code est un article ERP connu (voir `sitesecurite-articles.js`), **y compris sur les lignes sans snippet** — consulter le texte reste utile quand il n'y a rien à insérer ;
   - l'icône **verte** ajoute les données **DatAviso** de cet article (voir ci-dessous), et affiche au survol le texte qui sera inséré. Elle n'apparaît que si un article importé porte le même code ;
-  - l'icône **"+"** (grise) crée le snippet manquant : elle ajoute au tableau Google Sheets une ligne dont le déclencheur reprend le Référentiel (`/GN13`), actualise les données puis ouvre le tableau sur la cellule de contenu à saisir. Elle n'apparaît que sur les lignes **sans** snippet, et s'efface au profit de l'icône bleue une fois celui-ci créé. Nécessite un script Apps Script à jour (voir section 3).
+  - l'icône **"+"** (grise) crée le snippet manquant : elle ajoute au tableau Google Sheets une ligne dont le déclencheur reprend le Référentiel (`/GN13`) et dont le contenu reprend **le texte déjà saisi dans "Dispositions réalisées"** (vide si la cellule l'était), actualise les données puis ouvre le tableau sur la cellule de contenu. Elle n'apparaît que sur les lignes **sans** snippet, et s'efface au profit de l'icône bleue une fois celui-ci créé. Nécessite un script Apps Script à jour (voir section 3).
 
   Désactivable via le réglage **Intégration Aviso**, accessible depuis le popup de l'icône ou dans Paramètres avancés. Sans effet sur les autres sites.
 
@@ -84,7 +84,7 @@ L'extension s'en protège : avant toute écriture, elle interroge le script (`?p
 ### d. Mise à jour des données
 L'extension lit le Sheet à chaque récupération (bouton "🔄 Actualiser les données" du popup, "🔄 Forcer l'actualisation..." de la page Options, ou synchro automatique en arrière-plan) : les snippets affichés sont alors **entièrement remplacés** par le contenu actuel du Sheet.
 
-La **seule** écriture possible est l'ajout d'une ligne par le bouton "+" de l'intégration Aviso, qui crée un déclencheur au contenu vide. L'extension ne modifie ni ne supprime jamais une ligne existante.
+La **seule** écriture possible est l'ajout d'une ligne par le bouton "+" de l'intégration Aviso, avec le déclencheur et le texte saisi dans la cellule Aviso. L'extension ne supprime jamais une ligne existante ; elle ne complète une ligne déjà présente que si sa cellule de contenu est vide, et ne remplace donc jamais un texte rédigé dans le tableau.
 
 **Garde-fou** : si le tableau distant revient vide alors que des snippets sont enregistrés localement, la synchro est refusée et la copie locale conservée — un bandeau d'alerte s'affiche alors dans la page Paramètres. Un tableau vidé par accident ne fait donc pas disparaître la dernière copie des snippets. Pour vider délibérément le tableau, supprimez d'abord les snippets locaux (ou réinstallez l'extension).
 
