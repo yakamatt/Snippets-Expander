@@ -400,19 +400,41 @@ function insertAvisoImportIcon(container, dispoCell, article) {
 }
 
 // Bouton "+" : crée dans le tableau Google Sheets une ligne dont le déclencheur reprend le
-// Référentiel, puis ouvre le tableau sur la cellule de contenu à saisir. N'apparaît que sur les
+// Référentiel et dont le contenu reprend le texte déjà saisi dans "Dispositions réalisées" —
+// c'est le cas courant : on rédige une fois la disposition, puis on la capitalise en snippet.
+// Le tableau s'ouvre ensuite sur la cellule de contenu, à compléter ou à relire. N'apparaît que sur les
 // lignes sans snippet — créer un second snippet au même déclencheur rendrait l'expansion de
 // texte imprévisible (findMatch départage à la longueur, donc arbitrairement à égalité).
-function insertAvisoAddIcon(container, refCode) {
+function insertAvisoAddIcon(container, dispoCell, refCode) {
   if (container.querySelector('.' + AVISO_ADD_CLASS)) return;
 
   const trigger = '/' + refCode;
 
+  // Contenu déjà saisi dans "Dispositions réalisées" : il sert de contenu au snippet créé. Lu au
+  // clic et non à la pose de l'icône — la cellule est éditable, sa valeur au moment du scan
+  // n'est pas celle que l'utilisateur a sous les yeux quand il clique.
+  const lireDispositions = () => {
+    const textarea = dispoCell.querySelector('textarea.verification');
+    return textarea ? textarea.value.trim() : '';
+  };
+
   const btn = document.createElement('button');
   btn.type = 'button';
   btn.className = AVISO_ADD_CLASS;
-  btn.title = `Créer le snippet "${trigger}" dans le tableau Google Sheets`;
   btn.style.cssText = AVISO_BTN_STYLE;
+  // Le libellé dépend de ce que contient la cellule : il est recalculé au survol, la saisie
+  // pouvant avoir changé depuis la pose de l'icône.
+  // Passe à true après un échec : le message d'erreur reste alors affiché en infobulle au lieu
+  // d'être remplacé au survol suivant par le libellé normal.
+  let echec = false;
+  const majTitre = () => {
+    if (echec) return;
+    btn.title = lireDispositions()
+      ? `Créer le snippet "${trigger}" avec le texte saisi dans cette cellule`
+      : `Créer le snippet "${trigger}" (vide) dans le tableau Google Sheets`;
+  };
+  majTitre();
+  btn.addEventListener('mouseenter', majTitre);
 
   const img = document.createElement('img');
   img.src = chrome.runtime.getURL('icons/add16.svg');
@@ -427,7 +449,7 @@ function insertAvisoAddIcon(container, refCode) {
     btn.disabled = true;
     btn.style.opacity = '0.45';
 
-    chrome.runtime.sendMessage({ type: 'CREATE_SNIPPET_ROW', trigger }, (resp) => {
+    chrome.runtime.sendMessage({ type: 'CREATE_SNIPPET_ROW', trigger, content: lireDispositions() }, (resp) => {
       const erreur = chrome.runtime.lastError ? chrome.runtime.lastError.message
         : (resp && resp.ok ? null : (resp && resp.error) || 'Erreur inconnue');
       if (!erreur) return; // succès : la synchro retire ce bouton et pose l'icône du snippet
@@ -435,6 +457,7 @@ function insertAvisoAddIcon(container, refCode) {
       btn.style.opacity = '';
       // Pas de bandeau injecté dans la page d'Aviso : l'échec est rare et l'infobulle suffit à
       // le signaler sans perturber la mise en page du rapport.
+      echec = true;
       btn.title = `Création impossible : ${erreur}`;
       console.error('[Snippet Expander] Création du snippet impossible :', erreur);
     });
@@ -467,7 +490,7 @@ function scanAvisoTable() {
     const article = IMPORTED_ARTICLES.find(a => a.code === refCode);
     if (article) insertAvisoImportIcon(container, dispoCell, article);
 
-    if (!match) insertAvisoAddIcon(container, refCode);
+    if (!match) insertAvisoAddIcon(container, dispoCell, refCode);
   });
 }
 

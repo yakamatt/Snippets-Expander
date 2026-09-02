@@ -121,8 +121,9 @@ async function pullFromSheet() {
 }
 
 // ---------- Création d'un snippet depuis Aviso (bouton "+") ----------
-// Ajoute une ligne au tableau avec le seul déclencheur, récupère les données mises à jour, puis
-// ouvre le tableau positionné sur la cellule "content" à remplir.
+// Ajoute une ligne au tableau (déclencheur + le texte déjà saisi dans la cellule Aviso, s'il y en
+// a), récupère les données mises à jour, puis ouvre le tableau positionné sur la cellule
+// "content" pour la compléter ou la relire.
 //
 // La requête part du service worker et non du script de contenu : les permissions d'hôte de
 // l'extension s'y appliquent, la requête n'est donc pas soumise au CORS de la page Aviso.
@@ -152,7 +153,7 @@ async function verifierApiAjout(webAppUrl) {
   }
 }
 
-async function createSnippetRow(trigger) {
+async function createSnippetRow(trigger, content) {
   const { syncSettings } = await chrome.storage.sync.get(['syncSettings']);
   const settings = syncSettings || {};
   if (!settings.webAppUrl) throw new Error('URL du Web App non configurée (Paramètres avancés)');
@@ -162,7 +163,10 @@ async function createSnippetRow(trigger) {
   const res = await fetch(settings.webAppUrl, {
     method: 'POST',
     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify({ action: 'append', trigger })
+    // content : texte déjà saisi dans la cellule Aviso. Un script déployé en version 2 ignore ce
+    // champ et crée la ligne vide — dégradé mais sans perte, le tableau s'ouvrant de toute façon
+    // sur la cellule à saisir.
+    body: JSON.stringify({ action: 'append', trigger, content: content || '' })
   });
   if (!res.ok) throw new Error(`Le tableau a répondu ${res.status}`);
 
@@ -243,7 +247,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     return true;
   }
   if (msg.type === 'CREATE_SNIPPET_ROW') {
-    createSnippetRow(msg.trigger)
+    createSnippetRow(msg.trigger, msg.content)
       .then(r => sendResponse({ ok: true, ...r }))
       .catch(e => sendResponse({ ok: false, error: e.message }));
     return true;

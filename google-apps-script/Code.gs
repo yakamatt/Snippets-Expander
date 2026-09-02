@@ -2,10 +2,11 @@
 //
 // Expose le Sheet "Snippets" comme mini-API gratuite :
 //   GET                          -> renvoie tous les snippets (lecture, utilisée à chaque synchro)
-//   POST {action:"append", ...}  -> ajoute une ligne avec un déclencheur, contenu laissé vide
+//   POST {action:"append", ...}  -> ajoute une ligne (déclencheur + contenu, ce dernier facultatif)
 //
-// Le POST sert au bouton "+" de l'intégration Aviso : il crée la ligne, l'extension rouvre
-// ensuite le tableau sur la cellule "content" pour que l'utilisateur saisisse le texte.
+// Le POST sert au bouton "+" de l'intégration Aviso : il crée la ligne en y reprenant le texte
+// déjà saisi dans la cellule "Dispositions réalisées" (vide si la cellule l'était), puis
+// l'extension rouvre le tableau sur la cellule "content" pour compléter ou relire.
 //
 // ⚠️ Après toute modification de ce fichier : Déployer > Gérer les déploiements > (crayon) >
 // Version : "Nouvelle version" > Déployer. Sans nouvelle version, l'URL /exec continue de
@@ -102,7 +103,10 @@ function json_(obj) {
 // antérieure de ce fichier réécrivait le tableau entier sur n'importe quel POST, et un client
 // récent parlant à un script ancien effaçait donc tous les snippets. Le POST n'est plus émis
 // tant que cette signature n'a pas été obtenue.
-const API_VERSION = 2;
+// Version 3 : le POST accepte un champ "content". Un script resté en version 2 crée la ligne
+// sans contenu — l'extension continue de fonctionner, il faut juste ressaisir le texte dans le
+// tableau. Redéployer en "Nouvelle version" suffit à récupérer le pré-remplissage.
+const API_VERSION = 3;
 
 function doGet(e) {
   if (e && e.parameter && e.parameter.probe === 'append') {
@@ -135,21 +139,32 @@ function doPost(e) {
     const trigger = String(body.trigger || '').trim();
     if (!trigger) return json_({ ok: false, error: 'Déclencheur vide' });
 
+    // Contenu pré-rempli : le texte déjà saisi dans la cellule Aviso au moment du clic sur "+".
+    // Vide si la cellule l'était — la ligne est alors créée sans contenu, comme avant.
+    const contenu = String(body.content || '').trim();
+
     const sheet = getSheet_();
     const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const triggers = sheet.getDataRange().getValues().slice(1).map(r => String(r[0]).trim());
+    const rows = sheet.getDataRange().getValues().slice(1);
+    const triggers = rows.map(r => String(r[0]).trim());
 
     // Déjà présent : on renvoie sa ligne au lieu d'en créer une seconde au même déclencheur,
     // que l'expansion de texte départagerait de façon arbitraire.
     const deja = triggers.indexOf(trigger);
     if (deja >= 0) {
+      const ligne = deja + 2;
+      // Le contenu existant n'est jamais remplacé : on ne remplit que si la cellule est vide,
+      // pour ne pas écraser un texte rédigé dans le tableau par un texte venu d'Aviso.
+      if (contenu && !String(rows[deja][1] || '').trim()) {
+        sheet.getRange(ligne, 2).setValue(contenu);
+      }
       return json_({
-        ok: true, created: false, row: deja + 2,
+        ok: true, created: false, row: ligne,
         gid: sheet.getSheetId(), sheetUrl: ss.getUrl()
       });
     }
 
-    sheet.appendRow([trigger, '', String(body.folder || '')]);
+    sheet.appendRow([trigger, contenu, String(body.folder || '')]);
     return json_({
       ok: true, created: true, row: sheet.getLastRow(),
       gid: sheet.getSheetId(), sheetUrl: ss.getUrl()
