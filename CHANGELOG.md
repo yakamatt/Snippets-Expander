@@ -2,6 +2,7 @@
 
 ## v2.16.0 — 2026-09-02
 - **Le bouton "+" reprend le texte déjà saisi dans "Dispositions réalisées"** pour remplir la colonne `content` du tableau Google Sheets. C'est le geste courant : la disposition est rédigée une fois dans Aviso, puis capitalisée en snippet réutilisable d'un clic, sans copier-coller. La cellule vide donne, comme avant, une ligne au contenu à saisir
+- **L'infobulle de l'icône bleue affiche le contenu qui sera inséré**, sous le libellé « Ajouter le contenu du snippet "…" » — de quoi le relire avant de cliquer, comme le fait déjà l'icône verte DatAviso. Recalculée au survol, les `{date}` et `{time}` du contenu étant résolus à l'instant présent ; tronquée à 700 caractères, les infobulles natives ne défilant pas (le texte inséré, lui, n'est jamais tronqué)
 - Le texte est lu **au moment du clic**, pas à l'affichage de l'icône : la saisie en cours est bien celle qui part dans le tableau. L'infobulle du "+" indique laquelle des deux situations s'applique
 - **Un contenu déjà présent dans le tableau n'est jamais remplacé** : si le déclencheur existe déjà avec un contenu, la ligne est renvoyée telle quelle. Le pré-remplissage ne s'applique qu'à une cellule `content` vide
 - ⚠️ **Le script Apps Script doit être redéployé en "Nouvelle version"** (API v3) pour que le pré-remplissage fonctionne. Un script resté en v2 crée la ligne sans contenu — dégradé, mais sans perte : le tableau s'ouvre de toute façon sur la cellule à saisir

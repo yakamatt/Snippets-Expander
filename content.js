@@ -296,14 +296,34 @@ function appendAvisoText(dispoCell, addition) {
 const AVISO_BTN_STYLE = 'all:unset;cursor:pointer;display:inline-flex;vertical-align:middle;margin:0 6px 4px 0;';
 const AVISO_IMG_STYLE = 'width:16px;height:16px;display:block;';
 
+// Longueur maximale de l'infobulle de prévisualisation. Les infobulles natives ne défilent pas :
+// au-delà, le texte déborderait de l'écran et deviendrait illisible. Le contenu inséré, lui,
+// n'est jamais tronqué. Partagée par les icônes snippet et DatAviso.
+const AVISO_TOOLTIP_MAX = 700;
+
+function tronquerPourInfobulle(texte) {
+  return texte.length > AVISO_TOOLTIP_MAX
+    ? texte.slice(0, AVISO_TOOLTIP_MAX).trimEnd() + '…'
+    : texte;
+}
+
 function insertAvisoIcon(container, dispoCell, snippet) {
   if (container.querySelector('.' + AVISO_ICON_CLASS)) return;
 
   const btn = document.createElement('button');
   btn.type = 'button';
   btn.className = AVISO_ICON_CLASS;
-  btn.title = `Ajouter le contenu du snippet "${snippet.trigger}"`;
   btn.style.cssText = AVISO_BTN_STYLE;
+
+  // L'infobulle montre le texte qui sera réellement inséré, pour pouvoir le relire avant de
+  // cliquer. Recalculé au survol et non une fois pour toutes : le contenu peut porter des
+  // {date}/{time}, que resolveContent remplace par l'instant présent.
+  const majTitre = () => {
+    const texte = resolveContent(snippet.content);
+    btn.title = `Ajouter le contenu du snippet "${snippet.trigger}" :\n\n${tronquerPourInfobulle(texte)}`;
+  };
+  majTitre();
+  btn.addEventListener('mouseenter', majTitre);
 
   const img = document.createElement('img');
   img.src = chrome.runtime.getURL('icons/icon16.png');
@@ -358,11 +378,6 @@ function insertAvisoLawLink(container, refCode) {
   else container.insertBefore(link, container.firstChild);
 }
 
-// Longueur maximale de l'infobulle de prévisualisation. Les infobulles natives ne défilent pas :
-// au-delà, le texte déborderait de l'écran et deviendrait illisible. Le contenu inséré, lui,
-// n'est jamais tronqué.
-const AVISO_TOOLTIP_MAX = 700;
-
 // Troisième icône : ajoute les données DatAviso de cet article (tous ses champs, sans la ligne
 // de titre). Même comportement d'ajout que le bouton snippet — rien n'est écrasé.
 // Posée en dernier des trois, l'ordre affiché étant [snippet, texte réglementaire, DatAviso].
@@ -375,10 +390,9 @@ function insertAvisoImportIcon(container, dispoCell, article) {
   btn.type = 'button';
   btn.className = AVISO_IMPORT_CLASS;
   // L'infobulle montre le texte qui sera réellement inséré, pour pouvoir le relire avant de
-  // cliquer plutôt que de découvrir le contenu une fois dans la cellule.
-  btn.title = texte.length > AVISO_TOOLTIP_MAX
-    ? texte.slice(0, AVISO_TOOLTIP_MAX).trimEnd() + '…'
-    : texte;
+  // cliquer plutôt que de découvrir le contenu une fois dans la cellule. Calculé une fois : les
+  // données DatAviso sont figées entre deux imports, contrairement au contenu d'un snippet.
+  btn.title = tronquerPourInfobulle(texte);
   btn.style.cssText = AVISO_BTN_STYLE;
 
   const img = document.createElement('img');
