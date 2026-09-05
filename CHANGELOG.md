@@ -1,5 +1,12 @@
 # Changelog — Snippet Expander
 
+## v2.17.0 — 2026-09-05
+- **L'import DatAviso accepte les référentiels sans code d'article.** Les trames solidité d'Aviso (LP, ouvrages et éléments d'équipement, et LE, existants) listent des rubriques nommées — « Reconnaissance des sols », « Fondations profondes » — là où la trame sécurité incendie ERP donne des codes d'article. Côté Aviso, `extractRefCode` savait déjà les traiter : faute de `" - "` dans la cellule, il prend le libellé entier. Côté import, aucun en-tête ne pouvait produire un tel code, et ces trames restaient inutilisables
+- **Un en-tête peut désormais être un libellé seul**, reconnu à sa position : colonne 0, quand les champs sont indentés. Deux garde-fous, une ligne de champ n'est jamais un en-tête, une ligne commençant par un caractère de séparation ou de puce non plus. Le code est calculé exactement comme dans `content.js`, pour que les deux côtés se recoupent sans conversion
+- **Correctif : les codes à suffixe étaient tronqués.** `CH 12-1`, `M 50-1` et `T 38-1` étaient lus `CH12`, `M50` et `T38`, entrant en collision avec l'article de base du même numéro. Le second bloc écrasait le premier à l'affichage et l'icône verte pointait sur le mauvais texte. `(\d+)` devient `(\d+(?:-\d+)?)`
+- ⚠️ **Un fichier d'import ne doit contenir que des blocs**, sans bandeau, titre de section ni tableau de synthèse : depuis que la colonne 0 signale un en-tête, une ligne de titre y serait prise pour un article. Un rapport complet se génère donc en deux fichiers, l'un pour la lecture, l'autre pour l'import
+- Compatibilité ascendante vérifiée : les blocs à en-tête `GN 12 — Titre` de l'ancien format sont analysés comme avant
+
 ## v2.16.0 — 2026-09-02
 - **Le bouton "+" reprend le texte déjà saisi dans "Dispositions réalisées"** pour remplir la colonne `content` du tableau Google Sheets. C'est le geste courant : la disposition est rédigée une fois dans Aviso, puis capitalisée en snippet réutilisable d'un clic, sans copier-coller. La cellule vide donne, comme avant, une ligne au contenu à saisir
 - **L'infobulle de l'icône bleue affiche le contenu qui sera inséré**, sous le libellé « Ajouter le contenu du snippet "…" » — de quoi le relire avant de cliquer, comme le fait déjà l'icône verte DatAviso. Recalculée au survol, les `{date}` et `{time}` du contenu étant résolus à l'instant présent ; tronquée à 700 caractères, les infobulles natives ne défilant pas (le texte inséré, lui, n'est jamais tronqué)

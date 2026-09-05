@@ -16,7 +16,17 @@
 
 // "GN 12 — Titre de l'article" -> code "GN12" (même normalisation que le Référentiel Aviso et
 // que sitesecurite-articles.js, pour que les trois se recoupent sans conversion).
-const IMPORT_HEADER_RE = /^\s*([A-Za-z]{1,4})\s*(\d+)\s*[—–-]\s*(.+?)\s*$/;
+const IMPORT_HEADER_RE = /^\s*([A-Za-z]{1,4})\s*(\d+(?:-\d+)?)\s*[—–-]\s*(.+?)\s*$/;
+
+// Certains référentiels Aviso n'ont pas de code d'article : les missions solidité listent des
+// rubriques nommées ("Reconnaissance des sols", "Fondations profondes"). Aviso construit alors
+// son code depuis le libellé entier (extractRefCode dans content.js retombe sur le texte complet
+// quand il n'y a pas de " - "). L'en-tête d'un tel bloc est donc le libellé seul.
+//
+// On le reconnaît à sa position : dans un fichier d'import, un en-tête est en colonne 0 et les
+// champs sont indentés. Deux garde-fous : la ligne ne doit pas être une ligne de champ, et ne
+// doit pas être une barre de séparation ou une puce.
+const IMPORT_LABEL_HEADER_EXCLUDE_RE = /^[=\-_*#•>|\s]/;
 
 // Ligne de champ : libellé, puis ':' puis la valeur. La découpe se fait au PREMIER ':'
 // uniquement — les valeurs en contiennent ("... en présence du public : le chantier précède ...").
@@ -39,6 +49,31 @@ function splitImportedField(line) {
   return { label, valeur: m[2].trim() };
 }
 
+// Normalisation commune à l'import et au scan Aviso : "GN 4" et "GN4" désignent le même code,
+// "Reconnaissance des sols" devient "RECONNAISSANCEDESSOLS".
+function normalizeImportedCode(str) {
+  return String(str || '').replace(/\s+/g, '').toUpperCase();
+}
+
+// Rend { code, titre } si la ligne ouvre un bloc, sinon null.
+function importedHeader(rawLine) {
+  const m = IMPORT_HEADER_RE.exec(rawLine);
+  if (m) {
+    return { code: normalizeImportedCode(m[1] + m[2]), titre: m[3] };
+  }
+
+  // En-tête « libellé seul » : colonne 0, pas une ligne de champ, pas une séparation.
+  if (IMPORT_LABEL_HEADER_EXCLUDE_RE.test(rawLine)) return null;
+  if (splitImportedField(rawLine)) return null;
+
+  const text = rawLine.trim();
+  if (!text) return null;
+  const sep = text.indexOf(' - ');
+  const code = normalizeImportedCode(sep >= 0 ? text.slice(0, sep) : text);
+  if (!code) return null;
+  return { code, titre: sep >= 0 ? text.slice(sep + 3).trim() : text };
+}
+
 function parseImportedData(text) {
   const articles = [];
   let current = null;
@@ -46,13 +81,9 @@ function parseImportedData(text) {
   for (const rawLine of String(text || '').replace(/\r\n?/g, '\n').split('\n')) {
     if (!rawLine.trim()) continue;
 
-    const header = IMPORT_HEADER_RE.exec(rawLine);
+    const header = importedHeader(rawLine);
     if (header) {
-      current = {
-        code: (header[1] + header[2]).toUpperCase(),
-        titre: header[3],
-        champs: []
-      };
+      current = { code: header.code, titre: header.titre, champs: [] };
       articles.push(current);
       continue;
     }
