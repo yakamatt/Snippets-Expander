@@ -247,12 +247,20 @@ function normalizeRefCode(str) {
   return String(str || '').replace(/\s+/g, '').toUpperCase();
 }
 
+// Un code d'article : une à quatre lettres, un numéro, éventuellement un suffixe ("CO 24",
+// "CH 12-1"). Ce qui n'y ressemble pas est un libellé de rubrique, pas un code.
+const REF_CODE_RE = /^[A-Za-z]{1,4}\s*\d+(?:-\d+)?$/;
+
 // "GN 4 - Procédure d'adaptation..." -> "GN4"
+// "Dallage - Exigences d'utilisation et conception" -> le libellé entier : les référentiels
+// solidité n'ont pas de code, et deux rubriques d'un même groupe ("Dallage - données relatives
+// au sol support") se confondraient si l'on coupait au premier " - ".
 function extractRefCode(referentielText) {
   const text = String(referentielText || '').trim();
   const sepIndex = text.indexOf(' - ');
-  const code = sepIndex >= 0 ? text.slice(0, sepIndex) : text;
-  return normalizeRefCode(code);
+  if (sepIndex < 0) return normalizeRefCode(text);
+  const prefixe = text.slice(0, sepIndex).trim();
+  return normalizeRefCode(REF_CODE_RE.test(prefixe) ? prefixe : text);
 }
 
 // "/GN4" -> "GN4" (retire un préfixe usuel de déclencheur avant comparaison)

@@ -66,12 +66,15 @@ function importedHeader(rawLine) {
   if (IMPORT_LABEL_HEADER_EXCLUDE_RE.test(rawLine)) return null;
   if (splitImportedField(rawLine)) return null;
 
+  // Le libellé entier fait le code, y compris s'il contient " - " : un en-tête à code d'article
+  // a déjà été capté par IMPORT_HEADER_RE plus haut, et couper ici confondrait deux rubriques
+  // d'un même groupe ("Dallage - données relatives au sol support" et "Dallage - Exigences
+  // d'utilisation et conception"). Même règle que extractRefCode dans content.js.
   const text = rawLine.trim();
   if (!text) return null;
-  const sep = text.indexOf(' - ');
-  const code = normalizeImportedCode(sep >= 0 ? text.slice(0, sep) : text);
+  const code = normalizeImportedCode(text);
   if (!code) return null;
-  return { code, titre: sep >= 0 ? text.slice(sep + 3).trim() : text };
+  return { code, titre: text };
 }
 
 function parseImportedData(text) {
