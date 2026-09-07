@@ -43,7 +43,17 @@ GN 12 — Justification des classements de comportement au feu
   Statut        : Non renseigné
 ```
 
-- La **ligne d'en-tête** donne le code de l'article (`GN 12` → `GN12`, la même normalisation que le Référentiel Aviso) et son titre.
+- La **ligne d'en-tête** donne le code de l'article (`GN 12` → `GN12`, la même normalisation que le Référentiel Aviso) et son titre. Le séparateur est un tiret, simple `-`, demi-cadratin `–` ou cadratin `—`. Les codes à suffixe sont acceptés (`CH 12-1` → `CH12-1`), et distincts de l'article de base (`CH 12`).
+- **Les référentiels sans code d'article sont acceptés** : les missions solidité (trames LP et LE) listent des rubriques nommées plutôt que des articles. L'en-tête est alors le libellé seul, sur sa propre ligne, et le code en est déduit comme le fait Aviso, texte avant le premier `" - "` sinon le libellé entier, espaces retirés et majuscules :
+
+```
+Reconnaissance des sols
+  Dispositions prévues : Assise déterminée selon le rapport de sol G2 AVP/PRO [...]
+  Source               : LOT 02 p. 41 et p. 42
+  Observation          : le rapport de sol n'est pas dans les pièces transmises.
+```
+
+- Un en-tête se reconnaît **à sa position** : colonne 0, quand les champs sont indentés. Un fichier d'import ne doit donc contenir **que des blocs**, sans bandeau ni titre de section, faute de quoi ces lignes seraient prises pour des en-têtes.
 - Les **lignes de champ** sont de la forme `Libellé : valeur`. Les libellés ne sont pas figés dans le code : toute rubrique est reconnue, jusqu'à 80 caractères et sans point. Une valeur peut contenir des `:` (la découpe se fait au premier), et se poursuivre sur les lignes suivantes.
 - **Aucune ligne n'est perdue** : une ligne qui ne ressemble pas à `Libellé : valeur` est rattachée au champ précédent, ou conservée telle quelle si elle ouvre le bloc. Tout le texte situé sous l'en-tête se retrouve donc dans l'article.
 
