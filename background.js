@@ -20,7 +20,6 @@ chrome.runtime.onInstalled.addListener((details) => {
       sheetUrl: DEFAULT_SHEET_URL,
       autoSyncMinutes: 60,
       expansionDelayMs: 500,
-      avisoIconEnabled: true,
       autoCheckUpdates: true
     };
     const merged = { ...defaults, ...(syncSettings || {}) };
@@ -120,7 +119,11 @@ async function pullFromSheet() {
   return snippets;
 }
 
-// ---------- Création d'un snippet depuis Aviso (bouton "+") ----------
+// ---------- Création d'un snippet dans le Google Sheets ----------
+// Depuis la v2.18.0, le bouton "+" d'Aviso crée un snippet dans le Clausier Personnel (local) :
+// ce chemin n'est plus appelé, mais il est conservé, garde-fous compris, pour pouvoir être
+// rebranché sans réécrire la poignée de main avec Code.gs.
+//
 // Ajoute une ligne au tableau (déclencheur + le texte déjà saisi dans la cellule Aviso, s'il y en
 // a), récupère les données mises à jour, puis ouvre le tableau positionné sur la cellule
 // "content" pour la compléter ou la relire.

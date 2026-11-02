@@ -1,20 +1,20 @@
-const BUILD_DATE = '2026-08-25'; // v2.15.1
+const BUILD_DATE = '2026-11-02'; // v2.18.0
 const DEFAULT_GITHUB_URL = 'https://raw.githubusercontent.com/yakamatt/Snippets-Expander/main';
 const DEFAULT_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1H2rBzMQzZk74Bk2Z_Mo8lXAdYea7Mi7WfzVruBahd_I/edit';
 
+// Clausier Commun (Google Sheets) : plus affiché sur cette page depuis la v2.18.0, mais
+// toujours chargé pour la zone de test.
 let snippets = [];
-// Dossiers explicitement dépliés : vide par défaut, donc tous les dossiers démarrent fermés.
-const expandedFolders = new Set();
-
-const bodyEl = document.getElementById('snippets-body');
-const countEl = document.getElementById('count');
-const searchEl = document.getElementById('search');
-const folderFilterEl = document.getElementById('folder-filter');
+// Clausier Personnel (snippets locaux).
+let localSnippets = [];
 
 function load() {
-  chrome.storage.local.get(['snippets', 'lastSync', 'updateCheck', 'pinBannerDismissed', 'syncWarning'], (res) => {
+  chrome.storage.local.get(['snippets', 'localSnippets', 'lastSync', 'updateCheck', 'pinBannerDismissed', 'syncWarning'], (res) => {
     snippets = res.snippets || [];
-    render();
+    localSnippets = res.localSnippets || [];
+    renderLocal();
+    // Lien "Modifier le Clausier Personnel" du popup : la page s'ouvre sur options.html#clausier.
+    if (location.hash === '#clausier') document.getElementById('clausier').scrollIntoView({ block: 'start' });
     renderVersionFooter(res.lastSync);
     renderUpdateBanner(res.updateCheck);
     renderSyncWarning(res.syncWarning);
@@ -25,7 +25,6 @@ function load() {
     document.getElementById('autosync-minutes').value = s.autoSyncMinutes ?? 60;
     document.getElementById('expansion-delay').value = s.expansionDelayMs ?? 500;
     document.getElementById('local-folder-path').value = s.localFolderPath || '';
-    document.getElementById('aviso-icon-enabled').checked = s.avisoIconEnabled !== false;
     document.getElementById('auto-check-updates').checked = !!s.autoCheckUpdates;
     document.getElementById('sheet-url').value = s.sheetUrl || '';
     document.getElementById('webapp-url').value = s.webAppUrl || '';
@@ -35,14 +34,15 @@ function load() {
   loadImported();
 }
 
-// Rafraîchit automatiquement le tableau si les snippets changent en arrière-plan (synchro auto
-// horaire, mise à jour déclenchée depuis un autre onglet...).
+// Suit les changements faits ailleurs : synchro du Clausier Commun en arrière-plan, snippet local
+// créé ou modifié depuis Aviso pendant que cette page est ouverte.
 chrome.storage.onChanged.addListener((changes, area) => {
-  if (area !== 'local' || !changes.snippets) return;
-  const incoming = changes.snippets.newValue || [];
-  if (JSON.stringify(incoming) === JSON.stringify(snippets)) return;
-  snippets = incoming;
-  render();
+  if (area !== 'local') return;
+  if (changes.snippets) snippets = changes.snippets.newValue || [];
+  if (changes.localSnippets) {
+    localSnippets = changes.localSnippets.newValue || [];
+    renderLocal();
+  }
 });
 
 document.getElementById('pin-banner-dismiss').addEventListener('click', () => {
@@ -93,133 +93,262 @@ document.getElementById('refresh-btn').addEventListener('click', () => {
   });
 });
 
-function getFolders() {
-  const used = snippets.map(s => s.folder).filter(Boolean);
-  return Array.from(new Set(used)).sort((a, b) => a.localeCompare(b));
-}
-
-// Couleur pastel déterministe à partir du nom du dossier, piochée dans une palette de teintes
-// choisies pour rester harmonieuses sur le fond chaud de l'extension (plutôt qu'un arc-en-ciel brut).
-// Ces couleurs sont posées en style inline (une par dossier) : elles doivent donc s'adapter elles-mêmes
-// au thème sombre, la cascade CSS ne pouvant pas les intercepter.
-const FOLDER_HUES = [38, 16, 350, 300, 255, 185, 100, 55];
-function isDarkMode() {
-  return !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
-}
-function folderColor(name) {
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  const hue = FOLDER_HUES[Math.abs(hash) % FOLDER_HUES.length];
-  return isDarkMode()
-    ? { bg: `hsl(${hue}, 28%, 22%)`, text: `hsl(${hue}, 55%, 78%)` }
-    : { bg: `hsl(${hue}, 45%, 91%)`, text: `hsl(${hue}, 45%, 30%)` };
-}
-
 function escapeHtml(str) {
   const div = document.createElement('div');
   div.textContent = str ?? '';
   return div.innerHTML;
 }
 
-function renderFolderFilter() {
-  const folders = getFolders();
-  const currentFilter = folderFilterEl.value;
-  folderFilterEl.innerHTML = '<option value="">Tous les dossiers</option>' +
-    folders.map(f => `<option value="${escapeHtml(f)}">${escapeHtml(f)}</option>`).join('');
-  folderFilterEl.value = folders.includes(currentFilter) ? currentFilter : '';
+// ---------- Clausier Personnel (snippets locaux) ----------
+// Stocké dans chrome.storage.local (clé localSnippets), comme les autres données de
+// l'extension : il survit aux mises à jour, mais pas à une désinstallation, d'où l'export.
+// Les fichiers (.xlsx, .csv) sont lus et écrits par clausier-fichiers.js.
+
+const localBodyEl = document.getElementById('local-body');
+const localSearchEl = document.getElementById('local-search');
+const localStatusEl = document.getElementById('local-status');
+// Déclencheur en cours de modification dans le tableau : la ligne s'affiche alors en édition, et
+// le reste jusqu'à Enregistrer ou Annuler, même si la liste est redessinée entre-temps.
+let localEnEdition = null;
+
+function sauverLocal(liste) {
+  return chrome.storage.local.set({ localSnippets: liste });
 }
 
-// ---------- Tableau groupé par dossier (lecture seule) ----------
+function renderLocal() {
+  const filtre = (localSearchEl.value || '').toLowerCase();
+  document.getElementById('local-count').textContent = localSnippets.length;
+  localBodyEl.innerHTML = '';
 
-function render() {
-  const filter = (searchEl.value || '').toLowerCase();
-  const folderFilter = folderFilterEl.value;
+  const lignes = localSnippets
+    .filter(s => !filtre || s.trigger.toLowerCase().includes(filtre) || s.content.toLowerCase().includes(filtre))
+    .sort((a, b) => a.trigger.localeCompare(b.trigger, 'fr', { numeric: true }));
 
-  renderFolderFilter();
+  if (!lignes.length) {
+    const tr = document.createElement('tr');
+    const td = document.createElement('td');
+    td.colSpan = 2;
+    td.className = 'hint';
+    td.textContent = localSnippets.length
+      ? 'Aucun snippet ne correspond à cette recherche.'
+      : 'Aucun snippet personnel pour le moment. Ajoutez-en un ci-dessus, importez un fichier, ou utilisez le bouton "+" sur Aviso.';
+    tr.appendChild(td);
+    localBodyEl.appendChild(tr);
+    return;
+  }
 
-  const rows = snippets.filter(s => {
-    if (folderFilter && s.folder !== folderFilter) return false;
-    if (!filter) return true;
-    return s.trigger.toLowerCase().includes(filter) ||
-           s.content.toLowerCase().includes(filter);
-  });
-
-  countEl.textContent = snippets.length;
-  bodyEl.innerHTML = '';
-
-  const folders = getFolders();
-  const groupOrder = ['', ...folders]; // "Sans dossier" en premier
-
-  groupOrder.forEach(folderName => {
-    const groupRows = rows.filter(s => (s.folder || '') === folderName);
-    if (!groupRows.length) return;
-
-    const headerTr = document.createElement('tr');
-    headerTr.className = 'folder-group-header';
-    const isCollapsed = !expandedFolders.has(folderName);
-    if (isCollapsed) headerTr.classList.add('collapsed');
-    const color = folderName
-      ? folderColor(folderName)
-      : (isDarkMode() ? { bg: '#2a241a', text: '#a79a85' } : { bg: '#efe8db', text: '#77694f' });
-    headerTr.style.background = color.bg;
-    headerTr.style.color = color.text;
-
-    // Le flex est posé sur un wrapper interne, pas directement sur le <td> : un display:flex
-    // sur un <td colspan> casse le calcul de largeur de table-layout:fixed (Chrome le réduit
-    // à la largeur de la seule 1re colonne au lieu de sommer les colonnes couvertes).
-    const headerTd = document.createElement('td');
-    headerTd.colSpan = 2;
-    const headerRow = document.createElement('div');
-    headerRow.className = 'folder-group-td';
-    headerRow.innerHTML = `<span class="chevron">▾</span>${escapeHtml(folderName || 'Sans dossier')} (${groupRows.length})`;
-    headerTd.appendChild(headerRow);
-
-    headerTr.appendChild(headerTd);
-    headerTr.addEventListener('click', () => {
-      if (expandedFolders.has(folderName)) expandedFolders.delete(folderName);
-      else expandedFolders.add(folderName);
-      render();
-    });
-    bodyEl.appendChild(headerTr);
-
-    if (isCollapsed) return;
-
-    groupRows.forEach(s => renderSnippetRow(s));
-  });
+  lignes.forEach(s => localBodyEl.appendChild(s.trigger === localEnEdition ? ligneEdition(s) : ligneLecture(s)));
 }
 
-function renderSnippetRow(s) {
+function ligneLecture(s) {
   const tr = document.createElement('tr');
-
   const triggerTd = document.createElement('td');
   triggerTd.className = 'trigger';
-  triggerTd.textContent = s.trigger;
+  const code = document.createElement('div');
+  code.textContent = s.trigger;
+  code.title = s.trigger;
+
+  const modifier = document.createElement('button');
+  modifier.className = 'link-btn row-action';
+  modifier.textContent = 'Modifier';
+  modifier.addEventListener('click', () => {
+    localEnEdition = s.trigger;
+    renderLocal();
+  });
+
+  const supprimer = document.createElement('button');
+  supprimer.className = 'link-btn row-action';
+  supprimer.textContent = 'Supprimer';
+  supprimer.addEventListener('click', () => {
+    if (!confirm(`Supprimer le snippet "${s.trigger}" du Clausier Personnel ?`)) return;
+    sauverLocal(localSnippets.filter(x => x.trigger !== s.trigger));
+  });
+  triggerTd.append(code, modifier, supprimer);
 
   const contentTd = document.createElement('td');
   contentTd.className = 'content';
   contentTd.textContent = s.content;
 
   tr.append(triggerTd, contentTd);
-  bodyEl.appendChild(tr);
+  return tr;
 }
 
-searchEl.addEventListener('input', render);
-folderFilterEl.addEventListener('change', render);
+function ligneEdition(s) {
+  const tr = document.createElement('tr');
+  const triggerTd = document.createElement('td');
+  triggerTd.className = 'trigger';
+  triggerTd.textContent = s.trigger;
 
-document.getElementById('expand-all-btn').addEventListener('click', () => {
-  expandedFolders.clear();
-  ['', ...getFolders()].forEach(f => expandedFolders.add(f));
-  render();
+  const contentTd = document.createElement('td');
+  const textarea = document.createElement('textarea');
+  textarea.className = 'local-edit';
+  textarea.value = s.content;
+  const actions = document.createElement('div');
+  actions.className = 'button-row';
+  const enregistrer = document.createElement('button');
+  enregistrer.textContent = 'Enregistrer';
+  enregistrer.addEventListener('click', () => {
+    if (!textarea.value.trim()) {
+      alert('Le contenu est vide. Pour retirer ce snippet, utilisez "Supprimer".');
+      return;
+    }
+    localEnEdition = null;
+    sauverLocal(localSnippets.map(x => x.trigger === s.trigger ? { ...x, content: normaliserContenu(textarea.value) } : x));
+  });
+  const annuler = document.createElement('button');
+  annuler.className = 'secondary';
+  annuler.textContent = 'Annuler';
+  annuler.addEventListener('click', () => {
+    localEnEdition = null;
+    renderLocal();
+  });
+  actions.append(enregistrer, annuler);
+  contentTd.append(textarea, actions);
+
+  tr.append(triggerTd, contentTd);
+  setTimeout(() => textarea.focus(), 0);
+  return tr;
+}
+
+localSearchEl.addEventListener('input', renderLocal);
+
+document.getElementById('local-add-btn').addEventListener('click', () => {
+  const triggerEl = document.getElementById('local-new-trigger');
+  const contentEl = document.getElementById('local-new-content');
+  const trigger = normaliserDeclencheur(triggerEl.value);
+  const content = normaliserContenu(contentEl.value);
+  if (!trigger || !content.trim()) {
+    localStatusEl.textContent = '❌ Renseignez un déclencheur et un contenu.';
+    return;
+  }
+  const existant = localSnippets.find(s => s.trigger === trigger);
+  if (existant && !confirm(`Le snippet "${trigger}" existe déjà dans le Clausier Personnel. Remplacer son contenu ?`)) return;
+  const liste = existant
+    ? localSnippets.map(s => s.trigger === trigger ? { ...s, content } : s)
+    : [...localSnippets, { trigger, content }];
+  sauverLocal(liste).then(() => {
+    localStatusEl.textContent = `✅ Snippet "${trigger}" ${existant ? 'modifié' : 'ajouté'}.`;
+    triggerEl.value = '';
+    contentEl.value = '';
+  });
 });
 
-document.getElementById('collapse-all-btn').addEventListener('click', () => {
-  expandedFolders.clear();
-  render();
+// --- Import ---
+// Rien n'est remplacé sans accord : à chaque déclencheur déjà présent avec un contenu différent,
+// une fenêtre propose de remplacer ou d'ignorer, pour ce snippet seul ou pour tous les suivants.
+// "Annuler l'import" (ou Échap) n'écrit rien du tout : l'enregistrement n'a lieu qu'à la fin.
+
+const conflitDialog = document.getElementById('conflit-dialog');
+
+function demanderConflit(trigger, actuel, nouveau, restantes) {
+  return new Promise(resolve => {
+    conflitDialog.returnValue = '';
+    document.getElementById('conflit-trigger').textContent = trigger;
+    document.getElementById('conflit-actuel').textContent = actuel;
+    document.getElementById('conflit-nouveau').textContent = nouveau;
+    document.getElementById('conflit-reste').textContent = restantes
+      ? `Encore ${restantes} ligne${restantes > 1 ? 's' : ''} du fichier à traiter après celle-ci.`
+      : 'Dernière ligne du fichier.';
+    conflitDialog.addEventListener('close', () => resolve(conflitDialog.returnValue || 'annuler'), { once: true });
+    conflitDialog.showModal();
+  });
+}
+
+async function importerClausier(file) {
+  localStatusEl.textContent = '⏳ Lecture du fichier...';
+  let resultat;
+  try {
+    resultat = await lireFichierClausier(file);
+  } catch (e) {
+    localStatusEl.textContent = `❌ Import impossible : ${e.message}`;
+    return;
+  }
+  const { snippets: entrants, ignorees } = resultat;
+  if (!entrants.length) {
+    localStatusEl.textContent = '❌ Aucun snippet trouvé. Le fichier doit avoir une colonne "declencheur" et une colonne "contenu" (voir le modèle vierge).';
+    return;
+  }
+
+  const { localSnippets: actuels } = await chrome.storage.local.get(['localSnippets']);
+  const liste = (actuels || []).slice();
+  const index = new Map(liste.map((s, i) => [s.trigger, i]));
+  let ajoutes = 0, remplaces = 0, conserves = 0, identiques = 0;
+  let choixPourTous = null;
+
+  for (let n = 0; n < entrants.length; n++) {
+    const s = entrants[n];
+    const i = index.get(s.trigger);
+    if (i === undefined) {
+      index.set(s.trigger, liste.length);
+      liste.push(s);
+      ajoutes++;
+      continue;
+    }
+    if (liste[i].content === s.content) {
+      identiques++;
+      continue;
+    }
+    let choix = choixPourTous;
+    if (!choix) {
+      const reponse = await demanderConflit(s.trigger, liste[i].content, s.content, entrants.length - n - 1);
+      if (reponse === 'annuler') {
+        localStatusEl.textContent = 'Import annulé : le Clausier Personnel n\'a pas été modifié.';
+        return;
+      }
+      choix = reponse.replace('-tout', '');
+      if (reponse.endsWith('-tout')) choixPourTous = choix;
+    }
+    if (choix === 'remplacer') {
+      liste[i] = { ...liste[i], content: s.content };
+      remplaces++;
+    } else {
+      conserves++;
+    }
+  }
+
+  await sauverLocal(liste);
+  const parties = [`${ajoutes} ajouté${ajoutes > 1 ? 's' : ''}`];
+  if (remplaces) parties.push(`${remplaces} remplacé${remplaces > 1 ? 's' : ''}`);
+  if (conserves) parties.push(`${conserves} conservé${conserves > 1 ? 's' : ''} tel${conserves > 1 ? 's' : ''} quel${conserves > 1 ? 's' : ''}`);
+  if (identiques) parties.push(`${identiques} déjà identique${identiques > 1 ? 's' : ''}`);
+  if (ignorees) parties.push(`${ignorees} ligne${ignorees > 1 ? 's' : ''} sans déclencheur ou sans contenu ignorée${ignorees > 1 ? 's' : ''}`);
+  localStatusEl.textContent = `✅ Import de ${file.name} : ${parties.join(', ')}.`;
+}
+
+document.getElementById('local-import-file').addEventListener('change', (e) => {
+  const file = e.target.files && e.target.files[0];
+  e.target.value = ''; // permet de réimporter le même fichier après correction
+  if (file) importerClausier(file);
 });
 
-// ---------- DatAviso (données de dossier importées) ----------
-// Aperçu ligne par ligne (un champ = une ligne) des données importées depuis le popup, dans le
-// même esprit que le tableau des snippets. Suppression article par article, ou en bloc.
+// --- Export ---
+
+function nomFichierExport(extension) {
+  const jour = new Date().toISOString().slice(0, 10);
+  return `clausier-personnel-${jour}.${extension}`;
+}
+
+function exporterClausier(format) {
+  if (!localSnippets.length) {
+    localStatusEl.textContent = 'Le Clausier Personnel est vide : rien à exporter. Le modèle vierge sert à préparer un import.';
+    return;
+  }
+  const liste = localSnippets.slice().sort((a, b) => a.trigger.localeCompare(b.trigger, 'fr', { numeric: true }));
+  telechargerFichier(format === 'xlsx' ? clausierVersXlsx(liste) : clausierVersCsv(liste), nomFichierExport(format));
+  localStatusEl.textContent = `📤 ${liste.length} snippet${liste.length > 1 ? 's' : ''} exporté${liste.length > 1 ? 's' : ''} en .${format}.`;
+}
+
+document.getElementById('local-export-xlsx').addEventListener('click', () => exporterClausier('xlsx'));
+document.getElementById('local-export-csv').addEventListener('click', () => exporterClausier('csv'));
+document.getElementById('local-template-xlsx').addEventListener('click', () =>
+  telechargerFichier(clausierVersXlsx([]), 'clausier-personnel-modele.xlsx'));
+document.getElementById('local-template-csv').addEventListener('click', () =>
+  telechargerFichier(clausierVersCsv([]), 'clausier-personnel-modele.csv'));
+
+// ---------- DatAviso AI (données de dossier importées) ----------
+// Aperçu ligne par ligne (un champ = une ligne) des données importées depuis le popup.
+// Suppression article par article, ou en bloc. Le tableau est replié par défaut (il peut
+// compter des centaines de lignes) et s'ouvre de lui-même dès qu'une recherche est saisie.
 
 let importedArticles = [];
 
@@ -240,7 +369,7 @@ function renderImportedMeta(meta) {
   const quand = meta.importedAt ? new Date(meta.importedAt).toLocaleString() : null;
   if (!quand) return;
   const el = document.getElementById('imported-meta');
-  el.textContent = `Dernier import DatAviso : ${quand}${meta.source ? ` (${meta.source})` : ''}. ` +
+  el.textContent = `Dernier import DatAviso AI : ${quand}${meta.source ? ` (${meta.source})` : ''}. ` +
     `Sur Aviso, une icône verte apparaît sur les lignes dont le Référentiel figure ci-dessous et ajoute ces champs dans "Dispositions réalisées" — sans le titre de l'article.`;
 }
 
@@ -263,7 +392,7 @@ function renderImported() {
     td.className = 'hint';
     td.textContent = importedArticles.length
       ? 'Aucun article ne correspond à cette recherche.'
-      : 'Aucune donnée DatAviso. Utilisez le popup de l\'icône pour coller un texte ou choisir un fichier .txt.';
+      : 'Aucune donnée DatAviso AI. Utilisez le popup de l\'icône pour importer un fichier .txt.';
     tr.appendChild(td);
     importedBodyEl.appendChild(tr);
     return;
@@ -314,11 +443,14 @@ function renderImported() {
   });
 }
 
-importedSearchEl.addEventListener('input', renderImported);
+importedSearchEl.addEventListener('input', () => {
+  if (importedSearchEl.value) document.getElementById('imported-details').open = true;
+  renderImported();
+});
 
 document.getElementById('imported-clear').addEventListener('click', () => {
   if (!importedArticles.length) return;
-  if (!confirm(`Supprimer les ${importedArticles.length} articles DatAviso ?`)) return;
+  if (!confirm(`Supprimer les ${importedArticles.length} articles DatAviso AI ?`)) return;
   importedArticles = [];
   chrome.storage.local.set({ importedArticles: [], importedMeta: null }, renderImported);
 });
@@ -385,10 +517,6 @@ brancherChampUrl('webapp-url', 'webAppUrl', '/exec');
 
 document.getElementById('local-folder-path').addEventListener('change', (e) => {
   updateSyncSettings({ localFolderPath: e.target.value.trim() });
-});
-
-document.getElementById('aviso-icon-enabled').addEventListener('change', (e) => {
-  updateSyncSettings({ avisoIconEnabled: e.target.checked });
 });
 
 document.getElementById('auto-check-updates').addEventListener('change', (e) => {
@@ -518,8 +646,14 @@ function renderVersionFooter(lastSync) {
 // conflit, {date}/{time}/{cursor}, temporisation configurable) directement sur ce textarea.
 // Nécessaire car les scripts de contenu ne s'exécutent jamais sur les pages de l'extension
 // elle-même : ce n'est donc pas le vrai content.js qui tourne ici, mais un équivalent local
-// testé contre les snippets réellement chargés, pour un aperçu fidèle.
+// testé contre les snippets réellement chargés, pour un aperçu fidèle — y compris la priorité du
+// Clausier Personnel sur le Clausier Commun à déclencheur égal (rebuildActiveSnippets).
 let testTimeoutId = null;
+
+function testActiveSnippets() {
+  const locaux = new Set(localSnippets.map(s => s.trigger));
+  return localSnippets.concat(snippets.filter(s => !locaux.has(s.trigger)));
+}
 
 function testResolveContent(text) {
   const now = new Date();
@@ -529,8 +663,8 @@ function testResolveContent(text) {
     .replace(/\{cursor\}/gi, '');
 }
 
-function testFindMatch(before) {
-  return snippets
+function testFindMatch(actifs, before) {
+  return actifs
     .slice()
     .sort((a, b) => b.trigger.length - a.trigger.length)
     .find(s => before.endsWith(s.trigger));
@@ -539,10 +673,11 @@ function testFindMatch(before) {
 document.getElementById('test-area').addEventListener('input', (e) => {
   const el = e.target;
   const start = el.selectionStart;
-  if (start == null || start === 0 || !snippets.length) return;
-  const maxTriggerLen = snippets.reduce((m, s) => Math.max(m, s.trigger.length), 1);
+  const actifs = testActiveSnippets();
+  if (start == null || start === 0 || !actifs.length) return;
+  const maxTriggerLen = actifs.reduce((m, s) => Math.max(m, s.trigger.length), 1);
   const before = el.value.substring(Math.max(0, start - maxTriggerLen), start);
-  const match = testFindMatch(before);
+  const match = testFindMatch(actifs, before);
   if (!match) return;
 
   if (testTimeoutId) clearTimeout(testTimeoutId);

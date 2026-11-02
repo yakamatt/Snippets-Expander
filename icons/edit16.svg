@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" role="img">
+  <!-- Bouton "modifier le snippet local" sur Aviso, posé juste à droite de l'icône jaune du
+       Clausier Personnel : même jaune pour signaler qu'il agit sur la même source. -->
+  <rect x="0.5" y="0.5" width="15" height="15" rx="2.5" fill="#f2b705"/>
+  <path d="M4 12l.6-2.6 5.9-5.9a1.2 1.2 0 0 1 1.7 0l.3.3a1.2 1.2 0 0 1 0 1.7l-5.9 5.9z" fill="none" stroke="#3d2e00" stroke-width="1.4" stroke-linejoin="round"/>
+  <path d="M9.6 4.4l2 2" stroke="#3d2e00" stroke-width="1.4" stroke-linecap="round"/>
+</svg>

@@ -1,48 +1,22 @@
-document.getElementById('refresh-btn').addEventListener('click', () => {
-  const btn = document.getElementById('refresh-btn');
-  const statusEl = document.getElementById('refresh-status');
-  btn.disabled = true;
-  statusEl.textContent = '⏳ Actualisation en cours...';
-  chrome.runtime.sendMessage({ type: 'PULL_FROM_SHEET' }, (resp) => {
-    btn.disabled = false;
-    if (chrome.runtime.lastError) {
-      statusEl.textContent = '❌ Erreur : ' + chrome.runtime.lastError.message;
-      return;
-    }
-    if (resp && resp.ok) {
-      statusEl.textContent = '✅ Données actualisées.';
-    } else {
-      statusEl.textContent = '❌ Erreur : ' + (resp && resp.error);
-    }
-  });
-});
-
-// Réglage "Intégration Aviso", dupliqué ici depuis la page Paramètres : c'est le seul réglage
-// qu'on active/désactive au fil de la journée selon qu'on travaille ou non sur Aviso, d'où sa
-// place dans le popup. Le content script écoute chrome.storage.onChanged et applique le
-// changement immédiatement, sans rechargement de la page Aviso.
-const avisoEl = document.getElementById('aviso-icon-enabled');
 const DEFAULT_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1H2rBzMQzZk74Bk2Z_Mo8lXAdYea7Mi7WfzVruBahd_I/edit';
 
+// Clausier Commun : le tableau visé est configurable (Paramètres avancés), le lien suit ce réglage.
 chrome.storage.sync.get(['syncSettings'], (res) => {
   const s = res.syncSettings || {};
-  avisoEl.checked = s.avisoIconEnabled !== false;
-  // Le tableau visé est configurable (Paramètres avancés) : le lien suit ce réglage.
   document.getElementById('open-sheet-link').href = s.sheetUrl || DEFAULT_SHEET_URL;
 });
 
-avisoEl.addEventListener('change', (e) => {
-  chrome.storage.sync.get(['syncSettings'], (res) => {
-    const merged = { ...(res.syncSettings || {}), avisoIconEnabled: e.target.checked };
-    chrome.storage.sync.set({ syncSettings: merged });
-  });
+// Clausier Personnel : géré dans la page Paramètres, ouverte directement sur sa section.
+// chrome.runtime.openOptionsPage() ne transmet pas d'ancre, d'où l'ouverture par URL.
+document.getElementById('open-clausier').addEventListener('click', () => {
+  chrome.tabs.create({ url: chrome.runtime.getURL('options.html#clausier') });
+  window.close();
 });
 
-// ---------- DatAviso : import des données de dossier ----------
-// Chaque import REMPLACE entièrement les données précédentes : le texte importé fait foi, ce qui
-// évite de laisser traîner des articles d'un dossier précédent qui réapparaîtraient dans Aviso.
+// ---------- DatAviso AI : import des données de dossier ----------
+// Chaque import REMPLACE entièrement les données précédentes : le fichier importé fait foi, ce
+// qui évite de laisser traîner des articles d'un dossier précédent qui réapparaîtraient dans Aviso.
 
-const importTextEl = document.getElementById('import-text');
 const importStatusEl = document.getElementById('import-status');
 const importCountEl = document.getElementById('import-count');
 
@@ -51,7 +25,7 @@ function renderImportCount() {
     const articles = res.importedArticles || [];
     document.getElementById('import-clear').hidden = !articles.length;
     if (!articles.length) {
-      importCountEl.textContent = 'Aucune donnée DatAviso pour le moment.';
+      importCountEl.textContent = 'Aucune donnée DatAviso AI pour le moment.';
       return;
     }
     const meta = res.importedMeta || {};
@@ -76,29 +50,19 @@ function runImport(text, source) {
     const codes = articles.slice(0, 3).map(a => a.code).join(', ');
     importStatusEl.textContent =
       `✅ ${articles.length} article${articles.length > 1 ? 's' : ''} importé${articles.length > 1 ? 's' : ''} (${codes}${articles.length > 3 ? '…' : ''}).`;
-    importTextEl.value = '';
     renderImportCount();
   });
 }
 
-document.getElementById('import-btn').addEventListener('click', () => {
-  const text = importTextEl.value.trim();
-  if (!text) {
-    importStatusEl.textContent = '❌ Collez d\'abord le texte à importer.';
-    return;
-  }
-  runImport(text, 'le presse-papiers');
-});
-
-// Effacement complet, confirmé : les données DatAviso ne se retrouvent pas d'un clic, il faut
-// réimporter le texte source.
+// Effacement complet, confirmé : les données DatAviso AI ne se retrouvent pas d'un clic, il faut
+// réimporter le fichier source.
 document.getElementById('import-clear').addEventListener('click', () => {
   chrome.storage.local.get(['importedArticles'], (res) => {
     const nb = (res.importedArticles || []).length;
     if (!nb) return;
-    if (!confirm(`Effacer les ${nb} article${nb > 1 ? 's' : ''} DatAviso ?`)) return;
+    if (!confirm(`Effacer les ${nb} article${nb > 1 ? 's' : ''} DatAviso AI ?`)) return;
     chrome.storage.local.set({ importedArticles: [], importedMeta: null }, () => {
-      importStatusEl.textContent = '🗑️ Données DatAviso effacées.';
+      importStatusEl.textContent = '🗑️ Données DatAviso AI effacées.';
       renderImportCount();
     });
   });
