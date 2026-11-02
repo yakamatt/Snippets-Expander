@@ -8,12 +8,12 @@
 <body>
   <header>
     <h1><img src="icons/icon32.png" alt="" /> Snippet Expander</h1>
-    <p class="subtitle">Vos snippets, en lecture seule, synchronisés depuis un tableau Google Sheets partagé.</p>
+    <p class="subtitle">Tapez un déclencheur court (<code>/GN4</code>) dans n'importe quel champ du navigateur : il se remplace par le texte complet. Les textes viennent de deux sources, le <strong>Clausier Commun</strong>, partagé par l'équipe dans un tableau Google Sheets, et votre <strong>Clausier Personnel</strong>, propre à ce navigateur, qui l'emporte à déclencheur égal. Sur Aviso, des icônes insèrent ces textes et les données <strong>DatAviso AI</strong> dans « Dispositions réalisées », et ouvrent l'article réglementaire sur sitesecurite.com.</p>
     <div class="button-row">
-      <a class="link-btn" id="open-sheet-link" href="#" target="_blank" rel="noopener noreferrer">📄 Ouvrir le tableau Google Sheets</a>
-      <button id="refresh-btn">🔄 Forcer l'actualisation des données depuis le tableau Google Sheets</button>
+      <a class="link-btn" id="open-sheet-link" href="#" target="_blank" rel="noopener noreferrer">📄 Consulter le Clausier Commun</a>
+      <button id="refresh-btn">🔄 Forcer l'actualisation du Clausier Commun</button>
     </div>
-    <p class="hint">Les données se mettent déjà à jour automatiquement (fréquence réglable dans Paramètres avancés) : ce bouton force une actualisation immédiate.</p>
+    <p class="hint">Le Clausier Commun se met déjà à jour automatiquement (fréquence réglable dans Paramètres avancés) : ce bouton force une actualisation immédiate.</p>
     <p class="hint" id="refresh-status"></p>
     <div id="sync-warning" class="sync-warning" hidden></div>
     <div id="update-banner" class="update-banner" hidden>
@@ -29,47 +29,88 @@
   <main>
     <section class="card">
       <h2>🧪 Zone de test</h2>
-      <p class="hint">Vous débutez ? Tapez ici un déclencheur de votre liste ci-dessous (par exemple <code>/GN4</code>) : après une courte pause, il se remplace automatiquement par son contenu — exactement comme dans n'importe quel champ de texte du navigateur (Gmail, un formulaire...). Pratique pour vérifier que tout fonctionne, sans quitter cette page.</p>
+      <p class="hint">Vous débutez ? Tapez ici un déclencheur de votre Clausier Personnel ou du Clausier Commun (par exemple <code>/GN4</code>) : après une courte pause, il se remplace automatiquement par son contenu — exactement comme dans n'importe quel champ de texte du navigateur (Gmail, un formulaire...). Pratique pour vérifier que tout fonctionne, sans quitter cette page.</p>
       <textarea id="test-area" placeholder="Tapez un déclencheur ici pour le tester..." rows="4"></textarea>
     </section>
 
-    <section class="card">
+    <section class="card" id="clausier">
       <div class="row-between">
-        <h2>Mes snippets (<span id="count">0</span>)</h2>
+        <h2>📒 Clausier Personnel (<span id="local-count">0</span>)</h2>
         <div class="filters">
-          <select id="folder-filter"><option value="">Tous les dossiers</option></select>
-          <input type="text" id="search" placeholder="Rechercher..." />
+          <input type="text" id="local-search" placeholder="Rechercher..." />
         </div>
       </div>
-      <p class="hint">Ces données sont en lecture seule : modifiez-les directement dans le tableau Google Sheets (lien ci-dessus). Elles se mettent à jour ici automatiquement, ou immédiatement via "Forcer l'actualisation" ci-dessus.</p>
-      <div class="folder-controls">
-        <button type="button" id="expand-all-btn" class="link-btn">▾ Tout ouvrir</button>
-        <button type="button" id="collapse-all-btn" class="link-btn">▸ Tout fermer</button>
+      <p class="hint">Vos propres snippets. Au clavier, un snippet personnel l'emporte sur celui du Clausier Commun de même déclencheur ; sur Aviso, il s'insère avec l'icône jaune, et le crayon jaune à côté permet de le modifier sans quitter la page.</p>
+      <p class="hint local-warning">⚠️ Ils sont enregistrés <strong>dans ce navigateur uniquement</strong> : ils ne sont ni partagés, ni sauvegardés en ligne, et désinstaller l'extension les efface. Exportez-les régulièrement.</p>
+      <div class="button-row">
+        <label class="file-label" for="local-import-file">📥 Importer un fichier (.xlsx, .csv)</label>
+        <input type="file" id="local-import-file" accept=".xlsx,.csv,.xls,text/csv" hidden />
+        <button type="button" class="secondary" id="local-export-xlsx">📤 Exporter en .xlsx</button>
+        <button type="button" class="secondary" id="local-export-csv">📤 Exporter en .csv</button>
       </div>
-      <table id="snippets-table">
+      <p class="hint">Pour préparer un import : <button type="button" class="link-btn inline-link" id="local-template-xlsx">modèle vierge .xlsx</button> ou <button type="button" class="link-btn inline-link" id="local-template-csv">modèle vierge .csv</button>, une ligne par snippet, colonnes <code>declencheur</code> et <code>contenu</code>. Le <code>/</code> initial est ajouté s'il manque. Si un déclencheur existe déjà, l'import vous demande quoi faire.</p>
+      <p class="hint" id="local-status"></p>
+
+      <details class="local-add">
+        <summary>➕ Ajouter un snippet</summary>
+        <label for="local-new-trigger">Déclencheur</label>
+        <input type="text" id="local-new-trigger" placeholder="/GN4" />
+        <label for="local-new-content">Contenu</label>
+        <textarea id="local-new-content" rows="5"></textarea>
+        <div class="button-row">
+          <button type="button" id="local-add-btn">Ajouter au Clausier Personnel</button>
+        </div>
+      </details>
+
+      <table id="local-table">
         <thead>
           <tr><th>Déclencheur</th><th>Contenu</th></tr>
         </thead>
-        <tbody id="snippets-body"></tbody>
+        <tbody id="local-body"></tbody>
       </table>
     </section>
 
     <section class="card">
       <div class="row-between">
-        <h2>📥 DatAviso (<span id="imported-count">0</span>)</h2>
+        <h2>📥 DatAviso AI (<span id="imported-count">0</span>)</h2>
         <div class="filters">
           <input type="text" id="imported-search" placeholder="Rechercher..." />
           <button id="imported-clear" class="link-btn">Tout supprimer</button>
         </div>
       </div>
-      <p class="hint" id="imported-meta">Importez vos données DatAviso depuis le popup de l'icône (collage ou fichier .txt). Sur Aviso, une icône verte apparaît sur les lignes dont le Référentiel figure ci-dessous et ajoute ces champs dans "Dispositions réalisées" — sans le titre de l'article.</p>
-      <table id="imported-table">
-        <thead>
-          <tr><th>Article</th><th>Champs</th></tr>
-        </thead>
-        <tbody id="imported-body"></tbody>
-      </table>
+      <p class="hint" id="imported-meta">Importez vos données DatAviso AI depuis le popup de l'icône (fichier .txt). Sur Aviso, une icône verte apparaît sur les lignes dont le Référentiel figure ci-dessous et ajoute ces champs dans "Dispositions réalisées" — sans le titre de l'article.</p>
+      <details id="imported-details" class="table-details">
+        <summary>Afficher les articles</summary>
+        <table id="imported-table">
+          <thead>
+            <tr><th>Article</th><th>Champs</th></tr>
+          </thead>
+          <tbody id="imported-body"></tbody>
+        </table>
+      </details>
     </section>
+
+    <dialog id="conflit-dialog">
+      <h3>Ce déclencheur existe déjà : <code id="conflit-trigger"></code></h3>
+      <div class="conflit-grille">
+        <div>
+          <h4>Contenu actuel</h4>
+          <pre id="conflit-actuel"></pre>
+        </div>
+        <div>
+          <h4>Contenu du fichier</h4>
+          <pre id="conflit-nouveau"></pre>
+        </div>
+      </div>
+      <p class="hint" id="conflit-reste"></p>
+      <form method="dialog" class="button-row">
+        <button value="remplacer">Remplacer</button>
+        <button value="ignorer" class="secondary">Ignorer</button>
+        <button value="remplacer-tout">Remplacer tout</button>
+        <button value="ignorer-tout" class="secondary">Ignorer tout</button>
+        <button value="annuler" class="link-btn">Annuler l'import</button>
+      </form>
+    </dialog>
 
     <section class="card">
       <button id="toggle-advanced" class="link-btn">⚙️ Paramètres avancés ▾</button>
@@ -93,15 +134,6 @@
             <div class="inline-input">
               <input type="number" id="autosync-minutes" min="0" max="1440" step="5" value="60" /> min
             </div>
-          </div>
-        </div>
-
-        <div class="advanced-block">
-          <h3>Intégration Aviso</h3>
-          <p class="hint">Sur l'application Aviso, affiche des icônes à côté de "Dispositions réalisées" : une icône <strong>Snippet Expander</strong> pour ajouter le contenu du snippet, quand un snippet correspond au Référentiel de la ligne, et une icône <strong>sitesecurite.com</strong> pour ouvrir le texte réglementaire dans un nouvel onglet, dès que le Référentiel est un article du règlement ERP — même sans snippet correspondant.</p>
-          <div class="row-between">
-            <label for="aviso-icon-enabled">Intégration Aviso</label>
-            <input type="checkbox" id="aviso-icon-enabled" checked />
           </div>
         </div>
 
@@ -158,6 +190,7 @@
   </main>
 
   <script src="imported-data.js"></script>
+  <script src="clausier-fichiers.js"></script>
   <script src="options.js"></script>
 </body>
 </html>

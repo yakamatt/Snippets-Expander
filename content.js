@@ -1,10 +1,14 @@
 // content.js — détecte et remplace les snippets, avec temporisation et mise en forme
 
+// Deux sources coexistent : le Clausier Commun (snippets du Google Sheets, en lecture seule) et
+// le Clausier Personnel (snippets locaux, propres à ce navigateur). ACTIVE_SNIPPETS est la
+// fusion utilisée par l'expansion au clavier, où le snippet local l'emporte à déclencheur égal.
 let SNIPPETS = [];
+let LOCAL_SNIPPETS = [];
+let ACTIVE_SNIPPETS = [];
 let IMPORTED_ARTICLES = [];
 let MAX_TRIGGER_LEN = 1;
 let EXPANSION_DELAY_MS = 1000;
-let AVISO_ICON_ENABLED = true;
 let pendingTimeoutId = null;
 
 // Déclarés avant loadSnippets() car référencés depuis son callback : chrome.storage est
@@ -15,16 +19,35 @@ const AVISO_ICON_CLASS = 'snippet-expander-aviso-icon';
 const AVISO_LAW_CLASS = 'snippet-expander-aviso-law';
 const AVISO_IMPORT_CLASS = 'snippet-expander-aviso-import';
 const AVISO_ADD_CLASS = 'snippet-expander-aviso-add';
+const AVISO_LOCAL_CLASS = 'snippet-expander-aviso-local';
+const AVISO_EDIT_CLASS = 'snippet-expander-aviso-edit';
+
+// Ordre d'affichage des icônes, de gauche à droite. Le "+" et l'icône jaune occupent la même
+// place et ne coexistent jamais : le "+" n'apparaît que sur une ligne sans snippet local.
+const AVISO_ORDER = [
+  AVISO_ADD_CLASS, AVISO_LOCAL_CLASS, AVISO_EDIT_CLASS,
+  AVISO_ICON_CLASS, AVISO_LAW_CLASS, AVISO_IMPORT_CLASS
+];
 
 function isAvisoSite() {
   return location.hostname === AVISO_HOSTNAME;
 }
 
+// Le snippet local masque, pour l'expansion au clavier, le snippet du Google Sheets de même
+// déclencheur. Sans ce filtre, findMatch départagerait deux déclencheurs identiques à la
+// longueur, donc arbitrairement.
+function rebuildActiveSnippets() {
+  const locaux = new Set(LOCAL_SNIPPETS.map(s => s.trigger));
+  ACTIVE_SNIPPETS = LOCAL_SNIPPETS.concat(SNIPPETS.filter(s => !locaux.has(s.trigger)));
+  MAX_TRIGGER_LEN = ACTIVE_SNIPPETS.reduce((m, s) => Math.max(m, s.trigger.length), 1);
+}
+
 function loadSnippets() {
-  chrome.storage.local.get(['snippets', 'importedArticles'], (res) => {
+  chrome.storage.local.get(['snippets', 'localSnippets', 'importedArticles'], (res) => {
     SNIPPETS = res.snippets || [];
+    LOCAL_SNIPPETS = res.localSnippets || [];
     IMPORTED_ARTICLES = res.importedArticles || [];
-    MAX_TRIGGER_LEN = SNIPPETS.reduce((m, s) => Math.max(m, s.trigger.length), 1);
+    rebuildActiveSnippets();
     if (isAvisoSite()) scheduleAvisoScan();
   });
 }
@@ -32,38 +55,39 @@ function loadSettings() {
   chrome.storage.sync.get(['syncSettings'], (res) => {
     const s = res.syncSettings || {};
     EXPANSION_DELAY_MS = Number.isFinite(s.expansionDelayMs) ? s.expansionDelayMs : 1000;
-    AVISO_ICON_ENABLED = s.avisoIconEnabled !== false;
-    if (isAvisoSite()) applyAvisoIconSetting();
   });
 }
 loadSnippets();
 loadSettings();
 
+// Les icônes Aviso capturent leur snippet au moment de leur pose : quand une source change, les
+// icônes qui en dépendent sont retirées, puis le scan les repose d'après les nouvelles données.
+function retirerIconesAviso(classes) {
+  document.querySelectorAll(classes.map(c => '.' + c).join(', ')).forEach(el => el.remove());
+  scheduleAvisoScan();
+}
+
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area === 'local' && changes.snippets) {
     SNIPPETS = changes.snippets.newValue || [];
-    MAX_TRIGGER_LEN = SNIPPETS.reduce((m, s) => Math.max(m, s.trigger.length), 1);
-    if (isAvisoSite()) {
-      // Un snippet vient peut-être d'être créé depuis le bouton "+" : les icônes "+" devenues
-      // sans objet sont retirées, le scan repose ensuite l'icône bleue là où il faut.
-      document.querySelectorAll('.' + AVISO_ADD_CLASS).forEach(el => el.remove());
-      scheduleAvisoScan();
-    }
+    rebuildActiveSnippets();
+    if (isAvisoSite()) retirerIconesAviso([AVISO_ICON_CLASS]);
   }
-  // Un import depuis le popup doit se voir tout de suite sur l'onglet Aviso déjà ouvert : les
-  // icônes obsolètes sont retirées, puis un scan les repose d'après les nouvelles données.
+  // Un snippet local créé, modifié ou supprimé (fenêtre d'édition, page Paramètres) : le "+",
+  // l'icône jaune et le crayon dépendent tous trois de son existence.
+  if (area === 'local' && changes.localSnippets) {
+    LOCAL_SNIPPETS = changes.localSnippets.newValue || [];
+    rebuildActiveSnippets();
+    if (isAvisoSite()) retirerIconesAviso([AVISO_ADD_CLASS, AVISO_LOCAL_CLASS, AVISO_EDIT_CLASS]);
+  }
+  // Un import depuis le popup doit se voir tout de suite sur l'onglet Aviso déjà ouvert.
   if (area === 'local' && changes.importedArticles) {
     IMPORTED_ARTICLES = changes.importedArticles.newValue || [];
-    if (isAvisoSite()) {
-      document.querySelectorAll('.' + AVISO_IMPORT_CLASS).forEach(el => el.remove());
-      scheduleAvisoScan();
-    }
+    if (isAvisoSite()) retirerIconesAviso([AVISO_IMPORT_CLASS]);
   }
   if (area === 'sync' && changes.syncSettings) {
     const s = changes.syncSettings.newValue || {};
     EXPANSION_DELAY_MS = Number.isFinite(s.expansionDelayMs) ? s.expansionDelayMs : 1000;
-    AVISO_ICON_ENABLED = s.avisoIconEnabled !== false;
-    if (isAvisoSite()) applyAvisoIconSetting();
   }
 });
 
@@ -80,7 +104,7 @@ function findCursorOffset(rawText) {
 }
 
 function findMatch(before) {
-  return SNIPPETS
+  return ACTIVE_SNIPPETS
     .slice()
     .sort((a, b) => b.trigger.length - a.trigger.length)
     .find(s => before.endsWith(s.trigger));
@@ -225,7 +249,7 @@ function scheduleExpansion(fn) {
 }
 
 document.addEventListener('input', (e) => {
-  if (!SNIPPETS.length) return;
+  if (!ACTIVE_SNIPPETS.length) return;
   const el = e.target;
 
   if (el && (el.tagName === 'TEXTAREA' || (el.tagName === 'INPUT' && /^(text|search|email|url)$/i.test(el.type)))) {
@@ -315,29 +339,51 @@ function tronquerPourInfobulle(texte) {
     : texte;
 }
 
-function insertAvisoIcon(container, dispoCell, snippet) {
-  if (container.querySelector('.' + AVISO_ICON_CLASS)) return;
+// Place une icône à son rang dans AVISO_ORDER : juste après la plus proche des icônes qui la
+// précèdent et sont déjà posées, sinon en tête du conteneur. Jamais de position absolue — les
+// données arrivent dans un ordre quelconque (synchro, import, scan suivant), l'ordre affiché
+// doit pourtant rester le même.
+function placerIcone(container, el) {
+  const rang = AVISO_ORDER.indexOf(el.className);
+  for (let i = rang - 1; i >= 0; i--) {
+    const precedente = container.querySelector('.' + AVISO_ORDER[i]);
+    if (precedente) {
+      precedente.insertAdjacentElement('afterend', el);
+      return;
+    }
+  }
+  container.insertBefore(el, container.firstChild);
+}
 
+function creerBoutonAviso(className, iconPath, alt) {
   const btn = document.createElement('button');
   btn.type = 'button';
-  btn.className = AVISO_ICON_CLASS;
+  btn.className = className;
   btn.style.cssText = AVISO_BTN_STYLE;
+  const img = document.createElement('img');
+  img.src = chrome.runtime.getURL(iconPath);
+  img.alt = alt;
+  img.style.cssText = AVISO_IMG_STYLE;
+  btn.appendChild(img);
+  return btn;
+}
+
+// Bouton d'insertion d'un snippet, commun au bleu (Clausier Commun) et au jaune (Clausier
+// Personnel) : seuls l'icône et le libellé de l'infobulle changent.
+function insertAvisoSnippetButton(container, dispoCell, snippet, className, iconPath, libelle) {
+  if (container.querySelector('.' + className)) return;
+
+  const btn = creerBoutonAviso(className, iconPath, libelle);
 
   // L'infobulle montre le texte qui sera réellement inséré, pour pouvoir le relire avant de
   // cliquer. Recalculé au survol et non une fois pour toutes : le contenu peut porter des
   // {date}/{time}, que resolveContent remplace par l'instant présent.
   const majTitre = () => {
     const texte = resolveContent(snippet.content);
-    btn.title = `Ajouter le contenu du snippet "${snippet.trigger}" :\n\n${tronquerPourInfobulle(texte)}`;
+    btn.title = `${libelle} "${snippet.trigger}" :\n\n${tronquerPourInfobulle(texte)}`;
   };
   majTitre();
   btn.addEventListener('mouseenter', majTitre);
-
-  const img = document.createElement('img');
-  img.src = chrome.runtime.getURL('icons/icon16.png');
-  img.alt = 'Snippet Expander';
-  img.style.cssText = AVISO_IMG_STYLE;
-  btn.appendChild(img);
 
   btn.addEventListener('click', (e) => {
     e.preventDefault();
@@ -345,7 +391,32 @@ function insertAvisoIcon(container, dispoCell, snippet) {
     appendAvisoSnippet(dispoCell, snippet);
   });
 
-  container.insertBefore(btn, container.firstChild);
+  placerIcone(container, btn);
+}
+
+function insertAvisoIcon(container, dispoCell, snippet) {
+  insertAvisoSnippetButton(container, dispoCell, snippet, AVISO_ICON_CLASS, 'icons/icon16.png',
+    'Ajouter le contenu du snippet du Clausier Commun');
+}
+
+function insertAvisoLocalIcon(container, dispoCell, snippet) {
+  insertAvisoSnippetButton(container, dispoCell, snippet, AVISO_LOCAL_CLASS, 'icons/local16.svg',
+    'Ajouter le contenu du snippet du Clausier Personnel');
+}
+
+// Crayon jaune, à droite de l'icône jaune : modifie le snippet local sans quitter Aviso.
+function insertAvisoEditIcon(container, snippet) {
+  if (container.querySelector('.' + AVISO_EDIT_CLASS)) return;
+
+  const btn = creerBoutonAviso(AVISO_EDIT_CLASS, 'icons/edit16.svg', `Modifier ${snippet.trigger}`);
+  btn.title = `Modifier le snippet "${snippet.trigger}" du Clausier Personnel`;
+  btn.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    ouvrirEditeurLocal(snippet.trigger, snippet.content, true);
+  });
+
+  placerIcone(container, btn);
 }
 
 // Lien vers le texte réglementaire correspondant sur sitesecurite.com, ouvert dans un nouvel
@@ -378,17 +449,12 @@ function insertAvisoLawLink(container, refCode) {
   // lieu — on empêche juste Aviso de réagir au clic (bascule lecture/édition de la cellule).
   link.addEventListener('click', (e) => e.stopPropagation());
 
-  // Le bouton d'insertion est toujours posé en tête de conteneur : se placer juste après lui
-  // quand il existe garde l'ordre [insertion, texte réglementaire], quel que soit celui des
-  // deux qui a été inséré en premier (les snippets peuvent arriver après un premier scan).
-  const snippetBtn = container.querySelector('.' + AVISO_ICON_CLASS);
-  if (snippetBtn) snippetBtn.insertAdjacentElement('afterend', link);
-  else container.insertBefore(link, container.firstChild);
+  placerIcone(container, link);
 }
 
-// Troisième icône : ajoute les données DatAviso de cet article (tous ses champs, sans la ligne
-// de titre). Même comportement d'ajout que le bouton snippet — rien n'est écrasé.
-// Posée en dernier des trois, l'ordre affiché étant [snippet, texte réglementaire, DatAviso].
+// Icône verte : ajoute les données DatAviso de cet article (tous ses champs, sans la ligne de
+// titre). Même comportement d'ajout que le bouton snippet — rien n'est écrasé. Dernière icône
+// de la rangée (voir AVISO_ORDER).
 function insertAvisoImportIcon(container, dispoCell, article) {
   if (container.querySelector('.' + AVISO_IMPORT_CLASS)) return;
 
@@ -415,18 +481,16 @@ function insertAvisoImportIcon(container, dispoCell, article) {
     appendAvisoText(dispoCell, texte);
   });
 
-  const previous = container.querySelector('.' + AVISO_LAW_CLASS)
-    || container.querySelector('.' + AVISO_ICON_CLASS);
-  if (previous) previous.insertAdjacentElement('afterend', btn);
-  else container.insertBefore(btn, container.firstChild);
+  placerIcone(container, btn);
 }
 
-// Bouton "+" : crée dans le tableau Google Sheets une ligne dont le déclencheur reprend le
+// Bouton "+" : crée dans le Clausier Personnel un snippet dont le déclencheur reprend le
 // Référentiel et dont le contenu reprend le texte déjà saisi dans "Dispositions réalisées" —
 // c'est le cas courant : on rédige une fois la disposition, puis on la capitalise en snippet.
-// Le tableau s'ouvre ensuite sur la cellule de contenu, à compléter ou à relire. N'apparaît que sur les
-// lignes sans snippet — créer un second snippet au même déclencheur rendrait l'expansion de
-// texte imprévisible (findMatch départage à la longueur, donc arbitrairement à égalité).
+// Ouvre la fenêtre d'édition pour relire avant d'enregistrer. N'apparaît que sur les lignes sans
+// snippet local : deux snippets locaux au même déclencheur rendraient l'expansion imprévisible.
+// Plus aucune écriture dans le Google Sheets depuis Aviso (createSnippetRow, dans
+// background.js, est conservé mais n'est plus appelé).
 function insertAvisoAddIcon(container, dispoCell, refCode) {
   if (container.querySelector('.' + AVISO_ADD_CLASS)) return;
 
@@ -440,60 +504,176 @@ function insertAvisoAddIcon(container, dispoCell, refCode) {
     return textarea ? textarea.value.trim() : '';
   };
 
-  const btn = document.createElement('button');
-  btn.type = 'button';
-  btn.className = AVISO_ADD_CLASS;
-  btn.style.cssText = AVISO_BTN_STYLE;
+  const btn = creerBoutonAviso(AVISO_ADD_CLASS, 'icons/add16.svg', `Créer le snippet ${trigger}`);
   // Le libellé dépend de ce que contient la cellule : il est recalculé au survol, la saisie
   // pouvant avoir changé depuis la pose de l'icône.
-  // Passe à true après un échec : le message d'erreur reste alors affiché en infobulle au lieu
-  // d'être remplacé au survol suivant par le libellé normal.
-  let echec = false;
   const majTitre = () => {
-    if (echec) return;
     btn.title = lireDispositions()
-      ? `Créer le snippet "${trigger}" avec le texte saisi dans cette cellule`
-      : `Créer le snippet "${trigger}" (vide) dans le tableau Google Sheets`;
+      ? `Créer le snippet "${trigger}" dans le Clausier Personnel, à partir du texte saisi dans cette cellule`
+      : `Créer le snippet "${trigger}" dans le Clausier Personnel`;
   };
   majTitre();
   btn.addEventListener('mouseenter', majTitre);
 
-  const img = document.createElement('img');
-  img.src = chrome.runtime.getURL('icons/add16.svg');
-  img.alt = `Créer le snippet ${trigger}`;
-  img.style.cssText = AVISO_IMG_STYLE;
-  btn.appendChild(img);
-
   btn.addEventListener('click', (e) => {
     e.preventDefault();
     e.stopPropagation();
-    if (btn.disabled) return;
-    btn.disabled = true;
-    btn.style.opacity = '0.45';
-
-    chrome.runtime.sendMessage({ type: 'CREATE_SNIPPET_ROW', trigger, content: lireDispositions() }, (resp) => {
-      const erreur = chrome.runtime.lastError ? chrome.runtime.lastError.message
-        : (resp && resp.ok ? null : (resp && resp.error) || 'Erreur inconnue');
-      if (!erreur) return; // succès : la synchro retire ce bouton et pose l'icône du snippet
-      btn.disabled = false;
-      btn.style.opacity = '';
-      // Pas de bandeau injecté dans la page d'Aviso : l'échec est rare et l'infobulle suffit à
-      // le signaler sans perturber la mise en page du rapport.
-      echec = true;
-      btn.title = `Création impossible : ${erreur}`;
-      console.error('[Snippet Expander] Création du snippet impossible :', erreur);
-    });
+    ouvrirEditeurLocal(trigger, lireDispositions(), false);
   });
 
-  const previous = container.querySelector('.' + AVISO_IMPORT_CLASS)
-    || container.querySelector('.' + AVISO_LAW_CLASS)
-    || container.querySelector('.' + AVISO_ICON_CLASS);
-  if (previous) previous.insertAdjacentElement('afterend', btn);
-  else container.insertBefore(btn, container.firstChild);
+  placerIcone(container, btn);
+}
+
+// ---------- Clausier Personnel : écriture ----------
+// Les snippets locaux vivent dans chrome.storage.local (clé localSnippets), accessible
+// directement depuis le script de contenu. Lecture puis réécriture de la liste entière : les
+// modifications concurrentes (deux onglets Aviso) sont assez improbables pour ne pas justifier
+// de verrou, et chrome.storage.onChanged resynchronise ensuite tous les onglets.
+
+async function enregistrerSnippetLocal(trigger, content) {
+  const { localSnippets } = await chrome.storage.local.get(['localSnippets']);
+  const liste = (localSnippets || []).slice();
+  const i = liste.findIndex(s => s.trigger === trigger);
+  if (i >= 0) liste[i] = { ...liste[i], content };
+  else liste.push({ trigger, content });
+  await chrome.storage.local.set({ localSnippets: liste });
+}
+
+async function supprimerSnippetLocal(trigger) {
+  const { localSnippets } = await chrome.storage.local.get(['localSnippets']);
+  const liste = (localSnippets || []).filter(s => s.trigger !== trigger);
+  await chrome.storage.local.set({ localSnippets: liste });
+}
+
+// ---------- Clausier Personnel : fenêtre d'édition dans Aviso ----------
+// Superposée à la page, sans la quitter. Montée dans un Shadow DOM : les styles d'Aviso ne
+// l'atteignent pas, et les siens ne débordent pas sur le rapport.
+
+const AVISO_EDITOR_ID = 'snippet-expander-editeur-local';
+
+const AVISO_EDITOR_CSS = `
+  .fond { position: fixed; inset: 0; z-index: 2147483647; background: rgba(15, 20, 35, 0.45);
+    display: flex; align-items: center; justify-content: center;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif; }
+  .fenetre { background: #ffffff; color: #16213d; width: min(680px, 92vw); max-height: 90vh;
+    display: flex; flex-direction: column; gap: 10px; padding: 18px 20px; border-radius: 12px;
+    border-top: 5px solid #f2b705; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3); box-sizing: border-box; }
+  h2 { margin: 0; font-size: 15px; font-weight: 700; }
+  code { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; background: #fdf3d0;
+    padding: 1px 6px; border-radius: 4px; }
+  .aide { margin: 0; color: #5b6a8f; font-size: 12px; line-height: 1.5; }
+  textarea { width: 100%; min-height: 260px; box-sizing: border-box; padding: 10px 12px; resize: vertical;
+    border: 1px solid #c3cdea; border-radius: 8px; font-family: inherit; font-size: 13.5px;
+    line-height: 1.5; color: inherit; }
+  textarea:focus { outline: none; border-color: #c99700; box-shadow: 0 0 0 3px #fdf3d0; }
+  .erreur { margin: 0; color: #b3261e; font-size: 12.5px; }
+  .erreur[hidden] { display: none; }
+  .actions { display: flex; gap: 8px; align-items: center; }
+  .espace { flex: 1; }
+  button { border: none; border-radius: 8px; padding: 8px 14px; font-family: inherit;
+    font-size: 13px; font-weight: 600; cursor: pointer; }
+  button:disabled { opacity: 0.6; cursor: default; }
+  .enregistrer { background: #f2b705; color: #3d2e00; }
+  .enregistrer:hover { background: #dba500; }
+  .annuler { background: #e6ebfa; color: #1f3d8f; }
+  .supprimer { background: none; color: #b3261e; border: 1px solid #eccbc8; }
+  .supprimer:hover { background: #fbeceb; }
+  .supprimer[hidden] { display: none; }
+`;
+
+function ouvrirEditeurLocal(trigger, contenuInitial, existant) {
+  if (document.getElementById(AVISO_EDITOR_ID)) return; // une seule fenêtre à la fois
+
+  const host = document.createElement('div');
+  host.id = AVISO_EDITOR_ID;
+  const root = host.attachShadow({ mode: 'open' });
+  root.innerHTML = `<style>${AVISO_EDITOR_CSS}</style>
+    <div class="fond">
+      <div class="fenetre" role="dialog" aria-modal="true" aria-labelledby="titre">
+        <h2 id="titre"></h2>
+        <p class="aide">Clausier Personnel : ce snippet est enregistré dans ce navigateur uniquement.
+          Il s'insère avec l'icône jaune et, au clavier, l'emporte sur un snippet du Clausier Commun
+          de même déclencheur. Ctrl+Entrée pour enregistrer, Échap pour annuler.</p>
+        <textarea spellcheck="true"></textarea>
+        <p class="erreur" hidden></p>
+        <div class="actions">
+          <button type="button" class="supprimer">🗑️ Supprimer</button>
+          <span class="espace"></span>
+          <button type="button" class="annuler">Annuler</button>
+          <button type="button" class="enregistrer">Enregistrer</button>
+        </div>
+      </div>
+    </div>`;
+
+  const titre = root.getElementById('titre');
+  titre.append(existant ? 'Modifier le snippet ' : 'Créer le snippet ');
+  const code = document.createElement('code');
+  code.textContent = trigger;
+  titre.appendChild(code);
+
+  const textarea = root.querySelector('textarea');
+  const erreurEl = root.querySelector('.erreur');
+  const btnEnregistrer = root.querySelector('.enregistrer');
+  const btnSupprimer = root.querySelector('.supprimer');
+  textarea.value = contenuInitial || '';
+  btnSupprimer.hidden = !existant;
+
+  // Les évènements de la fenêtre ne doivent pas atteindre Aviso : ses raccourcis clavier et sa
+  // bascule lecture/édition des cellules réagiraient à une frappe ou un clic destinés ici.
+  ['keydown', 'keyup', 'keypress', 'input', 'click', 'mousedown', 'mouseup'].forEach(type => {
+    host.addEventListener(type, (e) => e.stopPropagation());
+  });
+
+  const fermer = () => host.remove();
+  const afficherErreur = (message) => {
+    erreurEl.textContent = message;
+    erreurEl.hidden = false;
+  };
+  // Après un rechargement de l'extension, l'ancien script de contenu reste dans la page mais
+  // perd l'accès à chrome.storage : seul un rechargement de la page Aviso le rétablit.
+  const messageErreur = (err) => /context invalidated/i.test(err && err.message)
+    ? "L'extension a été mise à jour : rechargez la page Aviso, puis recommencez."
+    : `Enregistrement impossible : ${err && err.message}`;
+
+  const annuler = () => {
+    if (textarea.value !== (contenuInitial || '') &&
+        !confirm('Abandonner les modifications de ce snippet ?')) return;
+    fermer();
+  };
+
+  const enregistrer = () => {
+    if (!textarea.value.trim()) {
+      afficherErreur(existant
+        ? 'Le contenu est vide. Pour retirer ce snippet, utilisez « Supprimer ».'
+        : 'Le contenu est vide : saisissez le texte du snippet.');
+      return;
+    }
+    btnEnregistrer.disabled = true;
+    enregistrerSnippetLocal(trigger, textarea.value)
+      .then(fermer)
+      .catch((err) => {
+        btnEnregistrer.disabled = false;
+        afficherErreur(messageErreur(err));
+      });
+  };
+
+  btnEnregistrer.addEventListener('click', enregistrer);
+  root.querySelector('.annuler').addEventListener('click', annuler);
+  btnSupprimer.addEventListener('click', () => {
+    if (!confirm(`Supprimer le snippet "${trigger}" du Clausier Personnel ?`)) return;
+    supprimerSnippetLocal(trigger).then(fermer).catch((err) => afficherErreur(messageErreur(err)));
+  });
+  root.querySelector('.fenetre').addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') { e.preventDefault(); annuler(); }
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); enregistrer(); }
+  });
+
+  document.body.appendChild(host);
+  textarea.focus();
+  textarea.setSelectionRange(textarea.value.length, textarea.value.length);
 }
 
 function scanAvisoTable() {
-  if (!AVISO_ICON_ENABLED) return;
   document.querySelectorAll('td.referentiel.content').forEach(refCell => {
     const tr = refCell.closest('tr');
     const dispoCell = tr && tr.querySelector('td.dispositions');
@@ -505,14 +685,20 @@ function scanAvisoTable() {
     const container = dispoCell.querySelector('.dispositions.verif');
     if (!container) return;
 
+    const local = LOCAL_SNIPPETS.find(s => triggerToRefCode(s.trigger) === refCode);
+    if (local) {
+      insertAvisoLocalIcon(container, dispoCell, local);
+      insertAvisoEditIcon(container, local);
+    } else {
+      insertAvisoAddIcon(container, dispoCell, refCode);
+    }
+
     const match = SNIPPETS.find(s => triggerToRefCode(s.trigger) === refCode);
     if (match) insertAvisoIcon(container, dispoCell, match);
     insertAvisoLawLink(container, refCode);
 
     const article = IMPORTED_ARTICLES.find(a => a.code === refCode);
     if (article) insertAvisoImportIcon(container, dispoCell, article);
-
-    if (!match) insertAvisoAddIcon(container, dispoCell, refCode);
   });
 }
 
@@ -522,19 +708,8 @@ function scheduleAvisoScan() {
   avisoScanTimeoutId = setTimeout(scanAvisoTable, 150);
 }
 
-// Réagit immédiatement à un changement du réglage "Intégration Aviso" (page Paramètres ou popup
-// de l'icône) : relance un scan si on vient de le réactiver, ou retire les icônes déjà posées.
-function applyAvisoIconSetting() {
-  if (AVISO_ICON_ENABLED) {
-    scheduleAvisoScan();
-  } else {
-    document.querySelectorAll(
-      '.' + AVISO_ICON_CLASS + ', .' + AVISO_LAW_CLASS + ', .' +
-      AVISO_IMPORT_CLASS + ', .' + AVISO_ADD_CLASS
-    ).forEach(el => el.remove());
-  }
-}
-
+// L'intégration est toujours active sur Aviso (le réglage "Intégration Aviso" a été retiré en
+// v2.18.0) et reste sans effet sur tout autre site.
 if (isAvisoSite()) {
   // Les lignes se chargent/déplient dynamiquement (boutons d'expansion, AJAX) : on réagit à
   // toute modification du DOM plutôt qu'à un seul passage au chargement de la page.

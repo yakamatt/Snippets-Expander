@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" role="img">
+  <!-- Icône du Clausier Personnel (snippet local) sur Aviso : le logo bleu de l'extension
+       ("+→" sur carré), décliné en jaune pour dire "même geste, autre source". Tracé foncé
+       plutôt que blanc : le blanc sur jaune ne se lit pas à 16 px. -->
+  <rect x="0.5" y="0.5" width="15" height="15" rx="2.5" fill="#f2b705"/>
+  <path d="M4.5 5v6M1.75 8h5.5" stroke="#3d2e00" stroke-width="1.6" stroke-linecap="round"/>
+  <path d="M9.25 8h4.5M11.75 5.75 13.9 8l-2.15 2.25" fill="none" stroke="#3d2e00" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

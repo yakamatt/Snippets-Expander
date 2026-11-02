@@ -1,6 +1,6 @@
 # Snippet Expander — extension Chrome gratuite
 
-Remplace automatiquement un texte court (ex: `;sig`) par un texte prédéfini, dans n'importe quel champ de texte du navigateur. Les snippets sont gérés dans un tableau Google Sheets partagé et l'extension les affiche en **lecture seule** — **100% gratuit**.
+Remplace automatiquement un texte court (ex: `;sig`) par un texte prédéfini, dans n'importe quel champ de texte du navigateur — **100% gratuit**. Les snippets viennent de deux sources : le **Clausier Commun**, un tableau Google Sheets partagé que l'extension lit sans jamais le modifier, et le **Clausier Personnel**, propre à chaque utilisateur et enregistré dans son navigateur.
 
 ## 1. Installer l'extension dans Chrome
 
@@ -8,30 +8,31 @@ Remplace automatiquement un texte court (ex: `;sig`) par un texte prédéfini, d
 2. Activez le **Mode développeur** (en haut à droite)
 3. Cliquez sur **Charger l'extension non empaquetée**
 4. Sélectionnez le dossier `snippet-expander` (celui qui contient `manifest.json`)
-5. L'icône de l'extension apparaît dans la barre d'outils — **un clic dessus ouvre un petit menu** avec un bouton "Actualiser les données" et un lien vers les paramètres complets
+5. L'icône de l'extension apparaît dans la barre d'outils — **un clic dessus ouvre un petit menu** (voir section 2)
 6. À la première installation, la page Options s'ouvre automatiquement avec une bannière 📌 vous invitant à épingler l'extension (clic sur le puzzle 🧩 en haut du navigateur, puis sur l'épingle à côté de Snippet Expander) pour l'avoir toujours sous la main
 
 ## 2. Utiliser l'extension
 
-- Cliquez sur l'icône de l'extension pour ouvrir le petit menu ("popup"), avec un bouton **"🔄 Actualiser les données"** et un lien **"⚙️ Paramètres"** vers la page complète (liste des snippets, filtres, réglages avancés).
-- Un snippet a un **déclencheur** (ex: `;sig`, `/adresse`), un **contenu** et un **dossier** optionnel.
+- Cliquez sur l'icône de l'extension pour ouvrir le petit menu ("popup") : **"📒 Modifier le Clausier Personnel"** (ouvre la page Paramètres sur cette section), **"📄 Consulter le Clausier Commun"** (ouvre le Google Sheets), l'import **DatAviso AI**, un lien **"✉️ Donner mon avis"** vers le formulaire de retour, et le lien **"⚙️ Paramètres"**.
+- Un snippet a un **déclencheur** (ex: `;sig`, `/adresse`) et un **contenu**.
 - Tapez le déclencheur dans n'importe quel champ (Gmail, formulaires web, réseaux sociaux, contenteditable...) : après une courte temporisation (1 seconde par défaut, réglable), il se remplace par le contenu — les sauts de ligne et retours à la ligne sont respectés.
+- **Deux clausiers** : à déclencheur égal, le snippet du **Clausier Personnel l'emporte** sur celui du Clausier Commun (voir section 2 ter).
 - Placeholders disponibles : `{date}`, `{time}`, `{cursor}` (repositionne le curseur après expansion).
-- **Lecture seule** : les snippets ne se créent, se modifient ou se suppriment plus depuis l'extension. Toute la gestion se fait directement dans le tableau Google Sheets partagé (bouton "📄 Ouvrir le tableau Google Sheets" en haut de la page Options).
-- **Mise à jour des données** : les données se mettent à jour automatiquement en arrière-plan (fréquence réglable, toutes les heures par défaut — voir Paramètres avancés). Pour forcer une actualisation immédiate : bouton "🔄 Actualiser les données" dans le popup de l'icône, ou "🔄 Forcer l'actualisation des données depuis le tableau Google Sheets" en haut de la page Options.
-- **Dossiers** : les snippets sont groupés par dossier (colonne `folder` du Sheet) pour la navigation ; utilisez le filtre en haut de la liste pour n'afficher qu'un dossier, ou la recherche pour filtrer par texte.
-- **Zone de test** : sur la page Options, un champ de texte libre permet de taper un déclencheur existant et de voir l'expansion se produire en direct — pratique pour vérifier que tout fonctionne sans avoir à ouvrir un autre site.
-- **Intégration Aviso** : sur l'application Aviso, des icônes apparaissent automatiquement à côté de "Dispositions réalisées", selon le code du "Référentiel" de la ligne (ex: "GN 4") :
-  - l'icône **Snippet Expander** **ajoute** le contenu du snippet à la suite du texte déjà saisi, sans jamais l'écraser, et affiche ce contenu au survol pour le relire avant de cliquer. Elle n'apparaît que si le code correspond au déclencheur d'un snippet ;
+- **Clausier Commun en lecture seule** : ses snippets se créent, se modifient et se suppriment dans le tableau Google Sheets partagé (bouton "📄 Consulter le Clausier Commun" du popup ou de la page Paramètres).
+- **Mise à jour du Clausier Commun** : il se met à jour automatiquement en arrière-plan (fréquence réglable, toutes les heures par défaut — voir Paramètres avancés). Pour forcer une actualisation immédiate : "🔄 Forcer l'actualisation du Clausier Commun" en haut de la page Paramètres.
+- **Zone de test** : sur la page Paramètres, un champ de texte libre permet de taper un déclencheur existant et de voir l'expansion se produire en direct — pratique pour vérifier que tout fonctionne sans avoir à ouvrir un autre site.
+- **Intégration Aviso** : sur l'application Aviso, des icônes apparaissent automatiquement à côté de "Dispositions réalisées", selon le code du "Référentiel" de la ligne (ex: "GN 4"). De gauche à droite :
+  - l'icône **jaune** **ajoute** le contenu du snippet du Clausier Personnel, et l'affiche au survol pour le relire avant de cliquer. Le **crayon jaune** à sa droite ouvre une fenêtre d'édition par-dessus la page pour le modifier ou le supprimer, sans quitter Aviso ;
+  - à leur place, sur une ligne **sans** snippet personnel, l'icône **"+"** (grise) crée ce snippet : la fenêtre d'édition s'ouvre avec un déclencheur qui reprend le Référentiel (`/GN13`) et un contenu prérempli avec **le texte déjà saisi dans "Dispositions réalisées"**. Une fois le snippet enregistré, le "+" laisse la place à l'icône jaune et au crayon ;
+  - l'icône **bleue** **ajoute** le contenu du snippet du Clausier Commun, avec le même aperçu au survol. Elle n'apparaît que si le code correspond au déclencheur d'un snippet du Google Sheets ;
   - l'icône **sitesecurite.com** ouvre dans un nouvel onglet l'article du règlement de sécurité ERP correspondant, ancré directement sur l'article visé. Elle s'affiche dès que le code est un article ERP connu (voir `sitesecurite-articles.js`), **y compris sur les lignes sans snippet** — consulter le texte reste utile quand il n'y a rien à insérer ;
-  - l'icône **verte** ajoute les données **DatAviso** de cet article (voir ci-dessous), et affiche au survol le texte qui sera inséré. Elle n'apparaît que si un article importé porte le même code ;
-  - l'icône **"+"** (grise) crée le snippet manquant : elle ajoute au tableau Google Sheets une ligne dont le déclencheur reprend le Référentiel (`/GN13`) et dont le contenu reprend **le texte déjà saisi dans "Dispositions réalisées"** (vide si la cellule l'était), actualise les données puis ouvre le tableau sur la cellule de contenu. Elle n'apparaît que sur les lignes **sans** snippet, et s'efface au profit de l'icône bleue une fois celui-ci créé. Nécessite un script Apps Script à jour (voir section 3).
+  - l'icône **verte** ajoute les données **DatAviso AI** de cet article (voir ci-dessous), et affiche au survol le texte qui sera inséré. Elle n'apparaît que si un article importé porte le même code.
 
-  Désactivable via le réglage **Intégration Aviso**, accessible depuis le popup de l'icône ou dans Paramètres avancés. Sans effet sur les autres sites.
+  Toute insertion s'ajoute à la suite du texte existant, sans jamais l'écraser. L'intégration est toujours active sur Aviso et sans effet sur les autres sites.
 
-## 2 bis. DatAviso — importer des données de dossier par article
+## 2 bis. DatAviso AI — importer des données de dossier par article
 
-Indépendamment des snippets (qui viennent du Google Sheet), l'extension peut mémoriser des **données propres à un dossier**, article par article, pour les réinjecter dans Aviso. Ces données et les zones qui les gèrent sont regroupées sous le nom **DatAviso**.
+Indépendamment des snippets, l'extension peut mémoriser des **données propres à un dossier**, article par article, pour les réinjecter dans Aviso. Ces données et les zones qui les gèrent sont regroupées sous le nom **DatAviso AI**.
 
 **Format attendu** — un bloc par article, séparés par une ligne vide :
 
@@ -57,11 +58,22 @@ Reconnaissance des sols
 - Les **lignes de champ** sont de la forme `Libellé : valeur`. Les libellés ne sont pas figés dans le code : toute rubrique est reconnue, jusqu'à 80 caractères et sans point. Une valeur peut contenir des `:` (la découpe se fait au premier), et se poursuivre sur les lignes suivantes.
 - **Aucune ligne n'est perdue** : une ligne qui ne ressemble pas à `Libellé : valeur` est rattachée au champ précédent, ou conservée telle quelle si elle ouvre le bloc. Tout le texte situé sous l'en-tête se retrouve donc dans l'article.
 
-**Importer** : cliquez sur l'icône de l'extension, collez le texte dans "📥 DatAviso" (ou choisissez un fichier `.txt`), puis "Importer". Chaque import **remplace entièrement** les données précédentes. Le bouton "🗑️ Effacer les données DatAviso", juste en dessous, vide tout après confirmation.
+**Importer** : cliquez sur l'icône de l'extension, puis "📄 Importer un fichier .txt" dans "📥 DatAviso AI". Chaque import **remplace entièrement** les données précédentes. Le bouton "🗑️ Effacer les données DatAviso AI", juste en dessous, vide tout après confirmation.
 
-**Consulter / supprimer** : page Paramètres, carte "📥 DatAviso" — aperçu ligne par ligne, recherche, suppression article par article ou en bloc.
+**Consulter / supprimer** : page Paramètres, carte "📥 DatAviso AI" — le tableau est replié par défaut ("Afficher les articles"), et s'ouvre de lui-même dès qu'une recherche est saisie. Aperçu ligne par ligne, suppression article par article ou en bloc.
 
 **Utiliser dans Aviso** : sur une ligne dont le Référentiel correspond à un article importé, une icône verte apparaît. La survoler affiche **le texte exact qui sera inséré** (tronqué à 700 caractères dans l'infobulle uniquement) ; un clic ajoute **tous ses champs** dans "Dispositions réalisées", à la suite du texte existant et **sans le titre de l'article** (la ligne Aviso porte déjà son Référentiel).
+
+## 2 ter. Clausier Personnel — vos propres snippets
+
+À côté du Clausier Commun partagé, chaque utilisateur peut tenir ses **propres snippets**, gérés depuis la carte "📒 Clausier Personnel" de la page Paramètres (ou le bouton "Modifier le Clausier Personnel" du popup) :
+
+- **Ajouter, modifier, supprimer** directement dans la liste, ou depuis Aviso (bouton "+" et crayon jaune, voir section 2).
+- **Priorité** : au clavier, un snippet personnel remplace celui du Clausier Commun qui porte le même déclencheur. Sur Aviso, les deux restent disponibles, l'icône jaune pour le personnel, la bleue pour le commun.
+- **Importer** un fichier `.xlsx` ou `.csv` : une ligne par snippet, colonnes `declencheur` et `contenu`, dans n'importe quel ordre. Des **modèles vierges** dans les deux formats se téléchargent depuis la même carte. Le `/` initial est ajouté s'il manque (`GN 4` devient `/GN 4`), et les lignes sans déclencheur ou sans contenu sont ignorées. Si un déclencheur existe déjà avec un autre contenu, l'import affiche les deux et demande **Remplacer**, **Ignorer**, **Remplacer tout**, **Ignorer tout** ou **Annuler l'import** — rien n'est enregistré avant la fin. Le format `.xls` (Excel 97-2003) n'est pas lu : enregistrez le fichier en `.xlsx` ou `.csv`.
+- **Exporter** en `.xlsx` ou `.csv` (séparateur `;`, UTF-8, s'ouvre directement dans Excel).
+
+⚠️ Le Clausier Personnel est enregistré **dans ce navigateur uniquement** (`chrome.storage.local`). Il est conservé lors des mises à jour de l'extension, mais **effacé si on la désinstalle**, et il ne se retrouve pas sur un autre ordinateur : exportez-le régulièrement, et importez l'export pour le transporter.
 
 ## 3. Partage en temps réel avec une équipe (Google Sheets, gratuit)
 
@@ -89,16 +101,16 @@ Reconnaissance des sols
 
 ⚠️ **Après toute modification de `Code.gs`**, redéployez : **Déployer > Gérer les déploiements > (crayon) > Version : "Nouvelle version" > Déployer**. Sans nouvelle version, l'URL `/exec` continue de servir l'ancien code.
 
-L'extension s'en protège : avant toute écriture, elle interroge le script (`?probe=append`) pour vérifier qu'il gère l'ajout de ligne. Si la réponse ne le confirme pas, **aucune requête d'écriture n'est envoyée** et le bouton "+" signale un script obsolète. Cette vérification existe parce qu'une version antérieure de `Code.gs` réécrivait le tableau entier sur n'importe quel POST : un client récent parlant à un script ancien effaçait tous les snippets.
+Le code d'écriture de l'extension s'en protège : avant toute écriture, il interroge le script (`?probe=append`) pour vérifier qu'il gère l'ajout de ligne, et n'envoie rien si la réponse ne le confirme pas. Cette vérification existe parce qu'une version antérieure de `Code.gs` réécrivait le tableau entier sur n'importe quel POST : un client récent parlant à un script ancien effaçait tous les snippets.
 
 ### d. Mise à jour des données
-L'extension lit le Sheet à chaque récupération (bouton "🔄 Actualiser les données" du popup, "🔄 Forcer l'actualisation..." de la page Options, ou synchro automatique en arrière-plan) : les snippets affichés sont alors **entièrement remplacés** par le contenu actuel du Sheet.
+L'extension lit le Sheet à chaque récupération ("🔄 Forcer l'actualisation du Clausier Commun" de la page Paramètres, ou synchro automatique en arrière-plan) : les snippets du Clausier Commun sont alors **entièrement remplacés** par le contenu actuel du Sheet. Le Clausier Personnel n'est jamais touché par cette synchro.
 
-La **seule** écriture possible est l'ajout d'une ligne par le bouton "+" de l'intégration Aviso, avec le déclencheur et le texte saisi dans la cellule Aviso. L'extension ne supprime jamais une ligne existante ; elle ne complète une ligne déjà présente que si sa cellule de contenu est vide, et ne remplace donc jamais un texte rédigé dans le tableau.
+**Depuis la v2.18.0, l'extension n'écrit plus du tout dans le Sheet** : le bouton "+" d'Aviso crée le snippet dans le Clausier Personnel. Le chemin d'ajout de ligne (`createSnippetRow` dans `background.js`, `doPost` dans `Code.gs`) est conservé, avec ses garde-fous, mais n'est plus appelé. Il ne supprime jamais une ligne existante et ne complète une ligne déjà présente que si sa cellule de contenu est vide.
 
 **Garde-fou** : si le tableau distant revient vide alors que des snippets sont enregistrés localement, la synchro est refusée et la copie locale conservée — un bandeau d'alerte s'affiche alors dans la page Paramètres. Un tableau vidé par accident ne fait donc pas disparaître la dernière copie des snippets. Pour vider délibérément le tableau, supprimez d'abord les snippets locaux (ou réinstallez l'extension).
 
-Pour ajouter, modifier ou supprimer un snippet : faites-le directement dans le Google Sheet (lien "📄 Ouvrir le tableau Google Sheets" en haut de la page Options), puis actualisez les données dans l'extension pour récupérer le résultat.
+Pour ajouter, modifier ou supprimer un snippet du Clausier Commun : faites-le directement dans le Google Sheet (lien "📄 Consulter le Clausier Commun" du popup ou de la page Paramètres), puis forcez l'actualisation pour récupérer le résultat sans attendre la synchro automatique.
 
 ## 4. Paramètres avancés
 
@@ -185,8 +197,9 @@ snippet-expander/
 ├── content.js              # Détection, temporisation et remplacement du texte + intégration Aviso
 ├── sitesecurite-articles.js # Table code d'article ERP -> page sitesecurite.com (générée, cf. en-tête)
 ├── imported-data.js         # Analyse du texte importé (données de dossier par article)
-├── popup.html/css/js       # Popup de l'icône (barre d'outils) : actualisation + lien Paramètres
-├── options.html/css/js     # Page de consultation (lecture seule) et paramètres avancés
+├── clausier-fichiers.js     # Import/export du Clausier Personnel (.xlsx, .csv), sans dépendance
+├── popup.html/css/js       # Popup de l'icône (barre d'outils) : clausiers, DatAviso AI, avis, Paramètres
+├── options.html/css/js     # Page Paramètres : Clausier Personnel, DatAviso AI, paramètres avancés
 ├── icons/                  # Icônes de l'extension
 ├── CHANGELOG.md             # Historique des versions
 └── google-apps-script/
