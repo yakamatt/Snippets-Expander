@@ -209,17 +209,12 @@ async function checkForUpdates() {
     updateCheck: { remoteVersion, localVersion, isNewer, checkedAt: new Date().toISOString() }
   });
 
+  // Signalée par le badge de l'icône et le bandeau de la page Paramètres. Plus de notification
+  // système depuis la v2.18.1 : la permission "notifications" ne servait qu'en mode développeur,
+  // et le Chrome Web Store refuse une permission qu'une installation depuis le Store n'utilise pas.
   if (isNewer) {
     chrome.action.setBadgeText({ text: '⬆' });
     chrome.action.setBadgeBackgroundColor({ color: '#dc2626' });
-    if (chrome.notifications) {
-      chrome.notifications.create({
-        type: 'basic',
-        iconUrl: 'icons/icon128.png',
-        title: 'Snippet Expander — mise à jour disponible',
-        message: `Version ${remoteVersion} disponible (actuelle : ${localVersion}). Ouvrez les paramètres pour mettre à jour.`
-      });
-    }
   } else {
     chrome.action.setBadgeText({ text: '' });
   }

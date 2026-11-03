@@ -50,7 +50,11 @@ de « simplifier ».
 6. **Même règle de code des deux côtés.** `extractRefCode` (content.js) et `importedHeader`
    (imported-data.js) doivent calculer le code *à l'identique*. Les désaccorder casse silencieusement
    toute reconnaissance des référentiels.
-7. **Le Clausier Personnel ne vit que dans le navigateur.** Une désinstallation l'efface : l'export
+7. **Aucune permission que n'utilise pas une installation depuis le Store.** La v2.18.0 a été
+   refusée pour `activeTab`, demandée mais jamais appelée. `host_permissions` liste les seuls
+   hôtes contactés par `fetch` ; ajouter un hôte ou une API, c'est d'abord l'ajouter au manifeste
+   et à la justification « Privacy practices » (README, section 6 d).
+8. **Le Clausier Personnel ne vit que dans le navigateur.** Une désinstallation l'efface : l'export
    est sa seule sauvegarde. Un import ne remplace jamais un snippet existant sans accord (fenêtre
    de conflit), et n'écrit rien avant la fin.
 

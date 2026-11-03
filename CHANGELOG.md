@@ -1,5 +1,12 @@
 # Changelog — Snippet Expander
 
+## v2.18.1 — 2026-11-03
+Permissions réduites au strict nécessaire, après un refus du Chrome Web Store (« Purple Potassium », permission demandée mais non utilisée). L'audit complet demandé par le Store a porté sur toutes les permissions, pour éviter un second cycle de revue :
+- **`activeTab` retirée**, c'était celle visée par le refus. Aucune fonction ne s'en servait : les onglets ouverts par l'extension passent par `chrome.tabs.create`, qui n'exige aucune permission, et les scripts de contenu tiennent leur accès aux pages de leur déclaration `matches`
+- **`notifications` retirée.** Elle ne servait qu'à la vérification de mise à jour GitHub, réservée au mode développeur : une installation depuis le Store ne l'utilisait jamais. La mise à jour disponible reste signalée par le badge de l'icône et le bandeau de la page Paramètres
+- **`host_permissions` réduites de `<all_urls>` aux trois hôtes réellement contactés** : `script.google.com` (lecture du Clausier Commun), `script.googleusercontent.com` (où Apps Script redirige sa réponse) et `raw.githubusercontent.com` (vérification de mise à jour). L'expansion de texte et l'intégration Aviso n'en dépendent pas, elles passent par les scripts de contenu. L'adresse de l'application Web saisie dans Paramètres avancés doit désormais commencer par `https://script.google.com/`
+- Réduire des permissions ne déclenche aucune demande d'accord chez les utilisateurs déjà installés
+
 ## v2.18.0 — 2026-11-02
 - **Nouveau : le Clausier Personnel**, des snippets propres à chaque utilisateur, enregistrés dans le navigateur (`chrome.storage.local`, clé `localSnippets`, permission `unlimitedStorage`). Il coexiste avec le Google Sheets, rebaptisé **Clausier Commun**. Au clavier, à déclencheur égal, **le snippet personnel l'emporte**
 - **Sur Aviso, deux boutons jaunes en tête de rangée.** L'icône jaune insère le snippet personnel, avec le même aperçu au survol que l'icône bleue. Le crayon jaune ouvre une fenêtre d'édition par-dessus la page, sans quitter Aviso : modifier, supprimer, Ctrl+Entrée pour enregistrer, Échap pour annuler. L'ordre devient : jaune (ou « + »), crayon, bleu, sitesecurite, vert. Chaque icône se place désormais d'après une liste d'ordre unique (`AVISO_ORDER`), toujours après la précédente déjà posée

@@ -1,4 +1,4 @@
-const BUILD_DATE = '2026-11-02'; // v2.18.0
+const BUILD_DATE = '2026-11-03'; // v2.18.1
 const DEFAULT_GITHUB_URL = 'https://raw.githubusercontent.com/yakamatt/Snippets-Expander/main';
 const DEFAULT_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1H2rBzMQzZk74Bk2Z_Mo8lXAdYea7Mi7WfzVruBahd_I/edit';
 
@@ -490,6 +490,9 @@ function validerUrl(valeur, motAttendu) {
   try { u = new URL(v); } catch { return 'adresse invalide'; }
   if (u.protocol !== 'https:') return 'l\'adresse doit commencer par https://';
   if (!u.hostname.endsWith('google.com')) return 'ce n\'est pas une adresse Google';
+  // Seul hôte de script autorisé dans host_permissions (manifest.json) : une autre adresse
+  // serait enregistrée, mais chaque synchro échouerait faute de permission.
+  if (motAttendu === '/exec' && u.hostname !== 'script.google.com') return 'l\'adresse doit commencer par https://script.google.com/';
   if (motAttendu && !v.includes(motAttendu)) return `l'adresse devrait contenir "${motAttendu}"`;
   return null;
 }
