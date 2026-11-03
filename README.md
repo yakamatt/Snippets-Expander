@@ -23,12 +23,14 @@ Remplace automatiquement un texte court (ex: `;sig`) par un texte prédéfini, d
 - **Zone de test** : sur la page Paramètres, un champ de texte libre permet de taper un déclencheur existant et de voir l'expansion se produire en direct — pratique pour vérifier que tout fonctionne sans avoir à ouvrir un autre site.
 - **Intégration Aviso** : sur l'application Aviso, des icônes apparaissent automatiquement à côté de "Dispositions réalisées", selon le code du "Référentiel" de la ligne (ex: "GN 4"). De gauche à droite :
   - l'icône **jaune** **ajoute** le contenu du snippet du Clausier Personnel, et l'affiche au survol pour le relire avant de cliquer. Le **crayon jaune** à sa droite ouvre une fenêtre d'édition par-dessus la page pour le modifier ou le supprimer, sans quitter Aviso ;
-  - à leur place, sur une ligne **sans** snippet personnel, l'icône **"+"** (grise) crée ce snippet : la fenêtre d'édition s'ouvre avec un déclencheur qui reprend le Référentiel (`/GN13`) et un contenu prérempli avec **le texte déjà saisi dans "Dispositions réalisées"**. Une fois le snippet enregistré, le "+" laisse la place à l'icône jaune et au crayon ;
+  - à leur place, sur une ligne **sans** snippet personnel, l'icône **"+"** (grise) crée ce snippet : la fenêtre d'édition s'ouvre avec un déclencheur qui reprend le Référentiel (`/GN13`) et un contenu prérempli avec **le texte déjà saisi dans "Dispositions réalisées"**. Une fois le snippet enregistré, il est **ajouté aussitôt à la cellule**, sans doublon : tout le snippet si la cellule était vide, ou seulement la suite si vous avez complété le texte prérempli (rien si vous l'avez réécrit). Le "+" laisse ensuite la place à l'icône jaune et au crayon ;
   - l'icône **bleue** **ajoute** le contenu du snippet du Clausier Commun, avec le même aperçu au survol. Elle n'apparaît que si le code correspond au déclencheur d'un snippet du Google Sheets ;
   - l'icône **sitesecurite.com** ouvre dans un nouvel onglet l'article du règlement de sécurité ERP correspondant, ancré directement sur l'article visé. Elle s'affiche dès que le code est un article ERP connu (voir `sitesecurite-articles.js`), **y compris sur les lignes sans snippet** — consulter le texte reste utile quand il n'y a rien à insérer ;
   - l'icône **verte** ajoute les données **DatAviso AI** de cet article (voir ci-dessous), et affiche au survol le texte qui sera inséré. Elle n'apparaît que si un article importé porte le même code.
 
-  Toute insertion s'ajoute à la suite du texte existant, sans jamais l'écraser. L'intégration est toujours active sur Aviso et sans effet sur les autres sites.
+  Au bord droit de la cellule, une **corbeille** (visible dès que la cellule contient du texte, sur toutes les lignes) efface son contenu d'un clic. Elle devient aussitôt un bouton **"Annuler l'effacement"**, qui remet le texte tant que la cellule est restée vide.
+
+  Toute insertion s'ajoute à la suite du texte existant, sans jamais l'écraser, et le champ s'agrandit pour montrer tout le texte inséré (jusqu'à 60 % de la hauteur de la fenêtre, avec défilement au-delà). L'intégration est toujours active sur Aviso et sans effet sur les autres sites.
 
 ## 2 bis. DatAviso AI — importer des données de dossier par article
 
