@@ -149,7 +149,7 @@ Dans Options > Paramètres avancés > "Mise à jour de l'extension (mode dévelo
 2. Cochez "Vérifier automatiquement les mises à jour" si souhaité (s'enregistre automatiquement), ou cliquez sur "Vérifier une mise à jour maintenant"
 3. L'extension compare le numéro de version de `manifest.json` sur GitHub avec la version installée
 
-⚠️ **Limite technique importante** : une extension chargée en mode développeur ne peut pas se ré-écrire elle-même — Chrome ne l'autorise pas, pour des raisons de sécurité. Quand une nouvelle version est détectée (badge rouge sur l'icône + notification), l'extension affiche une **marche à suivre détaillée avec liens cliquables** (dans la bannière en haut de la page Options, ou dans "Paramètres avancés > Mise à jour de l'extension") :
+⚠️ **Limite technique importante** : une extension chargée en mode développeur ne peut pas se ré-écrire elle-même — Chrome ne l'autorise pas, pour des raisons de sécurité. Quand une nouvelle version est détectée (badge rouge sur l'icône), l'extension affiche une **marche à suivre détaillée avec liens cliquables** (dans la bannière en haut de la page Options, ou dans "Paramètres avancés > Mise à jour de l'extension") :
 1. Cliquez sur le lien **"⬇️ Télécharger le zip de la version..."** — le téléchargement démarre directement
 2. Décompressez-le et remplacez les fichiers dans **le dossier de l'extension** — un lien direct est affiché si vous avez renseigné son chemin à l'étape précédente, sinon un rappel générique s'affiche à la place (ne créez pas un nouveau dossier)
 3. Cliquez sur le lien **"chrome://extensions"** affiché dans la liste (ouvre directement la page)
@@ -180,7 +180,13 @@ Une fois publiée, l'extension se met à jour **automatiquement et silencieuseme
 
 ### d. Déclarer les pratiques de confidentialité (obligatoire)
 Dans l'onglet **"Privacy practices"** du dashboard :
-- **Permission `host_permissions: <all_urls>`** : à justifier — nécessaire pour détecter la frappe et remplacer le texte dans n'importe quel champ, sur n'importe quel site
+- **Chaque permission est à justifier** ; le Store refuse toute permission demandée mais non utilisée (refus « Purple Potassium » en v2.18.0, pour `activeTab`). Justifications à reprendre :
+  - **Scripts de contenu sur `<all_urls>`** : détecter la frappe d'un déclencheur et le remplacer par son texte dans n'importe quel champ, sur n'importe quel site ; intégration Aviso
+  - **`host_permissions`** (`script.google.com`, `script.googleusercontent.com`, `raw.githubusercontent.com`) : lire le Clausier Commun depuis le script Apps Script (qui redirige sa réponse vers `googleusercontent.com`), et vérifier les mises à jour sur GitHub en mode développeur
+  - **`storage`** : enregistrer les snippets, les réglages et les données DatAviso AI
+  - **`unlimitedStorage`** : le Clausier Personnel et les données DatAviso AI, conservés dans le navigateur, peuvent dépasser la limite de 10 Mo de `chrome.storage.local`
+  - **`alarms`** : actualiser périodiquement le Clausier Commun (toutes les heures par défaut)
+- **Avant chaque soumission**, vérifier que toute nouvelle permission est réellement utilisée par une installation depuis le Store, pas seulement en mode développeur
 - **Usage des données** : l'extension lit du texte dans les champs des pages visitées (fonctionnalité cœur) et récupère vos snippets depuis l'URL Google Sheets que *vous* configurez — aucune donnée n'est envoyée à un serveur tiers appartenant au développeur
 - Fournissez une **URL de politique de confidentialité** (une simple page expliquant les points ci-dessus suffit ; ce README peut servir de base)
 - Cochez la case de certification de conformité au programme développeur
