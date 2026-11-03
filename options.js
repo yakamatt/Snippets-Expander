@@ -1,4 +1,4 @@
-const BUILD_DATE = '2026-11-03'; // v2.18.1
+const BUILD_DATE = '2026-11-03'; // v2.19.0
 const DEFAULT_GITHUB_URL = 'https://raw.githubusercontent.com/yakamatt/Snippets-Expander/main';
 const DEFAULT_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1H2rBzMQzZk74Bk2Z_Mo8lXAdYea7Mi7WfzVruBahd_I/edit';
 
@@ -118,6 +118,8 @@ function sauverLocal(liste) {
 function renderLocal() {
   const filtre = (localSearchEl.value || '').toLowerCase();
   document.getElementById('local-count').textContent = localSnippets.length;
+  document.getElementById('local-count-list').textContent = localSnippets.length;
+  document.getElementById('local-clear').hidden = !localSnippets.length;
   localBodyEl.innerHTML = '';
 
   const lignes = localSnippets
@@ -210,7 +212,26 @@ function ligneEdition(s) {
   return tr;
 }
 
-localSearchEl.addEventListener('input', renderLocal);
+// La liste est repliée par défaut (le formulaire d'ajout, lui, reste visible) : elle s'ouvre
+// d'elle-même dès qu'une recherche est saisie, sans quoi le filtre agirait sur une liste cachée.
+localSearchEl.addEventListener('input', () => {
+  if (localSearchEl.value) document.getElementById('local-details').open = true;
+  renderLocal();
+});
+
+// Effacement complet, irréversible : le Clausier Personnel n'existe que dans ce navigateur. Le
+// message le dit et rappelle l'export, seule sauvegarde possible.
+document.getElementById('local-clear').addEventListener('click', () => {
+  const nb = localSnippets.length;
+  if (!nb) return;
+  if (!confirm(`⚠️ Supprimer ${nb > 1 ? `les ${nb} snippets` : 'le snippet'} du Clausier Personnel ?\n\n` +
+    'Cette suppression est définitive : ces snippets ne sont sauvegardés nulle part ailleurs que dans ce navigateur. ' +
+    'Pensez à les exporter (.xlsx ou .csv) avant, si vous voulez pouvoir les retrouver.')) return;
+  localEnEdition = null;
+  sauverLocal([]).then(() => {
+    localStatusEl.textContent = `🗑️ ${nb} snippet${nb > 1 ? 's' : ''} supprimé${nb > 1 ? 's' : ''} du Clausier Personnel.`;
+  });
+});
 
 document.getElementById('local-add-btn').addEventListener('click', () => {
   const triggerEl = document.getElementById('local-new-trigger');
@@ -364,18 +385,21 @@ function loadImported() {
   });
 }
 
+const importedMetaEl = document.getElementById('imported-meta');
+const IMPORTED_META_DEFAUT = importedMetaEl.textContent; // texte d'aide d'avant tout import
+
 function renderImportedMeta(meta) {
-  if (!meta || !importedArticles.length) return;
-  const quand = meta.importedAt ? new Date(meta.importedAt).toLocaleString() : null;
-  if (!quand) return;
-  const el = document.getElementById('imported-meta');
-  el.textContent = `Dernier import DatAviso AI : ${quand}${meta.source ? ` (${meta.source})` : ''}. ` +
-    `Sur Aviso, une icône verte apparaît sur les lignes dont le Référentiel figure ci-dessous et ajoute ces champs dans "Dispositions réalisées" — sans le titre de l'article.`;
+  const quand = meta && meta.importedAt && importedArticles.length ? new Date(meta.importedAt).toLocaleString() : null;
+  importedMetaEl.textContent = quand
+    ? `Dernier import DatAviso AI : ${quand}${meta.source ? ` (${meta.source})` : ''}. ` +
+      `Sur Aviso, une icône verte apparaît sur les lignes dont le Référentiel figure ci-dessous et ajoute ces champs dans "Dispositions réalisées" — sans le titre de l'article.`
+    : IMPORTED_META_DEFAUT;
 }
 
 function renderImported() {
   const filter = (importedSearchEl.value || '').toLowerCase();
   importedCountEl.textContent = importedArticles.length;
+  document.getElementById('imported-clear').hidden = !importedArticles.length;
   importedBodyEl.innerHTML = '';
 
   const rows = importedArticles.filter(a => {
@@ -448,19 +472,50 @@ importedSearchEl.addEventListener('input', () => {
   renderImported();
 });
 
+// Même import que dans le popup (popup.js, runImport) : chaque import REMPLACE entièrement les
+// données précédentes, le fichier faisant foi pour le dossier en cours.
+const importedStatusEl = document.getElementById('imported-status');
+
+document.getElementById('imported-file').addEventListener('change', (e) => {
+  const file = e.target.files && e.target.files[0];
+  e.target.value = ''; // permet de réimporter le même fichier après correction
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onerror = () => { importedStatusEl.textContent = '❌ Lecture du fichier impossible.'; };
+  reader.onload = () => {
+    const articles = parseImportedData(String(reader.result));
+    if (!articles.length) {
+      importedStatusEl.textContent = '❌ Aucun article détecté. Chaque bloc doit commencer par une ligne d\'en-tête du type "GN 12 — Titre".';
+      return;
+    }
+    const meta = { importedAt: new Date().toISOString(), source: file.name, count: articles.length };
+    chrome.storage.local.set({ importedArticles: articles, importedMeta: meta }, () => {
+      importedArticles = articles;
+      renderImported();
+      renderImportedMeta(meta);
+      const codes = articles.slice(0, 3).map(a => a.code).join(', ');
+      importedStatusEl.textContent =
+        `✅ ${articles.length} article${articles.length > 1 ? 's' : ''} importé${articles.length > 1 ? 's' : ''} (${codes}${articles.length > 3 ? '…' : ''}).`;
+    });
+  };
+  reader.readAsText(file, 'utf-8');
+});
+
 document.getElementById('imported-clear').addEventListener('click', () => {
-  if (!importedArticles.length) return;
-  if (!confirm(`Supprimer les ${importedArticles.length} articles DatAviso AI ?`)) return;
+  const nb = importedArticles.length;
+  if (!nb) return;
+  if (!confirm(`Effacer ${nb > 1 ? `les ${nb} articles` : "l'article"} DatAviso AI ?`)) return;
   importedArticles = [];
-  chrome.storage.local.set({ importedArticles: [], importedMeta: null }, renderImported);
+  chrome.storage.local.set({ importedArticles: [], importedMeta: null }, () => {
+    renderImported();
+    renderImportedMeta(null);
+    importedStatusEl.textContent = '🗑️ Données DatAviso AI effacées.';
+  });
 });
 
 // Un import fait depuis le popup doit se voir immédiatement si cette page est déjà ouverte.
 chrome.storage.onChanged.addListener((changes, area) => {
-  if (area === 'local' && changes.importedArticles) {
-    importedArticles = changes.importedArticles.newValue || [];
-    renderImported();
-  }
+  if (area === 'local' && changes.importedArticles) loadImported(); // relit aussi la date d'import
 });
 
 // --- Paramètres avancés ---

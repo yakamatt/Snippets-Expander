@@ -13,7 +13,7 @@ Remplace automatiquement un texte court (ex: `;sig`) par un texte prédéfini, d
 
 ## 2. Utiliser l'extension
 
-- Cliquez sur l'icône de l'extension pour ouvrir le petit menu ("popup") : **"📒 Modifier le Clausier Personnel"** (ouvre la page Paramètres sur cette section), **"📄 Consulter le Clausier Commun"** (ouvre le Google Sheets), l'import **DatAviso AI**, un lien **"✉️ Donner mon avis"** vers le formulaire de retour, et le lien **"⚙️ Paramètres"**.
+- Cliquez sur l'icône de l'extension pour ouvrir le petit menu ("popup") : **"📒 Modifier le Clausier Personnel"** (ouvre la page Paramètres sur cette section), **"📄 Consulter le Clausier Commun"** (ouvre le Google Sheets), l'import **DatAviso AI**, un lien **"✉️ Donner mon avis"** vers le formulaire de retour, **"🤝 Partager avec mes collègues"** (copie le lien de la fiche du Chrome Web Store, ou prépare un e-mail qui le contient), et le lien **"⚙️ Paramètres"**.
 - Un snippet a un **déclencheur** (ex: `;sig`, `/adresse`) et un **contenu**.
 - Tapez le déclencheur dans n'importe quel champ (Gmail, formulaires web, réseaux sociaux, contenteditable...) : après une courte temporisation (1 seconde par défaut, réglable), il se remplace par le contenu — les sauts de ligne et retours à la ligne sont respectés.
 - **Deux clausiers** : à déclencheur égal, le snippet du **Clausier Personnel l'emporte** sur celui du Clausier Commun (voir section 2 ter).
@@ -62,7 +62,7 @@ Reconnaissance des sols
 
 **Importer** : cliquez sur l'icône de l'extension, puis "📄 Importer un fichier .txt" dans "📥 DatAviso AI". Chaque import **remplace entièrement** les données précédentes. Le bouton "🗑️ Effacer les données DatAviso AI", juste en dessous, vide tout après confirmation.
 
-**Consulter / supprimer** : page Paramètres, carte "📥 DatAviso AI" — le tableau est replié par défaut ("Afficher les articles"), et s'ouvre de lui-même dès qu'une recherche est saisie. Aperçu ligne par ligne, suppression article par article ou en bloc.
+**Consulter / importer / supprimer** : page Paramètres, carte "📥 DatAviso AI" — mêmes boutons d'import (.txt) et d'effacement que dans le popup. Le tableau est replié par défaut ("Afficher les articles"), et s'ouvre de lui-même dès qu'une recherche est saisie. Aperçu ligne par ligne, suppression article par article ou en bloc.
 
 **Utiliser dans Aviso** : sur une ligne dont le Référentiel correspond à un article importé, une icône verte apparaît. La survoler affiche **le texte exact qui sera inséré** (tronqué à 700 caractères dans l'infobulle uniquement) ; un clic ajoute **tous ses champs** dans "Dispositions réalisées", à la suite du texte existant et **sans le titre de l'article** (la ligne Aviso porte déjà son Référentiel).
 
@@ -70,7 +70,8 @@ Reconnaissance des sols
 
 À côté du Clausier Commun partagé, chaque utilisateur peut tenir ses **propres snippets**, gérés depuis la carte "📒 Clausier Personnel" de la page Paramètres (ou le bouton "Modifier le Clausier Personnel" du popup) :
 
-- **Ajouter, modifier, supprimer** directement dans la liste, ou depuis Aviso (bouton "+" et crayon jaune, voir section 2).
+- **Ajouter** avec le formulaire toujours visible en haut de la carte. **Modifier, supprimer** dans la liste, repliée par défaut ("Afficher les snippets") et ouverte d'elle-même dès qu'une recherche est saisie ; ou depuis Aviso (bouton "+" et crayon jaune, voir section 2).
+- **Tout supprimer** : bouton en bas de la liste, après un message d'alerte qui rappelle que la suppression est définitive et invite à exporter d'abord.
 - **Priorité** : au clavier, un snippet personnel remplace celui du Clausier Commun qui porte le même déclencheur. Sur Aviso, les deux restent disponibles, l'icône jaune pour le personnel, la bleue pour le commun.
 - **Importer** un fichier `.xlsx` ou `.csv` : une ligne par snippet, colonnes `declencheur` et `contenu`, dans n'importe quel ordre. Des **modèles vierges** dans les deux formats se téléchargent depuis la même carte. Le `/` initial est ajouté s'il manque (`GN 4` devient `/GN 4`), et les lignes sans déclencheur ou sans contenu sont ignorées. Si un déclencheur existe déjà avec un autre contenu, l'import affiche les deux et demande **Remplacer**, **Ignorer**, **Remplacer tout**, **Ignorer tout** ou **Annuler l'import** — rien n'est enregistré avant la fin. Le format `.xls` (Excel 97-2003) n'est pas lu : enregistrez le fichier en `.xlsx` ou `.csv`.
 - **Exporter** en `.xlsx` ou `.csv` (séparateur `;`, UTF-8, s'ouvre directement dans Excel).

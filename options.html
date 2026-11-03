@@ -10,7 +10,7 @@
     <h1><img src="icons/icon32.png" alt="" /> Snippet Expander</h1>
     <p class="subtitle">Tapez un déclencheur court (<code>/GN4</code>) dans n'importe quel champ du navigateur : il se remplace par le texte complet. Les textes viennent de deux sources, le <strong>Clausier Commun</strong>, partagé par l'équipe dans un tableau Google Sheets, et votre <strong>Clausier Personnel</strong>, propre à ce navigateur, qui l'emporte à déclencheur égal. Sur Aviso, des icônes insèrent ces textes et les données <strong>DatAviso AI</strong> dans « Dispositions réalisées », et ouvrent l'article réglementaire sur sitesecurite.com.</p>
     <div class="button-row">
-      <a class="link-btn" id="open-sheet-link" href="#" target="_blank" rel="noopener noreferrer">📄 Consulter le Clausier Commun</a>
+      <a class="btn-commun" id="open-sheet-link" href="#" target="_blank" rel="noopener noreferrer">📄 Consulter le Clausier Commun</a>
       <button id="refresh-btn">🔄 Forcer l'actualisation du Clausier Commun</button>
     </div>
     <p class="hint">Le Clausier Commun se met déjà à jour automatiquement (fréquence réglable dans Paramètres avancés) : ce bouton force une actualisation immédiate.</p>
@@ -51,8 +51,8 @@
       <p class="hint">Pour préparer un import : <button type="button" class="link-btn inline-link" id="local-template-xlsx">modèle vierge .xlsx</button> ou <button type="button" class="link-btn inline-link" id="local-template-csv">modèle vierge .csv</button>, une ligne par snippet, colonnes <code>declencheur</code> et <code>contenu</code>. Le <code>/</code> initial est ajouté s'il manque. Si un déclencheur existe déjà, l'import vous demande quoi faire.</p>
       <p class="hint" id="local-status"></p>
 
-      <details class="local-add">
-        <summary>➕ Ajouter un snippet</summary>
+      <div class="local-add">
+        <h3>➕ Ajouter un snippet</h3>
         <label for="local-new-trigger">Déclencheur</label>
         <input type="text" id="local-new-trigger" placeholder="/GN4" />
         <label for="local-new-content">Contenu</label>
@@ -60,14 +60,20 @@
         <div class="button-row">
           <button type="button" id="local-add-btn">Ajouter au Clausier Personnel</button>
         </div>
-      </details>
+      </div>
 
-      <table id="local-table">
-        <thead>
-          <tr><th>Déclencheur</th><th>Contenu</th></tr>
-        </thead>
-        <tbody id="local-body"></tbody>
-      </table>
+      <details id="local-details" class="table-details">
+        <summary>Afficher les snippets (<span id="local-count-list">0</span>)</summary>
+        <table id="local-table">
+          <thead>
+            <tr><th>Déclencheur</th><th>Contenu</th></tr>
+          </thead>
+          <tbody id="local-body"></tbody>
+        </table>
+        <div class="button-row">
+          <button type="button" class="danger" id="local-clear">🗑️ Supprimer tout le Clausier Personnel</button>
+        </div>
+      </details>
     </section>
 
     <section class="card">
@@ -75,10 +81,15 @@
         <h2>📥 DatAviso AI (<span id="imported-count">0</span>)</h2>
         <div class="filters">
           <input type="text" id="imported-search" placeholder="Rechercher..." />
-          <button id="imported-clear" class="link-btn">Tout supprimer</button>
         </div>
       </div>
-      <p class="hint" id="imported-meta">Importez vos données DatAviso AI depuis le popup de l'icône (fichier .txt). Sur Aviso, une icône verte apparaît sur les lignes dont le Référentiel figure ci-dessous et ajoute ces champs dans "Dispositions réalisées" — sans le titre de l'article.</p>
+      <p class="hint" id="imported-meta">Importez vos données DatAviso AI (fichier .txt), ici ou depuis le popup de l'icône. Sur Aviso, une icône verte apparaît sur les lignes dont le Référentiel figure ci-dessous et ajoute ces champs dans "Dispositions réalisées" — sans le titre de l'article.</p>
+      <div class="button-row">
+        <label class="file-label" for="imported-file">📄 Importer un fichier .txt</label>
+        <input type="file" id="imported-file" accept=".txt,text/plain" hidden />
+        <button type="button" class="danger" id="imported-clear">🗑️ Effacer les données DatAviso AI</button>
+      </div>
+      <p class="hint" id="imported-status"></p>
       <details id="imported-details" class="table-details">
         <summary>Afficher les articles</summary>
         <table id="imported-table">

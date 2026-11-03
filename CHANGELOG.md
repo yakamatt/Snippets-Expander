@@ -1,5 +1,11 @@
 # Changelog — Snippet Expander
 
+## v2.19.0 — 2026-11-03
+- **Partager l'extension depuis le popup** : nouvelle rubrique « 🤝 Partager avec mes collègues », en bas. « Copier le lien » place l'adresse de la fiche du Chrome Web Store dans le presse-papiers, « Par e-mail » ouvre un message prérempli qui la contient. Le collègue installe en un clic et reçoit ensuite les mises à jour automatiquement
+- **Paramètres, « Consulter le Clausier Commun » devient un bouton**, au même gabarit que « Forcer l'actualisation du Clausier Commun » mais en bleu-vert, pour ne pas confondre l'ouverture du tableau avec l'actualisation
+- **Paramètres, Clausier Personnel** : le formulaire d'ajout est toujours visible, et c'est la liste des snippets qui se replie désormais (« Afficher les snippets »). Elle s'ouvre d'elle-même dès qu'une recherche est saisie. Nouveau bouton **« Supprimer tout le Clausier Personnel »**, en bas de la liste, précédé d'un message d'alerte : la suppression est définitive, et le message invite à exporter d'abord
+- **Paramètres, DatAviso AI** : les boutons « Importer un fichier .txt » et « Effacer les données DatAviso AI » du popup sont aussi disponibles ici, et remplacent le lien « Tout supprimer ». La date du dernier import se met à jour aussitôt, y compris après un import fait depuis le popup
+
 ## v2.18.1 — 2026-11-03
 Permissions réduites au strict nécessaire, après un refus du Chrome Web Store (« Purple Potassium », permission demandée mais non utilisée). L'audit complet demandé par le Store a porté sur toutes les permissions, pour éviter un second cycle de revue :
 - **`activeTab` retirée**, c'était celle visée par le refus. Aucune fonction ne s'en servait : les onglets ouverts par l'extension passent par `chrome.tabs.create`, qui n'exige aucune permission, et les scripts de contenu tiennent leur accès aux pages de leur déclaration `matches`
