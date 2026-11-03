@@ -19,6 +19,10 @@
   --info: #1c8a92;
   --info-bg: #e2f4f5;
 
+  --danger: #b3261e;
+  --danger-border: #eccbc8;
+  --danger-wash: #fbeceb;
+
   --shadow: 0 1px 2px rgba(15, 25, 55, 0.06), 0 4px 14px rgba(15, 25, 55, 0.06);
 }
 
@@ -39,6 +43,10 @@
 
     --info: #4fc2c9;
     --info-bg: #123033;
+
+    --danger: #f2938c;
+    --danger-border: #5c2a27;
+    --danger-wash: #2a1614;
 
     --shadow: 0 1px 2px rgba(0, 0, 0, 0.35), 0 4px 16px rgba(0, 0, 0, 0.3);
   }
@@ -123,6 +131,21 @@ button.secondary { background: var(--accent-wash); color: var(--accent-hover); }
 
 .button-row { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
 
+/* Lien vers le Google Sheets, présenté en bouton : même gabarit que "Forcer l'actualisation"
+   à côté, dans la teinte "info" pour ne pas le confondre avec cette action. */
+.btn-commun {
+  display: inline-flex; align-items: center; background: var(--info); color: var(--surface);
+  padding: 9px 16px; border-radius: 8px; font-size: 13.5px; font-weight: 600;
+  text-decoration: none; transition: filter 0.15s ease;
+}
+.btn-commun:hover { filter: brightness(0.92); }
+.btn-commun:focus-visible { outline: 2px solid var(--info); outline-offset: 2px; }
+
+/* Action destructrice : contour rouge discret, pour ne pas la confondre avec un import. */
+button.danger { background: none; color: var(--danger); border: 1px solid var(--danger-border); }
+button.danger:hover { background: var(--danger-wash); }
+button.danger[hidden] { display: none; }
+
 .row-between { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 10px; }
 
 table { width: 100%; border-collapse: collapse; margin-top: 4px; table-layout: fixed; }
@@ -177,9 +200,12 @@ code {
 textarea.local-edit { min-height: 160px; }
 td .button-row { margin-top: 8px; }
 
-details.local-add { margin: 6px 0 12px; }
-details.local-add[open] { display: flex; flex-direction: column; gap: 6px; }
-details.local-add label { font-size: 12.5px; font-weight: 600; color: var(--ink-muted); margin-top: 6px; }
+.local-add {
+  display: flex; flex-direction: column; gap: 6px; margin: 8px 0 14px; padding: 12px 14px;
+  border: 1px solid var(--border); border-radius: 10px; background: var(--bg);
+}
+.local-add h3 { margin: 0; font-size: 13px; font-weight: 700; }
+.local-add label { font-size: 12.5px; font-weight: 600; color: var(--ink-muted); margin-top: 4px; }
 
 details > summary { cursor: pointer; color: var(--accent-hover); font-weight: 600; font-size: 13px; padding: 4px 0; user-select: none; }
 details > summary:hover { text-decoration: underline; }
