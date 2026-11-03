@@ -21,6 +21,8 @@ const AVISO_IMPORT_CLASS = 'snippet-expander-aviso-import';
 const AVISO_ADD_CLASS = 'snippet-expander-aviso-add';
 const AVISO_LOCAL_CLASS = 'snippet-expander-aviso-local';
 const AVISO_EDIT_CLASS = 'snippet-expander-aviso-edit';
+// Hors de AVISO_ORDER : la corbeille flotte au bord droit de la cellule, à l'écart de la rangée.
+const AVISO_CLEAR_CLASS = 'snippet-expander-aviso-clear';
 
 // Ordre d'affichage des icônes, de gauche à droite. Le "+" et l'icône jaune occupent la même
 // place et ne coexistent jamais : le "+" n'apparaît que sur une ligne sans snippet local.
@@ -306,12 +308,21 @@ function appendAvisoSnippet(dispoCell, snippet) {
 // par celui des données DatAviso : c'est la même écriture dans la cellule Aviso.
 function appendAvisoText(dispoCell, addition) {
   const textarea = dispoCell.querySelector('textarea.verification');
-  const displayDiv = dispoCell.querySelector('div.verification');
   if (!textarea || !addition) return;
 
   const hasExisting = textarea.value.trim().length > 0;
   const separator = hasExisting && !textarea.value.endsWith('\n') ? '\n' : '';
-  setNativeValue(textarea, textarea.value + separator + addition);
+  ecrireAvisoValeur(dispoCell, textarea.value + separator + addition);
+}
+
+// Seule écriture dans une cellule Aviso, partagée par l'ajout ci-dessus et par la corbeille
+// (effacement puis annulation de l'effacement).
+function ecrireAvisoValeur(dispoCell, valeur) {
+  const textarea = dispoCell.querySelector('textarea.verification');
+  const displayDiv = dispoCell.querySelector('div.verification');
+  if (!textarea) return;
+
+  setNativeValue(textarea, valeur);
   textarea.dispatchEvent(new Event('change', { bubbles: true }));
 
   // Le <div> d'affichage et le <textarea> partagent le même id/name (bascule "lecture" <->
@@ -323,6 +334,34 @@ function appendAvisoText(dispoCell, addition) {
   if (displayDiv) {
     displayDiv.innerHTML = escapeHtmlAviso(textarea.value).replace(/\n/g, '<br>');
   }
+
+  ajusterHauteurAviso(textarea);
+  ajusterHauteurAviso(displayDiv);
+}
+
+// Un long snippet inséré dans un champ de quelques lignes resterait caché derrière une barre de
+// défilement : le champ s'agrandit pour tout montrer, jusqu'à 60 % de la hauteur de la fenêtre
+// (au-delà, il défile, pour ne pas repousser les lignes suivantes hors de la vue). Il ne
+// rapetisse jamais sous la taille que lui donne Aviso.
+const AVISO_HAUTEUR_MAX = 0.6;
+
+function ajusterHauteurAviso(el) {
+  // Masqué (le <div> de lecture et le <textarea> d'édition alternent) : rien à mesurer. Le
+  // <textarea> est réajusté quand il reprend le focus, voir insertAvisoClearButton.
+  if (!el || !el.offsetParent) return;
+  if (el.scrollHeight <= el.clientHeight) return;
+  // Plancher de 200 px : une fenêtre très basse (ou un cadre encore en cours de mise en page)
+  // donnerait sinon un plafond dérisoire.
+  const max = Math.max(200, Math.round(window.innerHeight * AVISO_HAUTEUR_MAX));
+  const style = getComputedStyle(el);
+  // scrollHeight compte le padding mais pas la bordure : la hauteur à poser en dépend.
+  const bordureEtPadding = style.boxSizing === 'border-box'
+    ? el.offsetHeight - el.clientHeight
+    : -(parseFloat(style.paddingTop) + parseFloat(style.paddingBottom));
+  const actuelle = parseFloat(style.height) || 0;
+  el.style.height = Math.max(actuelle, Math.min(el.scrollHeight + bordureEtPadding, max)) + 'px';
+  el.style.maxHeight = Math.max(actuelle, max) + 'px';
+  el.style.overflowY = 'auto';
 }
 
 const AVISO_BTN_STYLE = 'all:unset;cursor:pointer;display:inline-flex;vertical-align:middle;margin:0 6px 4px 0;';
@@ -518,7 +557,7 @@ function insertAvisoAddIcon(container, dispoCell, refCode) {
   btn.addEventListener('click', (e) => {
     e.preventDefault();
     e.stopPropagation();
-    ouvrirEditeurLocal(trigger, lireDispositions(), false);
+    ouvrirEditeurLocal(trigger, lireDispositions(), false, dispoCell);
   });
 
   placerIcone(container, btn);
@@ -581,7 +620,22 @@ const AVISO_EDITOR_CSS = `
   .supprimer[hidden] { display: none; }
 `;
 
-function ouvrirEditeurLocal(trigger, contenuInitial, existant) {
+// Après la création d'un snippet par le "+", reporte dans la cellule ce qu'elle ne contient pas
+// encore. La fenêtre s'ouvre préremplie avec le texte de la cellule : l'ajouter tel quel le
+// doublerait. Cellule vide : tout le snippet. Snippet qui prolonge le texte de la cellule : la
+// seule suite. Texte réécrit : rien, la cellule n'étant jamais remplacée (rien n'est écrasé).
+function reporterCreationDansAviso(dispoCell, texteCellule, contenu) {
+  const debut = texteCellule.trim();
+  let ajout = '';
+  if (!debut) ajout = contenu;
+  else if (contenu.startsWith(debut)) ajout = contenu.slice(debut.length).replace(/^\s+/, '');
+  if (ajout.trim()) appendAvisoText(dispoCell, resolveContent(ajout));
+}
+
+// dispoCell n'est fourni que pour une création depuis le "+" : c'est le seul cas où le snippet
+// enregistré est aussi ajouté à la cellule Aviso. Le crayon corrige le snippet pour les fois
+// suivantes, sans toucher au rapport.
+function ouvrirEditeurLocal(trigger, contenuInitial, existant, dispoCell) {
   if (document.getElementById(AVISO_EDITOR_ID)) return; // une seule fenêtre à la fois
 
   const host = document.createElement('div');
@@ -649,8 +703,12 @@ function ouvrirEditeurLocal(trigger, contenuInitial, existant) {
       return;
     }
     btnEnregistrer.disabled = true;
-    enregistrerSnippetLocal(trigger, textarea.value)
-      .then(fermer)
+    const contenu = textarea.value;
+    enregistrerSnippetLocal(trigger, contenu)
+      .then(() => {
+        fermer();
+        if (!existant && dispoCell) reporterCreationDansAviso(dispoCell, contenuInitial || '', contenu);
+      })
       .catch((err) => {
         btnEnregistrer.disabled = false;
         afficherErreur(messageErreur(err));
@@ -673,17 +731,94 @@ function ouvrirEditeurLocal(trigger, contenuInitial, existant) {
   textarea.setSelectionRange(textarea.value.length, textarea.value.length);
 }
 
+// ---------- Corbeille : vider la cellule d'un clic, et pouvoir revenir en arrière ----------
+// Seul effacement de texte dans Aviso, et uniquement sur ce clic explicite. Pas de demande de
+// confirmation : la corbeille se change aussitôt en bouton "Annuler l'effacement", qui remet le
+// texte effacé. L'annulation reste offerte tant que la cellule est vide ; dès qu'on y écrit à
+// nouveau, elle disparaît (restaurer écraserait alors la nouvelle saisie) et la corbeille revient.
+
+const AVISO_SVG_CORBEILLE = '<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" fill="none" ' +
+  'stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">' +
+  '<path d="M2.5 4.5h11M6.5 4.5V3a1 1 0 0 1 1-1h1a1 1 0 0 1 1 1v1.5M4 4.5l.7 8.6a1 1 0 0 0 1 .9h4.6a1 1 0 0 0 1-.9l.7-8.6M6.75 7v4.5M9.25 7v4.5"/></svg>';
+const AVISO_SVG_ANNULER = '<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" fill="none" ' +
+  'stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">' +
+  '<path d="M5.5 3 2.5 6l3 3"/><path d="M2.5 6h7a4 4 0 0 1 0 8H7"/></svg>';
+
+const AVISO_COULEUR_CORBEILLE = '#5b6a8f';
+const AVISO_COULEUR_CORBEILLE_SURVOL = '#b3261e';
+const AVISO_COULEUR_ANNULER = '#1f3d8f';
+
+function insertAvisoClearButton(container, dispoCell) {
+  if (container.querySelector('.' + AVISO_CLEAR_CLASS)) return;
+  const textarea = dispoCell.querySelector('textarea.verification');
+  if (!textarea) return;
+
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = AVISO_CLEAR_CLASS;
+  // Flottant à droite : collé au bord droit de la cellule, sur la ligne des icônes.
+  btn.style.cssText = AVISO_BTN_STYLE + 'float:right;margin:0 0 4px 6px;';
+
+  // Texte effacé, en attente d'une éventuelle annulation ; null hors de ce mode.
+  let texteEfface = null;
+
+  const majAffichage = () => {
+    const enAnnulation = texteEfface !== null;
+    btn.innerHTML = enAnnulation ? AVISO_SVG_ANNULER : AVISO_SVG_CORBEILLE;
+    btn.style.color = enAnnulation ? AVISO_COULEUR_ANNULER : AVISO_COULEUR_CORBEILLE;
+    btn.title = enAnnulation ? "Annuler l'effacement : remettre le texte effacé" : 'Effacer le contenu de ce champ';
+    btn.style.display = enAnnulation || textarea.value.trim() ? 'inline-flex' : 'none';
+  };
+
+  btn.addEventListener('mouseenter', () => {
+    if (texteEfface === null) btn.style.color = AVISO_COULEUR_CORBEILLE_SURVOL;
+  });
+  btn.addEventListener('mouseleave', majAffichage);
+
+  btn.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (texteEfface === null) {
+      texteEfface = textarea.value;
+      ecrireAvisoValeur(dispoCell, '');
+    } else {
+      const aRemettre = texteEfface;
+      texteEfface = null; // avant l'écriture : son évènement 'change' ne doit plus voir le mode annulation
+      ecrireAvisoValeur(dispoCell, aRemettre);
+    }
+    majAffichage();
+  });
+
+  // La corbeille suit la saisie : visible dès qu'il y a du texte (frappe, insertion d'un
+  // snippet), masquée sinon. Une nouvelle saisie après effacement abandonne l'annulation.
+  const surModification = () => {
+    if (texteEfface !== null && textarea.value.trim()) texteEfface = null;
+    majAffichage();
+  };
+  textarea.addEventListener('input', surModification);
+  textarea.addEventListener('change', surModification);
+  // Le <textarea> était masqué quand un snippet a été inséré en mode lecture : il prend la bonne
+  // hauteur au moment où on le rouvre pour l'éditer.
+  textarea.addEventListener('focus', () => ajusterHauteurAviso(textarea));
+
+  majAffichage();
+  container.insertBefore(btn, container.firstChild);
+}
+
 function scanAvisoTable() {
   document.querySelectorAll('td.referentiel.content').forEach(refCell => {
     const tr = refCell.closest('tr');
     const dispoCell = tr && tr.querySelector('td.dispositions');
     if (!dispoCell || !dispoCell.querySelector('textarea.verification')) return;
 
-    const refCode = extractRefCode(refCell.textContent);
-    if (!refCode) return;
-
     const container = dispoCell.querySelector('.dispositions.verif');
     if (!container) return;
+
+    // Sur toutes les lignes, y compris celles dont le Référentiel n'a pas de code.
+    insertAvisoClearButton(container, dispoCell);
+
+    const refCode = extractRefCode(refCell.textContent);
+    if (!refCode) return;
 
     const local = LOCAL_SNIPPETS.find(s => triggerToRefCode(s.trigger) === refCode);
     if (local) {
