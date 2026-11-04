@@ -855,6 +855,7 @@ const SVG_ATTRS = 'height="16" aria-hidden="true" fill="none" stroke="currentCol
 const LIENS_AFFAIRE_DEFS = [
   {
     cle: 'sgo',
+    libelle: 'SGO',
     titre: (n) => `Ouvrir l'affaire ${n} dans SGO`,
     url: (n) => `${SGO_URL}?identifiant=${encodeURIComponent(n)}&action=accesDirect`,
     svg: `<svg viewBox="0 0 22 16" width="22" ${SVG_ATTRS}><rect x="0.75" y="2.75" width="20.5" height="10.5" rx="2.5"/>` +
@@ -862,6 +863,7 @@ const LIENS_AFFAIRE_DEFS = [
   },
   {
     cle: 'sharepoint',
+    libelle: 'ShP',
     titre: (n) => `Rechercher l'affaire ${n} dans SharePoint`,
     url: (n) => `${SHAREPOINT_RECHERCHE_URL}?q=${encodeURIComponent(n)}`,
     // Même cadre que SGO : trois lettres aussi.
@@ -870,16 +872,24 @@ const LIENS_AFFAIRE_DEFS = [
   },
   {
     cle: 'explorateur',
+    libelle: 'C:\\',
     windowsSeulement: true,
     titre: (n) => `Rechercher "${n}" dans l'Explorateur Windows (${EXPLORATEUR_LIBELLE})`,
     url: (n) => `search-ms:displayname=${encodeURIComponent('Affaire ' + n)}` +
       `&crumb=location:${encodeURIComponent(EXPLORATEUR_DOSSIER)}&query=${encodeURIComponent(n)}`,
-    svg: `<svg viewBox="0 0 16 16" width="16" ${SVG_ATTRS}><path d="M1.75 4.25a1 1 0 0 1 1-1h3.2l1.5 1.6h5.8a1 1 0 0 1 1 1v6.9a1 1 0 0 1-1 1H2.75a1 1 0 0 1-1-1z"/></svg>`
+    // « C:\ » plutôt qu'un dossier : dit à la fois l'outil (l'Explorateur) et où il cherche.
+    svg: `<svg viewBox="0 0 20 16" width="20" ${SVG_ATTRS}><rect x="0.75" y="2.75" width="18.5" height="10.5" rx="2.5"/>` +
+      '<text x="10" y="10.9" text-anchor="middle" fill="currentColor" stroke="none" font-family="Arial, sans-serif" font-size="7.4" font-weight="700" letter-spacing="0.3">C:\\</text></svg>'
   }
 ];
 
 // Bande verticale qui contient toutes les icônes, trait de 1,4 compris (voir LIENS_AFFAIRE_DEFS).
 const ICONE_RECADRAGE = { y: 2.0, hauteur: 12.5 };
+
+// Boutons de la liste Plans Affaires : libellé en vrai texte (plus lisible qu'un dessin de 7 px),
+// hauteur au plus juste pour que les trois tiennent empilés dans une ligne de deux lignes de texte.
+const BOUTON_TEXTE = 11;   // px
+const BOUTON_HAUTEUR = 13; // px, bordure comprise
 
 // couleur : celle de l'environnement (blanc sur la barre bleue, gris sur la liste) ;
 // survol : plus contrasté, sans changer de teinte, pour rester discret.
@@ -910,24 +920,32 @@ function creerLiensAffaire(numero, { couleur, couleurSurvol, espacement, taille 
     if (classeBouton) {
       a.className = classeBouton;
       // Gabarit resserré : le bouton d'Aviso, avec sa hauteur de ligne de texte, ferait plus du
-      // double de la hauteur de l'icône.
-      a.style.cssText = 'display:flex;align-items:center;justify-content:center;padding:1px 3px;line-height:0;margin:0;';
+      // double de la hauteur du libellé.
+      a.style.cssText = `display:flex;align-items:center;justify-content:center;box-sizing:border-box;` +
+        `height:${BOUTON_HAUTEUR}px;padding:0 2px;margin:0;font-family:Arial,sans-serif;` +
+        `font-size:${BOUTON_TEXTE}px;font-weight:700;line-height:1;letter-spacing:0.2px;`;
     } else {
       a.style.cssText = `all:unset;cursor:pointer;display:inline-flex;color:${couleur};opacity:${opacite};transition:opacity .15s;`;
     }
-    a.innerHTML = d.svg;
-    const svg = a.firstElementChild;
-    // Sur un bouton, le fond bleu délimite déjà l'icône : le cadre de SGO et ShP, utile sur un
-    // fond nu, ferait double emploi.
-    if (classeBouton) svg.querySelectorAll('rect').forEach(r => r.remove());
-    const vb = svg.viewBox.baseVal;
-    // Empilées, les marges haute et basse du dessin (le cadre SGO/SP va de 2,75 à 13,25 sur 16,
-    // le dossier de 3,25 à 13,75) s'additionneraient d'une icône à l'autre : on recadre au plus
-    // près, trait compris.
-    if (empile) svg.setAttribute('viewBox', `${vb.x} ${ICONE_RECADRAGE.y} ${vb.width} ${ICONE_RECADRAGE.hauteur}`);
-    const hauteurDessin = empile ? ICONE_RECADRAGE.hauteur : 16;
-    svg.setAttribute('height', hauteurDessin * taille / 16);
-    svg.setAttribute('width', vb.width * taille / 16);
+    if (classeBouton && d.libelle) {
+      // Sur un bouton, le fond bleu délimite déjà l'icône : SGO et ShP s'écrivent en texte, sans
+      // le cadre de leur dessin, utile seulement sur un fond nu.
+      a.textContent = d.libelle;
+    } else {
+      a.innerHTML = d.svg;
+      const svg = a.firstElementChild;
+      const vb = svg.viewBox.baseVal;
+      // Empilées, les marges haute et basse du dessin (le cadre SGO/SP va de 2,75 à 13,25 sur 16,
+      // le dossier de 3,25 à 13,75) s'additionneraient d'une icône à l'autre : on recadre au plus
+      // près, trait compris.
+      if (empile || classeBouton) svg.setAttribute('viewBox', `${vb.x} ${ICONE_RECADRAGE.y} ${vb.width} ${ICONE_RECADRAGE.hauteur}`);
+      // Sur un bouton, le dessin prend la hauteur du texte des boutons voisins.
+      const hauteur = classeBouton ? BOUTON_TEXTE
+        : (empile ? ICONE_RECADRAGE.hauteur : 16) * taille / 16;
+      const hauteurVue = (empile || classeBouton) ? ICONE_RECADRAGE.hauteur : 16;
+      svg.setAttribute('height', hauteur);
+      svg.setAttribute('width', vb.width * hauteur / hauteurVue);
+    }
     if (!classeBouton) {
       a.addEventListener('mouseenter', () => { a.style.opacity = '1'; a.style.color = couleurSurvol; });
       a.addEventListener('mouseleave', () => { a.style.opacity = String(opacite); a.style.color = couleur; });
@@ -939,6 +957,40 @@ function creerLiensAffaire(numero, { couleur, couleurSurvol, espacement, taille 
   return groupe;
 }
 
+// La ligne d'affaire ne doit pas grandir à cause des liens : ils sont posés hors du flux
+// (position absolue), à droite de la loupe, et la cellule ne leur réserve que la largeur.
+// Empilés si la hauteur de la ligne le permet, sinon côte à côte (ligne d'une seule ligne de
+// texte). Recalculé au redimensionnement de la fenêtre, qui change le nombre de lignes du libellé.
+function disposerLiensListe(actions, liens) {
+  if (!actions.dataset.snippetExpanderPadding) {
+    actions.dataset.snippetExpanderPadding = getComputedStyle(actions).paddingRight;
+  }
+  const paddingDroit = parseFloat(actions.dataset.snippetExpanderPadding) || 0;
+  const cs = getComputedStyle(actions);
+  actions.style.position = 'relative';
+  liens.style.position = 'absolute';
+  liens.style.top = cs.paddingTop;
+  liens.style.right = paddingDroit + 'px';
+
+  // Hauteur disponible : celle de la ligne telle qu'Aviso la dessine, les liens étant hors du flux.
+  const disponible = actions.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+  const nb = liens.children.length;
+  const empile = nb * BOUTON_HAUTEUR <= disponible;
+  liens.style.flexDirection = empile ? 'column' : 'row';
+  liens.style.gap = empile ? '0px' : '2px';
+  actions.style.paddingRight = (paddingDroit + liens.offsetWidth + 2) + 'px';
+}
+
+let liensListeResizeId = null;
+window.addEventListener('resize', () => {
+  if (!isAvisoSite()) return;
+  clearTimeout(liensListeResizeId);
+  liensListeResizeId = setTimeout(() => {
+    document.querySelectorAll('td.std_links > .' + AVISO_LIENS_CLASS)
+      .forEach(liens => disposerLiensListe(liens.parentNode, liens));
+  }, 200);
+});
+
 function scanLiensAffaire() {
   // Liste Plans Affaires : une affaire par ligne, numéro dans la colonne "N° plan affaire".
   document.querySelectorAll('td[headers="plans_affaires_n_degrees_plan_affaire_th"]').forEach(td => {
@@ -947,14 +999,13 @@ function scanLiensAffaire() {
     if (!actions || actions.querySelector('.' + AVISO_LIENS_CLASS)) return;
     const numero = numeroAffaire(td.textContent);
     if (!numero) return;
-    // Empilées : la colonne de la loupe est étroite, et une ligne d'affaire fait déjà plusieurs
-    // lignes de haut (libellé sur deux ou trois lignes). Mêmes classes que la loupe voisine
-    // (btn btn-primary) : blanc sur fond bleu, survol compris, identiques par construction.
-    const liens = creerLiensAffaire(numero, { espacement: 1, empile: true, classeBouton: 'btn btn-primary' });
+    // Mêmes classes que la loupe voisine (btn btn-primary) : blanc sur fond bleu, survol
+    // compris, identiques par construction. Empilées sans espace, comme un groupe de boutons.
+    const liens = creerLiensAffaire(numero, { espacement: 0, empile: true, classeBouton: 'btn btn-primary' });
     if (!liens) return;
-    liens.style.marginLeft = '8px';
     actions.style.whiteSpace = 'nowrap';
     actions.appendChild(liens);
+    disposerLiensListe(actions, liens);
   });
 
   // Barre bleue : le titre de l'affaire ouverte, vide sur les pages sans affaire (la liste).

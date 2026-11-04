@@ -90,7 +90,9 @@ Les icônes s'insèrent dans la cellule « Dispositions réalisées », dans l'o
 - **Liens d'affaire** (`scanLiensAffaire`, appelé par chaque scan) : SGO, SharePoint et
   Explorateur (`search-ms:`, Windows seulement, sur `C:\Users\` : l'Explorateur ne développe pas
   `%USERPROFILE%` dans ce protocole, essayé et abandonné en v2.20.1) à partir du numéro avant « / ». Liste : dans `td.std_links`, empilées après la loupe, avec ses classes `btn btn-primary`
-  (couleurs identiques par construction) ; barre : 22 px, blanc. Barre bleue : numéro lu dans `#cur_plan_aff`, liens à gauche
+  (couleurs identiques par construction), libellés en texte de 11 px. `disposerLiensListe` les
+  pose hors du flux (position absolue) pour ne pas grandir la ligne, ne réserve que la largeur
+  (padding-right), et les range côte à côte si la ligne est trop basse. Barre : 22 px, blanc. Barre bleue : numéro lu dans `#cur_plan_aff`, liens à gauche
   de `#metier_header_selector`, dont le parent est en flex `row-reverse` — le côté d'insertion
   suit le sens réel d'affichage. Repli après `#cur_plan_aff` si le sélecteur est absent.
   Un réglage par lien (`lienSgo`, `lienSharepoint`, `lienExplorateur`, actifs par défaut).

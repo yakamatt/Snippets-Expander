@@ -32,7 +32,7 @@ Remplace automatiquement un texte court (ex: `;sig`) par un texte prédéfini, d
 
   Toute insertion s'ajoute à la suite du texte existant, sans jamais l'écraser, et le champ s'agrandit pour montrer tout le texte inséré (jusqu'à 60 % de la hauteur de la fenêtre, avec défilement au-delà). L'intégration est toujours active sur Aviso et sans effet sur les autres sites.
 
-- **Liens vers l'affaire** : à partir du numéro d'affaire (`29462057`, ou 7 chiffres pour les plus anciennes), trois petites icônes monochromes ouvrent :
+- **Liens vers l'affaire** : à partir du numéro d'affaire (`29462057`, ou 7 chiffres pour les plus anciennes), trois petites icônes, « SGO », « ShP » et « C:\ », ouvrent :
   - **SGO** : la fiche de l'affaire, dans un nouvel onglet ;
   - **SharePoint** : une recherche du numéro, dans un nouvel onglet ;
   - **l'Explorateur Windows** : une recherche des fichiers et dossiers de `C:\Users\` (qui contient le dossier « Bureau Veritas » de chacun) contenant le numéro (Windows uniquement, l'icône n'apparaît pas sur Mac). Chrome demande d'abord « Ouvrir Explorateur Windows ? », autorisable une fois pour toutes.

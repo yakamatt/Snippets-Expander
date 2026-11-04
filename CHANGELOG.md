@@ -1,5 +1,11 @@
 # Changelog — Snippet Expander
 
+## v2.20.4 — 2026-11-04
+- **Liste Plans Affaires : libellés des boutons empilés plus grands.** « SGO » et « ShP » s'écrivent en vrai texte de 11 px, au lieu d'un dessin d'environ 7 px
+- **L'icône de l'Explorateur devient « C:\ »** au lieu d'un dossier, en texte comme « SGO » et « ShP » : elle dit à la fois l'outil et où il cherche. Dans la barre bleue, elle prend le même petit cadre que les deux autres
+- **La pile ne fait plus grandir la ligne d'affaire.** Les boutons sont resserrés (13 px de haut, collés comme un groupe de boutons) : la pile passe de 52 à 39 px. Elle est posée hors du flux (position absolue) à droite de la loupe, et ne compte donc plus dans la hauteur de la ligne. Si une ligne est trop basse pour l'empiler, les boutons s'y rangent côte à côte ; la disposition est recalculée quand la fenêtre change de taille
+- ⚠️ **Limite connue** : la colonne de la loupe s'élargit de 33 px (de 33 à 66 px) pour accueillir la pile de 31 × 39 px, collée à 2 px de la loupe. Le tableau occupant toute la largeur, ce sont les autres colonnes qui rétrécissent, et une ligne peut alors gagner une ligne de texte : mesuré sur la liste enregistrée, aucune ligne sur 10 à 1 920 et 1 280 px de large, une sur 10 à 1 400 px. Afficher les boutons seulement au survol aurait évité cet effet, mais ils doivent rester visibles en permanence
+
 ## v2.20.3 — 2026-11-04
 - **L'Explorateur cherche dans `C:\Users\`** au lieu de tout le disque `C:`. Ce dossier contient les profils Windows, donc le dossier « Bureau Veritas » de l'utilisateur : la recherche est plus rapide et ne remonte plus de fichiers système. Le chemin est écrit en dur, sans variable d'environnement, comme le demande un lien `search-ms:` (voir v2.20.2)
 - **Sur la liste Plans Affaires, les icônes empilées prennent le style de la loupe voisine** : blanc sur fond bleu, au lieu de gris sur fond blanc. Elles reprennent ses classes Bootstrap (`btn btn-primary`), donc les mêmes couleurs, la même bordure et le même survol, qui suivront si Aviso change son thème. Gabarit resserré, de même largeur pour les trois : la pile mesure 52 px de haut. Sur ces boutons, « SGO » et « ShP » perdent leur petit cadre, le fond bleu suffisant à délimiter l'icône ; il reste dans la barre bleue, où l'icône n'a pas de fond
