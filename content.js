@@ -835,7 +835,12 @@ const SHAREPOINT_RECHERCHE_URL = 'https://bureauveritas.sharepoint.com/_layouts/
 // Un navigateur ne peut pas lancer l'Explorateur lui-même : le protocole search-ms:, propre à
 // Windows, ouvre une recherche dans l'Explorateur (Chrome demande d'abord l'autorisation
 // d'ouvrir l'application). Sans objet ailleurs : le lien n'est posé que sous Windows.
-const EXPLORATEUR_DOSSIER = 'C:\\';
+// La recherche porte sur le dossier OneDrive "Bureau Veritas" du profil Windows
+// (C:\Users\<identifiant>\Bureau Veritas). Une page web ne peut pas connaître l'identifiant
+// Windows : %USERPROFILE%, que l'Explorateur développe lui-même, désigne le profil de
+// l'utilisateur connecté.
+const EXPLORATEUR_DOSSIER = '%USERPROFILE%\\Bureau Veritas';
+const EXPLORATEUR_LIBELLE = 'dossier Bureau Veritas';
 const EST_WINDOWS = /Windows/i.test(navigator.userAgent);
 
 // "29462057 / 1" (liste) ou "33846357 / 1 - CTC - PROJET…" (barre bleue) -> "29462057"
@@ -866,22 +871,28 @@ const LIENS_AFFAIRE_DEFS = [
   {
     cle: 'explorateur',
     windowsSeulement: true,
-    titre: (n) => `Rechercher "${n}" dans l'Explorateur Windows (${EXPLORATEUR_DOSSIER})`,
+    titre: (n) => `Rechercher "${n}" dans l'Explorateur Windows (${EXPLORATEUR_LIBELLE})`,
     url: (n) => `search-ms:displayname=${encodeURIComponent('Affaire ' + n)}` +
       `&crumb=location:${encodeURIComponent(EXPLORATEUR_DOSSIER)}&query=${encodeURIComponent(n)}`,
     svg: `<svg viewBox="0 0 16 16" width="16" ${SVG_ATTRS}><path d="M1.75 4.25a1 1 0 0 1 1-1h3.2l1.5 1.6h5.8a1 1 0 0 1 1 1v6.9a1 1 0 0 1-1 1H2.75a1 1 0 0 1-1-1z"/></svg>`
   }
 ];
 
+// Bande verticale qui contient toutes les icônes, trait de 1,4 compris (voir LIENS_AFFAIRE_DEFS).
+const ICONE_RECADRAGE = { y: 2.0, hauteur: 12.5 };
+
 // couleur : celle de l'environnement (blanc sur la barre bleue, gris sur la liste) ;
 // survol : plus contrasté, sans changer de teinte, pour rester discret.
-function creerLiensAffaire(numero, { couleur, couleurSurvol, espacement }) {
+// taille : hauteur des icônes en px (les SVG sont dessinés sur une hauteur de 16).
+// empile : icônes les unes sous les autres, pour tenir dans une colonne étroite.
+function creerLiensAffaire(numero, { couleur, couleurSurvol, espacement, taille = 16, opacite = 0.75, empile = false }) {
   const defs = LIENS_AFFAIRE_DEFS.filter(d => LIENS_AFFAIRE[d.cle] && (!d.windowsSeulement || EST_WINDOWS));
   if (!defs.length) return null;
 
   const groupe = document.createElement('span');
   groupe.className = AVISO_LIENS_CLASS;
-  groupe.style.cssText = `display:inline-flex;align-items:center;gap:${espacement}px;vertical-align:middle;`;
+  groupe.style.cssText = `display:inline-flex;flex-direction:${empile ? 'column' : 'row'};align-items:center;` +
+    `gap:${espacement}px;vertical-align:middle;`;
   defs.forEach(d => {
     const a = document.createElement('a');
     a.href = d.url(numero);
@@ -892,10 +903,19 @@ function creerLiensAffaire(numero, { couleur, couleurSurvol, espacement }) {
     }
     a.title = d.titre(numero);
     a.setAttribute('aria-label', d.titre(numero));
-    a.style.cssText = `all:unset;cursor:pointer;display:inline-flex;color:${couleur};opacity:0.75;transition:opacity .15s;`;
+    a.style.cssText = `all:unset;cursor:pointer;display:inline-flex;color:${couleur};opacity:${opacite};transition:opacity .15s;`;
     a.innerHTML = d.svg;
+    const svg = a.firstElementChild;
+    const vb = svg.viewBox.baseVal;
+    // Empilées, les marges haute et basse du dessin (le cadre SGO/SP va de 2,75 à 13,25 sur 16,
+    // le dossier de 3,25 à 13,75) s'additionneraient d'une icône à l'autre : on recadre au plus
+    // près, trait compris.
+    if (empile) svg.setAttribute('viewBox', `${vb.x} ${ICONE_RECADRAGE.y} ${vb.width} ${ICONE_RECADRAGE.hauteur}`);
+    const hauteurDessin = empile ? ICONE_RECADRAGE.hauteur : 16;
+    svg.setAttribute('height', hauteurDessin * taille / 16);
+    svg.setAttribute('width', vb.width * taille / 16);
     a.addEventListener('mouseenter', () => { a.style.opacity = '1'; a.style.color = couleurSurvol; });
-    a.addEventListener('mouseleave', () => { a.style.opacity = '0.75'; a.style.color = couleur; });
+    a.addEventListener('mouseleave', () => { a.style.opacity = String(opacite); a.style.color = couleur; });
     // Ni la ligne du tableau ni la barre ne doivent réagir au clic (ouverture de l'affaire, menu).
     a.addEventListener('click', (e) => e.stopPropagation());
     groupe.appendChild(a);
@@ -911,7 +931,9 @@ function scanLiensAffaire() {
     if (!actions || actions.querySelector('.' + AVISO_LIENS_CLASS)) return;
     const numero = numeroAffaire(td.textContent);
     if (!numero) return;
-    const liens = creerLiensAffaire(numero, { couleur: '#6b7280', couleurSurvol: '#00049e', espacement: 7 });
+    // Empilées : la colonne de la loupe est étroite, et une ligne d'affaire fait déjà plusieurs
+    // lignes de haut (libellé sur deux ou trois lignes).
+    const liens = creerLiensAffaire(numero, { couleur: '#6b7280', couleurSurvol: '#00049e', espacement: 1, empile: true });
     if (!liens) return;
     liens.style.marginLeft = '8px';
     actions.style.whiteSpace = 'nowrap';
@@ -928,7 +950,9 @@ function scanLiensAffaire() {
     if (existant && existant.dataset.numero !== numero) existant.remove();
     else if (existant) return;
     if (!numero) return;
-    const liens = creerLiensAffaire(numero, { couleur: '#ffffff', couleurSurvol: '#ffffff', espacement: 10 });
+    // Plus grandes et plus opaques que sur la liste : elles doivent se voir sur le fond bleu, à
+    // côté de textes de menu en 14 px.
+    const liens = creerLiensAffaire(numero, { couleur: '#ffffff', couleurSurvol: '#ffffff', espacement: 12, taille: 22, opacite: 0.9 });
     if (!liens) return;
     liens.dataset.numero = numero;
     const metier = document.getElementById('metier_header_selector');

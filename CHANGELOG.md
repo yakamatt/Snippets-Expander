@@ -1,5 +1,10 @@
 # Changelog — Snippet Expander
 
+## v2.20.1 — 2026-11-04
+- **L'Explorateur cherche dans le dossier « Bureau Veritas » du profil Windows** (`C:\Users\<identifiant>\Bureau Veritas`), où sont synchronisés les documents, au lieu de tout le disque `C:`, ce qui est plus rapide et plus pertinent. Une page web ne pouvant pas connaître l'identifiant Windows, le lien désigne le dossier par `%USERPROFILE%`, que l'Explorateur remplace lui-même par le profil de l'utilisateur connecté
+- **Sur la liste Plans Affaires, les trois icônes sont empilées et resserrées** à droite de la loupe : la colonne est étroite. Les marges haute et basse de chaque dessin sont recadrées pour que la pile tienne en 40 px de haut, moins qu'une ligne d'affaire
+- **Dans la barre bleue, les icônes sont agrandies** (22 px au lieu de 16) et plus opaques, pour mieux se voir sur le fond bleu
+
 ## v2.20.0 — 2026-11-04
 - **Liens vers l'affaire sur Aviso** : à partir du numéro d'affaire, trois petites icônes monochromes ouvrent la fiche de l'affaire dans **SGO**, une recherche du numéro dans **SharePoint**, et une recherche des fichiers et dossiers du disque `C:` dans l'**Explorateur Windows**. Elles sont posées à deux endroits :
   - sur la liste **Plans Affaires**, à droite de la loupe « Consulter » de chaque ligne ;

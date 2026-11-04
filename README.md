@@ -35,9 +35,9 @@ Remplace automatiquement un texte court (ex: `;sig`) par un texte prédéfini, d
 - **Liens vers l'affaire** : à partir du numéro d'affaire (`29462057`, ou 7 chiffres pour les plus anciennes), trois petites icônes monochromes ouvrent :
   - **SGO** : la fiche de l'affaire, dans un nouvel onglet ;
   - **SharePoint** : une recherche du numéro, dans un nouvel onglet ;
-  - **l'Explorateur Windows** : une recherche des fichiers et dossiers du disque `C:` qui contiennent le numéro (Windows uniquement, l'icône n'apparaît pas sur Mac). Chrome demande d'abord « Ouvrir Explorateur Windows ? », autorisable une fois pour toutes.
+  - **l'Explorateur Windows** : une recherche des fichiers et dossiers qui contiennent le numéro, dans le dossier `C:\Users\<identifiant>\Bureau Veritas` de l'utilisateur Windows connecté (Windows uniquement, l'icône n'apparaît pas sur Mac). Chrome demande d'abord « Ouvrir Explorateur Windows ? », autorisable une fois pour toutes.
 
-  Elles apparaissent sur la liste **Plans Affaires**, à droite de la loupe de chaque ligne, et dans la **barre bleue** d'une affaire ouverte, à gauche du sélecteur « BTS ». Chacune se désactive dans Paramètres avancés > Liens vers l'affaire.
+  Elles apparaissent sur la liste **Plans Affaires**, empilées à droite de la loupe de chaque ligne, et dans la **barre bleue** d'une affaire ouverte, à gauche du sélecteur « BTS ». Chacune se désactive dans Paramètres avancés > Liens vers l'affaire.
 
 ## 2 bis. DatAviso AI — importer des données de dossier par article
 
