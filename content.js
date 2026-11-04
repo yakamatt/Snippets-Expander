@@ -835,12 +835,11 @@ const SHAREPOINT_RECHERCHE_URL = 'https://bureauveritas.sharepoint.com/_layouts/
 // Un navigateur ne peut pas lancer l'Explorateur lui-même : le protocole search-ms:, propre à
 // Windows, ouvre une recherche dans l'Explorateur (Chrome demande d'abord l'autorisation
 // d'ouvrir l'application). Sans objet ailleurs : le lien n'est posé que sous Windows.
-// La recherche porte sur le dossier OneDrive "Bureau Veritas" du profil Windows
-// (C:\Users\<identifiant>\Bureau Veritas). Une page web ne peut pas connaître l'identifiant
-// Windows : %USERPROFILE%, que l'Explorateur développe lui-même, désigne le profil de
-// l'utilisateur connecté.
-const EXPLORATEUR_DOSSIER = '%USERPROFILE%\\Bureau Veritas';
-const EXPLORATEUR_LIBELLE = 'dossier Bureau Veritas';
+// Recherche sur tout le disque C:. Viser le seul dossier "Bureau Veritas" du profil a été
+// essayé (v2.20.1) et abandonné : l'Explorateur ne développe pas %USERPROFILE% dans un lien
+// search-ms: (rien ne s'ouvre), et une page web ne peut pas connaître l'identifiant Windows.
+const EXPLORATEUR_DOSSIER = 'C:\\';
+const EXPLORATEUR_LIBELLE = 'disque C:';
 const EST_WINDOWS = /Windows/i.test(navigator.userAgent);
 
 // "29462057 / 1" (liste) ou "33846357 / 1 - CTC - PROJET…" (barre bleue) -> "29462057"
@@ -864,9 +863,9 @@ const LIENS_AFFAIRE_DEFS = [
     cle: 'sharepoint',
     titre: (n) => `Rechercher l'affaire ${n} dans SharePoint`,
     url: (n) => `${SHAREPOINT_RECHERCHE_URL}?q=${encodeURIComponent(n)}`,
-    // Même cadre que SGO, plus étroit : deux lettres au lieu de trois.
-    svg: `<svg viewBox="0 0 18 16" width="18" ${SVG_ATTRS}><rect x="0.75" y="2.75" width="16.5" height="10.5" rx="2.5"/>` +
-      '<text x="9" y="10.9" text-anchor="middle" fill="currentColor" stroke="none" font-family="Arial, sans-serif" font-size="7.4" font-weight="700" letter-spacing="0.3">SP</text></svg>'
+    // Même cadre que SGO : trois lettres aussi.
+    svg: `<svg viewBox="0 0 22 16" width="22" ${SVG_ATTRS}><rect x="0.75" y="2.75" width="20.5" height="10.5" rx="2.5"/>` +
+      '<text x="11" y="10.9" text-anchor="middle" fill="currentColor" stroke="none" font-family="Arial, sans-serif" font-size="7.4" font-weight="700" letter-spacing="0.3">ShP</text></svg>'
   },
   {
     cle: 'explorateur',
