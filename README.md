@@ -32,6 +32,13 @@ Remplace automatiquement un texte court (ex: `;sig`) par un texte prédéfini, d
 
   Toute insertion s'ajoute à la suite du texte existant, sans jamais l'écraser, et le champ s'agrandit pour montrer tout le texte inséré (jusqu'à 60 % de la hauteur de la fenêtre, avec défilement au-delà). L'intégration est toujours active sur Aviso et sans effet sur les autres sites.
 
+- **Liens vers l'affaire** : à partir du numéro d'affaire (`29462057`, ou 7 chiffres pour les plus anciennes), trois petites icônes monochromes ouvrent :
+  - **SGO** : la fiche de l'affaire, dans un nouvel onglet ;
+  - **SharePoint** : une recherche du numéro, dans un nouvel onglet ;
+  - **l'Explorateur Windows** : une recherche des fichiers et dossiers du disque `C:` qui contiennent le numéro (Windows uniquement, l'icône n'apparaît pas sur Mac). Chrome demande d'abord « Ouvrir Explorateur Windows ? », autorisable une fois pour toutes.
+
+  Elles apparaissent sur la liste **Plans Affaires**, à droite de la loupe de chaque ligne, et dans la **barre bleue** d'une affaire ouverte, à gauche du sélecteur « BTS ». Chacune se désactive dans Paramètres avancés > Liens vers l'affaire.
+
 ## 2 bis. DatAviso AI — importer des données de dossier par article
 
 Indépendamment des snippets, l'extension peut mémoriser des **données propres à un dossier**, article par article, pour les réinjecter dans Aviso. Ces données et les zones qui les gèrent sont regroupées sous le nom **DatAviso AI**.
@@ -119,6 +126,7 @@ Pour ajouter, modifier ou supprimer un snippet du Clausier Commun : faites-le di
 
 Accessibles via le bouton "⚙️ Paramètres avancés" en bas de la page Options :
 - **Fréquence d'actualisation des données** : intervalle entre deux récupérations automatiques depuis le Google Sheet (minutes, 60 par défaut)
+- **Liens vers l'affaire** : une case par lien (SGO, SharePoint, Explorateur Windows), tous activés par défaut
 - **Temporisation avant expansion** : délai (ms) après la fin de la frappe avant remplacement (évite qu'un mot plus long contenant un déclencheur ne s'expanse par erreur)
 - **Mise à jour de l'extension** : voir section suivante
 

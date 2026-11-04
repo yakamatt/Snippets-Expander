@@ -9,6 +9,9 @@ let ACTIVE_SNIPPETS = [];
 let IMPORTED_ARTICLES = [];
 let MAX_TRIGGER_LEN = 1;
 let EXPANSION_DELAY_MS = 1000;
+// Liens SGO / SharePoint / Explorateur posés sur les affaires dans Aviso, un réglage par lien
+// (Paramètres avancés). Actifs par défaut : un réglage absent vaut "activé".
+let LIENS_AFFAIRE = { sgo: true, sharepoint: true, explorateur: true };
 let pendingTimeoutId = null;
 
 // Déclarés avant loadSnippets() car référencés depuis son callback : chrome.storage est
@@ -23,6 +26,8 @@ const AVISO_LOCAL_CLASS = 'snippet-expander-aviso-local';
 const AVISO_EDIT_CLASS = 'snippet-expander-aviso-edit';
 // Hors de AVISO_ORDER : la corbeille flotte au bord droit de la cellule, à l'écart de la rangée.
 const AVISO_CLEAR_CLASS = 'snippet-expander-aviso-clear';
+// Groupe de liens SGO / SharePoint / Explorateur d'une affaire (liste Plans Affaires, barre bleue).
+const AVISO_LIENS_CLASS = 'snippet-expander-liens-affaire';
 
 // Ordre d'affichage des icônes, de gauche à droite. Le "+" et l'icône jaune occupent la même
 // place et ne coexistent jamais : le "+" n'apparaît que sur une ligne sans snippet local.
@@ -53,10 +58,22 @@ function loadSnippets() {
     if (isAvisoSite()) scheduleAvisoScan();
   });
 }
+// Applique les réglages ; renvoie true si les liens d'affaire ont changé, pour que l'appelant
+// retire et repose ceux déjà affichés.
+function appliquerReglages(s) {
+  EXPANSION_DELAY_MS = Number.isFinite(s.expansionDelayMs) ? s.expansionDelayMs : 1000;
+  const avant = JSON.stringify(LIENS_AFFAIRE);
+  LIENS_AFFAIRE = {
+    sgo: s.lienSgo !== false,
+    sharepoint: s.lienSharepoint !== false,
+    explorateur: s.lienExplorateur !== false
+  };
+  return JSON.stringify(LIENS_AFFAIRE) !== avant;
+}
+
 function loadSettings() {
   chrome.storage.sync.get(['syncSettings'], (res) => {
-    const s = res.syncSettings || {};
-    EXPANSION_DELAY_MS = Number.isFinite(s.expansionDelayMs) ? s.expansionDelayMs : 1000;
+    if (appliquerReglages(res.syncSettings || {}) && isAvisoSite()) retirerIconesAviso([AVISO_LIENS_CLASS]);
   });
 }
 loadSnippets();
@@ -88,8 +105,9 @@ chrome.storage.onChanged.addListener((changes, area) => {
     if (isAvisoSite()) retirerIconesAviso([AVISO_IMPORT_CLASS]);
   }
   if (area === 'sync' && changes.syncSettings) {
-    const s = changes.syncSettings.newValue || {};
-    EXPANSION_DELAY_MS = Number.isFinite(s.expansionDelayMs) ? s.expansionDelayMs : 1000;
+    if (appliquerReglages(changes.syncSettings.newValue || {}) && isAvisoSite()) {
+      retirerIconesAviso([AVISO_LIENS_CLASS]);
+    }
   }
 });
 
@@ -805,6 +823,134 @@ function insertAvisoClearButton(container, dispoCell) {
   container.insertBefore(btn, container.firstChild);
 }
 
+// ---------- Liens d'affaire : SGO, SharePoint, Explorateur Windows ----------
+// À partir du numéro d'affaire (8 chiffres en général, parfois 7 : utilisé tel quel), trois
+// liens discrets, monochromes, chacun désactivable dans Paramètres avancés :
+// - sur la liste Plans Affaires, à côté de la loupe "Consulter" de chaque ligne ;
+// - dans la barre bleue d'une affaire ouverte, à gauche du sélecteur de métier "BTS".
+// De simples liens dans la page : aucune permission supplémentaire n'est nécessaire.
+
+const SGO_URL = 'https://sgo.bureauveritas.com/SGO-Client/servlet/com.bv.sgo.modele.affaire.j2ee.AramisSGOCtrl';
+const SHAREPOINT_RECHERCHE_URL = 'https://bureauveritas.sharepoint.com/_layouts/15/sharepoint.aspx/search';
+// Un navigateur ne peut pas lancer l'Explorateur lui-même : le protocole search-ms:, propre à
+// Windows, ouvre une recherche dans l'Explorateur (Chrome demande d'abord l'autorisation
+// d'ouvrir l'application). Sans objet ailleurs : le lien n'est posé que sous Windows.
+const EXPLORATEUR_DOSSIER = 'C:\\';
+const EST_WINDOWS = /Windows/i.test(navigator.userAgent);
+
+// "29462057 / 1" (liste) ou "33846357 / 1 - CTC - PROJET…" (barre bleue) -> "29462057"
+const NUMERO_AFFAIRE_RE = /^\s*(\d{5,})\s*\//;
+
+function numeroAffaire(texte) {
+  const m = NUMERO_AFFAIRE_RE.exec(String(texte || ''));
+  return m ? m[1] : null;
+}
+
+const SVG_ATTRS = 'height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"';
+const LIENS_AFFAIRE_DEFS = [
+  {
+    cle: 'sgo',
+    titre: (n) => `Ouvrir l'affaire ${n} dans SGO`,
+    url: (n) => `${SGO_URL}?identifiant=${encodeURIComponent(n)}&action=accesDirect`,
+    svg: `<svg viewBox="0 0 22 16" width="22" ${SVG_ATTRS}><rect x="0.75" y="2.75" width="20.5" height="10.5" rx="2.5"/>` +
+      '<text x="11" y="10.9" text-anchor="middle" fill="currentColor" stroke="none" font-family="Arial, sans-serif" font-size="7.4" font-weight="700" letter-spacing="0.3">SGO</text></svg>'
+  },
+  {
+    cle: 'sharepoint',
+    titre: (n) => `Rechercher l'affaire ${n} dans SharePoint`,
+    url: (n) => `${SHAREPOINT_RECHERCHE_URL}?q=${encodeURIComponent(n)}`,
+    // Même cadre que SGO, plus étroit : deux lettres au lieu de trois.
+    svg: `<svg viewBox="0 0 18 16" width="18" ${SVG_ATTRS}><rect x="0.75" y="2.75" width="16.5" height="10.5" rx="2.5"/>` +
+      '<text x="9" y="10.9" text-anchor="middle" fill="currentColor" stroke="none" font-family="Arial, sans-serif" font-size="7.4" font-weight="700" letter-spacing="0.3">SP</text></svg>'
+  },
+  {
+    cle: 'explorateur',
+    windowsSeulement: true,
+    titre: (n) => `Rechercher "${n}" dans l'Explorateur Windows (${EXPLORATEUR_DOSSIER})`,
+    url: (n) => `search-ms:displayname=${encodeURIComponent('Affaire ' + n)}` +
+      `&crumb=location:${encodeURIComponent(EXPLORATEUR_DOSSIER)}&query=${encodeURIComponent(n)}`,
+    svg: `<svg viewBox="0 0 16 16" width="16" ${SVG_ATTRS}><path d="M1.75 4.25a1 1 0 0 1 1-1h3.2l1.5 1.6h5.8a1 1 0 0 1 1 1v6.9a1 1 0 0 1-1 1H2.75a1 1 0 0 1-1-1z"/></svg>`
+  }
+];
+
+// couleur : celle de l'environnement (blanc sur la barre bleue, gris sur la liste) ;
+// survol : plus contrasté, sans changer de teinte, pour rester discret.
+function creerLiensAffaire(numero, { couleur, couleurSurvol, espacement }) {
+  const defs = LIENS_AFFAIRE_DEFS.filter(d => LIENS_AFFAIRE[d.cle] && (!d.windowsSeulement || EST_WINDOWS));
+  if (!defs.length) return null;
+
+  const groupe = document.createElement('span');
+  groupe.className = AVISO_LIENS_CLASS;
+  groupe.style.cssText = `display:inline-flex;align-items:center;gap:${espacement}px;vertical-align:middle;`;
+  defs.forEach(d => {
+    const a = document.createElement('a');
+    a.href = d.url(numero);
+    // search-ms: n'ouvre pas d'onglet mais l'Explorateur : target="_blank" laisserait un onglet vide.
+    if (!d.url(numero).startsWith('search-ms:')) {
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+    }
+    a.title = d.titre(numero);
+    a.setAttribute('aria-label', d.titre(numero));
+    a.style.cssText = `all:unset;cursor:pointer;display:inline-flex;color:${couleur};opacity:0.75;transition:opacity .15s;`;
+    a.innerHTML = d.svg;
+    a.addEventListener('mouseenter', () => { a.style.opacity = '1'; a.style.color = couleurSurvol; });
+    a.addEventListener('mouseleave', () => { a.style.opacity = '0.75'; a.style.color = couleur; });
+    // Ni la ligne du tableau ni la barre ne doivent réagir au clic (ouverture de l'affaire, menu).
+    a.addEventListener('click', (e) => e.stopPropagation());
+    groupe.appendChild(a);
+  });
+  return groupe;
+}
+
+function scanLiensAffaire() {
+  // Liste Plans Affaires : une affaire par ligne, numéro dans la colonne "N° plan affaire".
+  document.querySelectorAll('td[headers="plans_affaires_n_degrees_plan_affaire_th"]').forEach(td => {
+    const tr = td.closest('tr');
+    const actions = tr && tr.querySelector('td.std_links');
+    if (!actions || actions.querySelector('.' + AVISO_LIENS_CLASS)) return;
+    const numero = numeroAffaire(td.textContent);
+    if (!numero) return;
+    const liens = creerLiensAffaire(numero, { couleur: '#6b7280', couleurSurvol: '#00049e', espacement: 7 });
+    if (!liens) return;
+    liens.style.marginLeft = '8px';
+    actions.style.whiteSpace = 'nowrap';
+    actions.appendChild(liens);
+  });
+
+  // Barre bleue : le titre de l'affaire ouverte, vide sur les pages sans affaire (la liste).
+  const titre = document.getElementById('cur_plan_aff');
+  const bar = document.getElementById('main_bar');
+  if (titre && bar) {
+    const numero = numeroAffaire(titre.textContent);
+    const existant = bar.querySelector('.' + AVISO_LIENS_CLASS);
+    // Une autre affaire ouverte sans rechargement complet : les liens suivent le nouveau numéro.
+    if (existant && existant.dataset.numero !== numero) existant.remove();
+    else if (existant) return;
+    if (!numero) return;
+    const liens = creerLiensAffaire(numero, { couleur: '#ffffff', couleurSurvol: '#ffffff', espacement: 10 });
+    if (!liens) return;
+    liens.dataset.numero = numero;
+    const metier = document.getElementById('metier_header_selector');
+    if (metier) {
+      // En-tête actuel d'Aviso : à gauche du sélecteur de métier "BTS". Les menus de cette zone
+      // sont rangés en flex "row-reverse" (l'ordre affiché est l'inverse de celui de la page) :
+      // le côté d'insertion suit le sens réel d'affichage, pour rester à gauche dans les deux cas.
+      liens.style.margin = '0 6px 0 14px';
+      liens.style.alignSelf = 'center';
+      const inverse = getComputedStyle(metier.parentNode).flexDirection === 'row-reverse';
+      metier.insertAdjacentElement(inverse ? 'afterend' : 'beforebegin', liens);
+    } else {
+      // Repli, pour un en-tête sans sélecteur de métier (pages d'avant son apparition) : juste
+      // après le titre de l'affaire, qui flotte à gauche dans la barre.
+      liens.style.float = 'left';
+      liens.style.height = titre.offsetHeight + 'px';
+      liens.style.marginLeft = '-1em';
+      titre.insertAdjacentElement('afterend', liens);
+    }
+  }
+}
+
 function scanAvisoTable() {
   document.querySelectorAll('td.referentiel.content').forEach(refCell => {
     const tr = refCell.closest('tr');
@@ -835,6 +981,8 @@ function scanAvisoTable() {
     const article = IMPORTED_ARTICLES.find(a => a.code === refCode);
     if (article) insertAvisoImportIcon(container, dispoCell, article);
   });
+
+  scanLiensAffaire();
 }
 
 let avisoScanTimeoutId = null;

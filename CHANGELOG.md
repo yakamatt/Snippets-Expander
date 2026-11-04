@@ -1,5 +1,14 @@
 # Changelog — Snippet Expander
 
+## v2.20.0 — 2026-11-04
+- **Liens vers l'affaire sur Aviso** : à partir du numéro d'affaire, trois petites icônes monochromes ouvrent la fiche de l'affaire dans **SGO**, une recherche du numéro dans **SharePoint**, et une recherche des fichiers et dossiers du disque `C:` dans l'**Explorateur Windows**. Elles sont posées à deux endroits :
+  - sur la liste **Plans Affaires**, à droite de la loupe « Consulter » de chaque ligne ;
+  - dans la **barre bleue** d'une affaire ouverte, à gauche du sélecteur « BTS ». Cette zone d'Aviso étant affichée en ordre inversé, le placement suit le sens réel d'affichage. Sur un en-tête sans sélecteur de métier, les liens se placent après le titre de l'affaire
+- Le numéro est pris tel quel, 8 chiffres en général, 7 pour les affaires les plus anciennes (`9012405`)
+- **L'Explorateur passe par le protocole `search-ms:` de Windows** : un navigateur ne peut pas lancer l'Explorateur lui-même. Chrome demande d'abord l'autorisation d'ouvrir l'application, que l'on peut donner une fois pour toutes. L'icône n'est pas posée hors de Windows
+- **Une case par lien** dans Paramètres avancés > Liens vers l'affaire, toutes cochées par défaut. Le changement s'applique aussitôt dans les onglets Aviso ouverts
+- Aucune permission ajoutée : ce sont de simples liens dans la page
+
 ## v2.19.0 — 2026-11-03
 - **Partager l'extension depuis le popup** : nouvelle rubrique « 🤝 Partager avec mes collègues », en bas. « Copier le lien » place l'adresse de la fiche du Chrome Web Store dans le presse-papiers, « Par e-mail » ouvre un message prérempli qui la contient. Le collègue installe en un clic et reçoit ensuite les mises à jour automatiquement
 - **Paramètres, « Consulter le Clausier Commun » devient un bouton**, au même gabarit que « Forcer l'actualisation du Clausier Commun » mais en bleu-vert, pour ne pas confondre l'ouverture du tableau avec l'actualisation

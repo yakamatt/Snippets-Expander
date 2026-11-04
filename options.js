@@ -1,4 +1,4 @@
-const BUILD_DATE = '2026-11-03'; // v2.19.0
+const BUILD_DATE = '2026-11-04'; // v2.20.0
 const DEFAULT_GITHUB_URL = 'https://raw.githubusercontent.com/yakamatt/Snippets-Expander/main';
 const DEFAULT_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1H2rBzMQzZk74Bk2Z_Mo8lXAdYea7Mi7WfzVruBahd_I/edit';
 
@@ -24,6 +24,9 @@ function load() {
     const s = res.syncSettings || {};
     document.getElementById('autosync-minutes').value = s.autoSyncMinutes ?? 60;
     document.getElementById('expansion-delay').value = s.expansionDelayMs ?? 500;
+    document.getElementById('lien-sgo').checked = s.lienSgo !== false;
+    document.getElementById('lien-sharepoint').checked = s.lienSharepoint !== false;
+    document.getElementById('lien-explorateur').checked = s.lienExplorateur !== false;
     document.getElementById('local-folder-path').value = s.localFolderPath || '';
     document.getElementById('auto-check-updates').checked = !!s.autoCheckUpdates;
     document.getElementById('sheet-url').value = s.sheetUrl || '';
@@ -530,6 +533,13 @@ document.getElementById('toggle-advanced').addEventListener('click', () => {
   panel.hidden = !panel.hidden;
   document.getElementById('toggle-advanced').textContent = panel.hidden ? '⚙️ Paramètres avancés ▾' : '⚙️ Paramètres avancés ▴';
 });
+
+// Liens vers l'affaire (SGO, SharePoint, Explorateur) : content.js écoute syncSettings et pose ou
+// retire les icônes aussitôt, sans recharger Aviso.
+[['lien-sgo', 'lienSgo'], ['lien-sharepoint', 'lienSharepoint'], ['lien-explorateur', 'lienExplorateur']]
+  .forEach(([id, cle]) => {
+    document.getElementById(id).addEventListener('change', (e) => updateSyncSettings({ [cle]: e.target.checked }));
+  });
 
 document.getElementById('expansion-delay').addEventListener('change', (e) => {
   updateSyncSettings({ expansionDelayMs: parseInt(e.target.value, 10) || 0 });
