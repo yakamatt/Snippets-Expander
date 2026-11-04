@@ -835,11 +835,12 @@ const SHAREPOINT_RECHERCHE_URL = 'https://bureauveritas.sharepoint.com/_layouts/
 // Un navigateur ne peut pas lancer l'Explorateur lui-même : le protocole search-ms:, propre à
 // Windows, ouvre une recherche dans l'Explorateur (Chrome demande d'abord l'autorisation
 // d'ouvrir l'application). Sans objet ailleurs : le lien n'est posé que sous Windows.
-// Recherche sur tout le disque C:. Viser le seul dossier "Bureau Veritas" du profil a été
-// essayé (v2.20.1) et abandonné : l'Explorateur ne développe pas %USERPROFILE% dans un lien
-// search-ms: (rien ne s'ouvre), et une page web ne peut pas connaître l'identifiant Windows.
-const EXPLORATEUR_DOSSIER = 'C:\\';
-const EXPLORATEUR_LIBELLE = 'disque C:';
+// Recherche dans C:\Users\ : les profils Windows, donc le dossier "Bureau Veritas" de
+// l'utilisateur, sans parcourir tout le disque. Viser directement ce dossier a été essayé
+// (v2.20.1) et abandonné : l'Explorateur ne développe pas %USERPROFILE% dans un lien search-ms:
+// (rien ne s'ouvre), et une page web ne peut pas connaître l'identifiant Windows.
+const EXPLORATEUR_DOSSIER = 'C:\\Users\\';
+const EXPLORATEUR_LIBELLE = 'C:\\Users';
 const EST_WINDOWS = /Windows/i.test(navigator.userAgent);
 
 // "29462057 / 1" (liste) ou "33846357 / 1 - CTC - PROJET…" (barre bleue) -> "29462057"
@@ -884,13 +885,17 @@ const ICONE_RECADRAGE = { y: 2.0, hauteur: 12.5 };
 // survol : plus contrasté, sans changer de teinte, pour rester discret.
 // taille : hauteur des icônes en px (les SVG sont dessinés sur une hauteur de 16).
 // empile : icônes les unes sous les autres, pour tenir dans une colonne étroite.
-function creerLiensAffaire(numero, { couleur, couleurSurvol, espacement, taille = 16, opacite = 0.75, empile = false }) {
+// classeBouton : classes d'un bouton d'Aviso à reprendre telles quelles (couleurs, bordure,
+// survol) ; couleur, couleurSurvol et opacite sont alors sans effet.
+function creerLiensAffaire(numero, { couleur, couleurSurvol, espacement, taille = 16, opacite = 0.75, empile = false, classeBouton = null }) {
   const defs = LIENS_AFFAIRE_DEFS.filter(d => LIENS_AFFAIRE[d.cle] && (!d.windowsSeulement || EST_WINDOWS));
   if (!defs.length) return null;
 
   const groupe = document.createElement('span');
   groupe.className = AVISO_LIENS_CLASS;
-  groupe.style.cssText = `display:inline-flex;flex-direction:${empile ? 'column' : 'row'};align-items:center;` +
+  // En boutons empilés, tous prennent la largeur du plus large, comme une colonne de boutons.
+  groupe.style.cssText = `display:inline-flex;flex-direction:${empile ? 'column' : 'row'};` +
+    `align-items:${classeBouton && empile ? 'stretch' : 'center'};` +
     `gap:${espacement}px;vertical-align:middle;`;
   defs.forEach(d => {
     const a = document.createElement('a');
@@ -902,9 +907,19 @@ function creerLiensAffaire(numero, { couleur, couleurSurvol, espacement, taille 
     }
     a.title = d.titre(numero);
     a.setAttribute('aria-label', d.titre(numero));
-    a.style.cssText = `all:unset;cursor:pointer;display:inline-flex;color:${couleur};opacity:${opacite};transition:opacity .15s;`;
+    if (classeBouton) {
+      a.className = classeBouton;
+      // Gabarit resserré : le bouton d'Aviso, avec sa hauteur de ligne de texte, ferait plus du
+      // double de la hauteur de l'icône.
+      a.style.cssText = 'display:flex;align-items:center;justify-content:center;padding:1px 3px;line-height:0;margin:0;';
+    } else {
+      a.style.cssText = `all:unset;cursor:pointer;display:inline-flex;color:${couleur};opacity:${opacite};transition:opacity .15s;`;
+    }
     a.innerHTML = d.svg;
     const svg = a.firstElementChild;
+    // Sur un bouton, le fond bleu délimite déjà l'icône : le cadre de SGO et ShP, utile sur un
+    // fond nu, ferait double emploi.
+    if (classeBouton) svg.querySelectorAll('rect').forEach(r => r.remove());
     const vb = svg.viewBox.baseVal;
     // Empilées, les marges haute et basse du dessin (le cadre SGO/SP va de 2,75 à 13,25 sur 16,
     // le dossier de 3,25 à 13,75) s'additionneraient d'une icône à l'autre : on recadre au plus
@@ -913,8 +928,10 @@ function creerLiensAffaire(numero, { couleur, couleurSurvol, espacement, taille 
     const hauteurDessin = empile ? ICONE_RECADRAGE.hauteur : 16;
     svg.setAttribute('height', hauteurDessin * taille / 16);
     svg.setAttribute('width', vb.width * taille / 16);
-    a.addEventListener('mouseenter', () => { a.style.opacity = '1'; a.style.color = couleurSurvol; });
-    a.addEventListener('mouseleave', () => { a.style.opacity = String(opacite); a.style.color = couleur; });
+    if (!classeBouton) {
+      a.addEventListener('mouseenter', () => { a.style.opacity = '1'; a.style.color = couleurSurvol; });
+      a.addEventListener('mouseleave', () => { a.style.opacity = String(opacite); a.style.color = couleur; });
+    }
     // Ni la ligne du tableau ni la barre ne doivent réagir au clic (ouverture de l'affaire, menu).
     a.addEventListener('click', (e) => e.stopPropagation());
     groupe.appendChild(a);
@@ -931,8 +948,9 @@ function scanLiensAffaire() {
     const numero = numeroAffaire(td.textContent);
     if (!numero) return;
     // Empilées : la colonne de la loupe est étroite, et une ligne d'affaire fait déjà plusieurs
-    // lignes de haut (libellé sur deux ou trois lignes).
-    const liens = creerLiensAffaire(numero, { couleur: '#6b7280', couleurSurvol: '#00049e', espacement: 1, empile: true });
+    // lignes de haut (libellé sur deux ou trois lignes). Mêmes classes que la loupe voisine
+    // (btn btn-primary) : blanc sur fond bleu, survol compris, identiques par construction.
+    const liens = creerLiensAffaire(numero, { espacement: 1, empile: true, classeBouton: 'btn btn-primary' });
     if (!liens) return;
     liens.style.marginLeft = '8px';
     actions.style.whiteSpace = 'nowrap';

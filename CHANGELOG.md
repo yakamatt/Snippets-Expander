@@ -1,5 +1,9 @@
 # Changelog — Snippet Expander
 
+## v2.20.3 — 2026-11-04
+- **L'Explorateur cherche dans `C:\Users\`** au lieu de tout le disque `C:`. Ce dossier contient les profils Windows, donc le dossier « Bureau Veritas » de l'utilisateur : la recherche est plus rapide et ne remonte plus de fichiers système. Le chemin est écrit en dur, sans variable d'environnement, comme le demande un lien `search-ms:` (voir v2.20.2)
+- **Sur la liste Plans Affaires, les icônes empilées prennent le style de la loupe voisine** : blanc sur fond bleu, au lieu de gris sur fond blanc. Elles reprennent ses classes Bootstrap (`btn btn-primary`), donc les mêmes couleurs, la même bordure et le même survol, qui suivront si Aviso change son thème. Gabarit resserré, de même largeur pour les trois : la pile mesure 52 px de haut. Sur ces boutons, « SGO » et « ShP » perdent leur petit cadre, le fond bleu suffisant à délimiter l'icône ; il reste dans la barre bleue, où l'icône n'a pas de fond
+
 ## v2.20.2 — 2026-11-04
 - **Correctif : l'icône de l'Explorateur n'ouvrait plus rien depuis la v2.20.1.** La recherche visait `%USERPROFILE%\Bureau Veritas`, mais l'Explorateur ne développe pas cette variable dans un lien `search-ms:` : le dossier était invalide. Une page web ne pouvant pas connaître l'identifiant Windows, la recherche porte de nouveau sur tout le disque `C:`, comme en v2.20.0
 - **L'icône SharePoint affiche « ShP »** au lieu de « SP », dans le même cadre que « SGO »
