@@ -1,5 +1,9 @@
 # Changelog — Snippet Expander
 
+## v2.20.2 — 2026-11-04
+- **Correctif : l'icône de l'Explorateur n'ouvrait plus rien depuis la v2.20.1.** La recherche visait `%USERPROFILE%\Bureau Veritas`, mais l'Explorateur ne développe pas cette variable dans un lien `search-ms:` : le dossier était invalide. Une page web ne pouvant pas connaître l'identifiant Windows, la recherche porte de nouveau sur tout le disque `C:`, comme en v2.20.0
+- **L'icône SharePoint affiche « ShP »** au lieu de « SP », dans le même cadre que « SGO »
+
 ## v2.20.1 — 2026-11-04
 - **L'Explorateur cherche dans le dossier « Bureau Veritas » du profil Windows** (`C:\Users\<identifiant>\Bureau Veritas`), où sont synchronisés les documents, au lieu de tout le disque `C:`, ce qui est plus rapide et plus pertinent. Une page web ne pouvant pas connaître l'identifiant Windows, le lien désigne le dossier par `%USERPROFILE%`, que l'Explorateur remplace lui-même par le profil de l'utilisateur connecté
 - **Sur la liste Plans Affaires, les trois icônes sont empilées et resserrées** à droite de la loupe : la colonne est étroite. Les marges haute et basse de chaque dessin sont recadrées pour que la pile tienne en 40 px de haut, moins qu'une ligne d'affaire
