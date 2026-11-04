@@ -87,6 +87,12 @@ Les icônes s'insèrent dans la cellule « Dispositions réalisées », dans l'o
   (`tronquerPourInfobulle`). Le texte **inséré** n'est jamais tronqué.
 - Après écriture, `ajusterHauteurAviso` agrandit le champ (jamais il ne le rapetisse), plafonné
   à 60 % de la fenêtre. Un élément masqué ne se mesure pas : le textarea se réajuste au `focus`.
+- **Liens d'affaire** (`scanLiensAffaire`, appelé par chaque scan) : SGO, SharePoint et
+  Explorateur (`search-ms:`, Windows seulement) à partir du numéro avant « / ». Liste : dans
+  `td.std_links`, après la loupe. Barre bleue : numéro lu dans `#cur_plan_aff`, liens à gauche
+  de `#metier_header_selector`, dont le parent est en flex `row-reverse` — le côté d'insertion
+  suit le sens réel d'affichage. Repli après `#cur_plan_aff` si le sélecteur est absent.
+  Un réglage par lien (`lienSgo`, `lienSharepoint`, `lienExplorateur`, actifs par défaut).
 - L'intégration est toujours active sur Aviso (le réglage « Intégration Aviso » a été retiré en
   v2.18.0) et sans effet ailleurs (`isAvisoSite`).
 
