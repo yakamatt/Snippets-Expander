@@ -43,6 +43,10 @@ de « simplifier ».
    `clearContents()` puis réécrivait : un POST vers un script non redéployé a réellement vidé le
    tableau (v2.15.0). Seul `sauvegarderClausier_` met à jour des lignes, et uniquement dans
    `Local_Snippets_Backup` (une ligne par couple `Ref_User` + déclencheur), jamais ailleurs.
+   L'unique autre écriture dans `Snippets` est le menu **Clausier > Appliquer les décisions**,
+   lancé par le garant depuis le tableau : il remplace un texte commun seulement sur sa
+   décision, après l'avoir copié dans `Historique`, et jamais si ce texte a changé depuis la
+   préparation de la revue.
 3. **Sonder avant d'écrire.** `verifierApiAjout()` fait un GET `?probe=append`, la sauvegarde un
    GET `?probe=backup`, et le POST n'est émis que si la signature revient. Un ancien script répond un tableau — `Array.isArray` le démasque.
 4. **Une synchro ne remplace jamais des snippets par un tableau vide** (`pullFromSheet`). La copie
@@ -120,6 +124,11 @@ Les icônes s'insèrent dans la cellule « Dispositions réalisées », dans l'o
 **toute** modification : Déployer > Gérer les déploiements > crayon > **« Nouvelle version »**.
 Choisir « Version la plus récente » laisse l'ancien code en service — c'est l'erreur classique, le
 guide complet est en commentaire en tête de `Code.gs`.
+
+Le menu **Clausier** (`onOpen`, `preparerRevue`, `appliquerDecisions`) s'exécute dans le tableau
+avec le code enregistré, sans redéploiement. Il rapproche les déclencheurs par `cleDeclencheur_`
+(casse, espaces et préfixe ignorés) ; les onglets du garant (`Local_Snippets_Backup`,
+`Historique`, `Revue_Traités`) restent masqués — masquer n'est pas protéger.
 
 Quand tu touches au contrat du POST, prévois toujours le script resté en version précédente :
 **dégrader, jamais casser** (la ligne se crée sans contenu, le tableau s'ouvre quand même).
