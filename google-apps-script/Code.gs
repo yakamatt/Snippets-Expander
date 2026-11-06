@@ -3,6 +3,8 @@
 // Expose le Sheet "Snippets" comme mini-API gratuite :
 //   GET                          -> renvoie tous les snippets (lecture, utilisée à chaque synchro)
 //   POST {action:"append", ...}  -> ajoute une ligne (déclencheur + contenu, ce dernier facultatif)
+//   POST {action:"backup", ...}  -> sauvegarde le Clausier Personnel d'un utilisateur dans
+//                                   l'onglet "Local_Snippets_Backup" (jamais dans "Snippets")
 //
 // Le POST sert au bouton "+" de l'intégration Aviso : il crée la ligne en y reprenant le texte
 // déjà saisi dans la cellule "Dispositions réalisées" (vide si la cellule l'était), puis
@@ -82,6 +84,8 @@
 //    la nouvelle URL dans les Paramètres avancés de l'extension.
 
 const SHEET_NAME = 'Snippets';
+const BACKUP_SHEET_NAME = 'Local_Snippets_Backup';
+const BACKUP_HEADER = ['trigger', 'content', 'Ref_User', 'Date'];
 
 function getSheet_() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -89,6 +93,20 @@ function getSheet_() {
   if (!sheet) {
     sheet = ss.insertSheet(SHEET_NAME);
     sheet.appendRow(['trigger', 'content', 'folder']);
+  }
+  return sheet;
+}
+
+function getBackupSheet_() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName(BACKUP_SHEET_NAME);
+  if (!sheet) {
+    sheet = ss.insertSheet(BACKUP_SHEET_NAME);
+    sheet.appendRow(BACKUP_HEADER);
+    sheet.setFrozenRows(1);
+    // Colonne Date en texte : la valeur reste telle qu'écrite ("2026-11-06 14:32"), sans
+    // conversion selon les paramètres régionaux du tableau.
+    sheet.getRange('D:D').setNumberFormat('@');
   }
   return sheet;
 }
@@ -106,11 +124,17 @@ function json_(obj) {
 // Version 3 : le POST accepte un champ "content". Un script resté en version 2 crée la ligne
 // sans contenu — l'extension continue de fonctionner, il faut juste ressaisir le texte dans le
 // tableau. Redéployer en "Nouvelle version" suffit à récupérer le pré-remplissage.
-const API_VERSION = 3;
+// Version 4 : POST {action:"backup"} pour la sauvegarde du Clausier Personnel, sondée par
+// ?probe=backup. Un script resté en version 3 renvoie le tableau des snippets à cette sonde :
+// l'extension ne lui envoie alors rien et réessaie à la synchro suivante.
+const API_VERSION = 4;
 
 function doGet(e) {
   if (e && e.parameter && e.parameter.probe === 'append') {
     return json_({ ok: true, api: 'append', version: API_VERSION });
+  }
+  if (e && e.parameter && e.parameter.probe === 'backup') {
+    return json_({ ok: true, api: 'backup', version: API_VERSION });
   }
 
   const sheet = getSheet_();
@@ -132,6 +156,7 @@ function doGet(e) {
 function doPost(e) {
   try {
     const body = JSON.parse(e.postData.contents);
+    if (body.action === 'backup') return json_(sauvegarderClausier_(body));
     if (body.action !== 'append') {
       return json_({ ok: false, error: 'Action inconnue : ' + body.action });
     }
@@ -171,5 +196,53 @@ function doPost(e) {
     });
   } catch (err) {
     return json_({ ok: false, error: String(err) });
+  }
+}
+
+// Sauvegarde anonyme des Clausiers Personnels, pour repérer les snippets utiles à intégrer au
+// Clausier Commun. N'écrit QUE dans l'onglet "Local_Snippets_Backup" : l'onglet "Snippets"
+// reste en ajout seul (voir doPost). Ici, une ligne par couple (Ref_User, trigger) : un snippet
+// modifié remplace sa version précédente pour cet utilisateur ; le même déclencheur peut exister
+// chez plusieurs utilisateurs. Un snippet supprimé dans l'extension reste dans la sauvegarde.
+function sauvegarderClausier_(body) {
+  const refUser = String(body.refUser || '').trim();
+  // Identifiant aléatoire créé par l'extension : on refuse tout le reste plutôt que d'écrire
+  // n'importe quoi dans la colonne qui sert de clé.
+  if (!/^[A-Za-z0-9-]{8,64}$/.test(refUser)) return { ok: false, error: 'Ref_User invalide' };
+  const recus = Array.isArray(body.snippets) ? body.snippets : [];
+
+  // Deux utilisateurs qui sauvegardent en même temps liraient le même état puis ajouteraient
+  // chacun leurs lignes au même endroit.
+  const lock = LockService.getScriptLock();
+  lock.waitLock(20000);
+  try {
+    const sheet = getBackupSheet_();
+    const date = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm');
+    const lignes = sheet.getDataRange().getValues();
+    const index = {};
+    for (let i = 1; i < lignes.length; i++) {
+      index[String(lignes[i][2]) + '\u0000' + String(lignes[i][0]).trim()] = i + 1;
+    }
+
+    const ajouts = [];
+    let maj = 0;
+    recus.forEach(s => {
+      const trigger = String((s && s.trigger) || '').trim();
+      if (!trigger) return;
+      const ligne = [trigger, String(s.content || ''), refUser, date];
+      const existante = index[refUser + '\u0000' + trigger];
+      if (existante) {
+        sheet.getRange(existante, 1, 1, 4).setValues([ligne]);
+        maj++;
+      } else {
+        ajouts.push(ligne);
+      }
+    });
+    if (ajouts.length) {
+      sheet.getRange(sheet.getLastRow() + 1, 1, ajouts.length, 4).setValues(ajouts);
+    }
+    return { ok: true, api: 'backup', updated: maj, added: ajouts.length };
+  } finally {
+    lock.releaseLock();
   }
 }

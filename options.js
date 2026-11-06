@@ -1,4 +1,4 @@
-const BUILD_DATE = '2026-11-04'; // v2.20.4
+const BUILD_DATE = '2026-11-06'; // v2.21.0
 const DEFAULT_GITHUB_URL = 'https://raw.githubusercontent.com/yakamatt/Snippets-Expander/main';
 const DEFAULT_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1H2rBzMQzZk74Bk2Z_Mo8lXAdYea7Mi7WfzVruBahd_I/edit';
 
@@ -27,6 +27,7 @@ function load() {
     document.getElementById('lien-sgo').checked = s.lienSgo !== false;
     document.getElementById('lien-sharepoint').checked = s.lienSharepoint !== false;
     document.getElementById('lien-explorateur').checked = s.lienExplorateur !== false;
+    document.getElementById('sauvegarde-clausier').checked = s.sauvegardeClausier !== false;
     document.getElementById('local-folder-path').value = s.localFolderPath || '';
     document.getElementById('auto-check-updates').checked = !!s.autoCheckUpdates;
     document.getElementById('sheet-url').value = s.sheetUrl || '';
@@ -228,7 +229,7 @@ document.getElementById('local-clear').addEventListener('click', () => {
   const nb = localSnippets.length;
   if (!nb) return;
   if (!confirm(`⚠️ Supprimer ${nb > 1 ? `les ${nb} snippets` : 'le snippet'} du Clausier Personnel ?\n\n` +
-    'Cette suppression est définitive : ces snippets ne sont sauvegardés nulle part ailleurs que dans ce navigateur. ' +
+    "Cette suppression est définitive : l'extension ne peut pas les restaurer. " +
     'Pensez à les exporter (.xlsx ou .csv) avant, si vous voulez pouvoir les retrouver.')) return;
   localEnEdition = null;
   sauverLocal([]).then(() => {
@@ -532,6 +533,12 @@ document.getElementById('toggle-advanced').addEventListener('click', () => {
   const panel = document.getElementById('advanced-panel');
   panel.hidden = !panel.hidden;
   document.getElementById('toggle-advanced').textContent = panel.hidden ? '⚙️ Paramètres avancés ▾' : '⚙️ Paramètres avancés ▴';
+});
+
+// Lu par background.js à la synchro suivante : décocher arrête les envois, recocher envoie ce
+// qui a changé entre-temps.
+document.getElementById('sauvegarde-clausier').addEventListener('change', (e) => {
+  updateSyncSettings({ sauvegardeClausier: e.target.checked });
 });
 
 // Liens vers l'affaire (SGO, SharePoint, Explorateur) : content.js écoute syncSettings et pose ou

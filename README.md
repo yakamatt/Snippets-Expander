@@ -13,9 +13,10 @@ Remplace automatiquement un texte court (ex: `;sig`) par un texte prédéfini, d
 
 ## 2. Utiliser l'extension
 
+- À l'installation, un **tutoriel** visuel s'ouvre dans un onglet ; le lien **"🎓 Tutoriel"** en haut du popup permet de le revoir.
 - Cliquez sur l'icône de l'extension pour ouvrir le petit menu ("popup") : **"📒 Modifier le Clausier Personnel"** (ouvre la page Paramètres sur cette section), **"📄 Consulter le Clausier Commun"** (ouvre le Google Sheets), l'import **DatAviso AI**, un lien **"✉️ Donner mon avis"** vers le formulaire de retour, **"🤝 Partager avec mes collègues"** (copie le lien de la fiche du Chrome Web Store, ou prépare un e-mail qui le contient), et le lien **"⚙️ Paramètres"**.
 - Un snippet a un **déclencheur** (ex: `;sig`, `/adresse`) et un **contenu**.
-- Tapez le déclencheur dans n'importe quel champ (Gmail, formulaires web, réseaux sociaux, contenteditable...) : après une courte temporisation (1 seconde par défaut, réglable), il se remplace par le contenu — les sauts de ligne et retours à la ligne sont respectés.
+- Tapez le déclencheur dans n'importe quel champ (Gmail, formulaires web, réseaux sociaux, contenteditable, champ « Remarque » d'Aviso...) : après une courte temporisation (1 seconde par défaut, réglable), il se remplace par le contenu — les sauts de ligne et retours à la ligne sont respectés.
 - **Deux clausiers** : à déclencheur égal, le snippet du **Clausier Personnel l'emporte** sur celui du Clausier Commun (voir section 2 ter).
 - Placeholders disponibles : `{date}`, `{time}`, `{cursor}` (repositionne le curseur après expansion).
 - **Clausier Commun en lecture seule** : ses snippets se créent, se modifient et se suppriment dans le tableau Google Sheets partagé (bouton "📄 Consulter le Clausier Commun" du popup ou de la page Paramètres).
@@ -83,7 +84,9 @@ Reconnaissance des sols
 - **Importer** un fichier `.xlsx` ou `.csv` : une ligne par snippet, colonnes `declencheur` et `contenu`, dans n'importe quel ordre. Des **modèles vierges** dans les deux formats se téléchargent depuis la même carte. Le `/` initial est ajouté s'il manque (`GN 4` devient `/GN 4`), et les lignes sans déclencheur ou sans contenu sont ignorées. Si un déclencheur existe déjà avec un autre contenu, l'import affiche les deux et demande **Remplacer**, **Ignorer**, **Remplacer tout**, **Ignorer tout** ou **Annuler l'import** — rien n'est enregistré avant la fin. Le format `.xls` (Excel 97-2003) n'est pas lu : enregistrez le fichier en `.xlsx` ou `.csv`.
 - **Exporter** en `.xlsx` ou `.csv` (séparateur `;`, UTF-8, s'ouvre directement dans Excel).
 
-⚠️ Le Clausier Personnel est enregistré **dans ce navigateur uniquement** (`chrome.storage.local`). Il est conservé lors des mises à jour de l'extension, mais **effacé si on la désinstalle**, et il ne se retrouve pas sur un autre ordinateur : exportez-le régulièrement, et importez l'export pour le transporter.
+⚠️ Le Clausier Personnel est enregistré **dans ce navigateur** (`chrome.storage.local`). Il est conservé lors des mises à jour de l'extension, mais **effacé si on la désinstalle**, et il ne se retrouve pas sur un autre ordinateur : exportez-le régulièrement, et importez l'export pour le transporter.
+
+**Sauvegarde anonyme** (depuis la v2.21.0) : à chaque actualisation du Clausier Commun, les snippets personnels ajoutés ou modifiés sont copiés dans l'onglet `Local_Snippets_Backup` du Google Sheets (`trigger | content | Ref_User | Date`), pour enrichir le Clausier Commun. `Ref_User` est un identifiant aléatoire, sans nom ni adresse ; une seule ligne par utilisateur et par déclencheur, la dernière version remplaçant la précédente. Cette copie ne sert pas à restaurer : l'extension ne la relit jamais. Désactivable dans Paramètres avancés.
 
 ## 3. Partage en temps réel avec une équipe (Google Sheets, gratuit)
 
@@ -111,12 +114,12 @@ Reconnaissance des sols
 
 ⚠️ **Après toute modification de `Code.gs`**, redéployez : **Déployer > Gérer les déploiements > (crayon) > Version : "Nouvelle version" > Déployer**. Sans nouvelle version, l'URL `/exec` continue de servir l'ancien code.
 
-Le code d'écriture de l'extension s'en protège : avant toute écriture, il interroge le script (`?probe=append`) pour vérifier qu'il gère l'ajout de ligne, et n'envoie rien si la réponse ne le confirme pas. Cette vérification existe parce qu'une version antérieure de `Code.gs` réécrivait le tableau entier sur n'importe quel POST : un client récent parlant à un script ancien effaçait tous les snippets.
+Le code d'écriture de l'extension s'en protège : avant toute écriture, il interroge le script (`?probe=append` pour l'ajout de ligne, `?probe=backup` pour la sauvegarde du Clausier Personnel) pour vérifier qu'il gère l'ajout de ligne, et n'envoie rien si la réponse ne le confirme pas. Cette vérification existe parce qu'une version antérieure de `Code.gs` réécrivait le tableau entier sur n'importe quel POST : un client récent parlant à un script ancien effaçait tous les snippets.
 
 ### d. Mise à jour des données
 L'extension lit le Sheet à chaque récupération ("🔄 Forcer l'actualisation du Clausier Commun" de la page Paramètres, ou synchro automatique en arrière-plan) : les snippets du Clausier Commun sont alors **entièrement remplacés** par le contenu actuel du Sheet. Le Clausier Personnel n'est jamais touché par cette synchro.
 
-**Depuis la v2.18.0, l'extension n'écrit plus du tout dans le Sheet** : le bouton "+" d'Aviso crée le snippet dans le Clausier Personnel. Le chemin d'ajout de ligne (`createSnippetRow` dans `background.js`, `doPost` dans `Code.gs`) est conservé, avec ses garde-fous, mais n'est plus appelé. Il ne supprime jamais une ligne existante et ne complète une ligne déjà présente que si sa cellule de contenu est vide.
+**Depuis la v2.18.0, l'extension n'écrit plus dans l'onglet `Snippets`** : le bouton "+" d'Aviso crée le snippet dans le Clausier Personnel. Sa seule écriture est la sauvegarde anonyme dans l'onglet `Local_Snippets_Backup` (section 2 ter), créé par le script au premier envoi. Le chemin d'ajout de ligne (`createSnippetRow` dans `background.js`, `doPost` dans `Code.gs`) est conservé, avec ses garde-fous, mais n'est plus appelé. Il ne supprime jamais une ligne existante et ne complète une ligne déjà présente que si sa cellule de contenu est vide.
 
 **Garde-fou** : si le tableau distant revient vide alors que des snippets sont enregistrés localement, la synchro est refusée et la copie locale conservée — un bandeau d'alerte s'affiche alors dans la page Paramètres. Un tableau vidé par accident ne fait donc pas disparaître la dernière copie des snippets. Pour vider délibérément le tableau, supprimez d'abord les snippets locaux (ou réinstallez l'extension).
 
@@ -191,12 +194,12 @@ Une fois publiée, l'extension se met à jour **automatiquement et silencieuseme
 Dans l'onglet **"Privacy practices"** du dashboard :
 - **Chaque permission est à justifier** ; le Store refuse toute permission demandée mais non utilisée (refus « Purple Potassium » en v2.18.0, pour `activeTab`). Justifications à reprendre :
   - **Scripts de contenu sur `<all_urls>`** : détecter la frappe d'un déclencheur et le remplacer par son texte dans n'importe quel champ, sur n'importe quel site ; intégration Aviso
-  - **`host_permissions`** (`script.google.com`, `script.googleusercontent.com`, `raw.githubusercontent.com`) : lire le Clausier Commun depuis le script Apps Script (qui redirige sa réponse vers `googleusercontent.com`), et vérifier les mises à jour sur GitHub en mode développeur
+  - **`host_permissions`** (`script.google.com`, `script.googleusercontent.com`, `raw.githubusercontent.com`) : lire le Clausier Commun depuis le script Apps Script (qui redirige sa réponse vers `googleusercontent.com`), y envoyer la sauvegarde anonyme du Clausier Personnel, et vérifier les mises à jour sur GitHub en mode développeur
   - **`storage`** : enregistrer les snippets, les réglages et les données DatAviso AI
   - **`unlimitedStorage`** : le Clausier Personnel et les données DatAviso AI, conservés dans le navigateur, peuvent dépasser la limite de 10 Mo de `chrome.storage.local`
   - **`alarms`** : actualiser périodiquement le Clausier Commun (toutes les heures par défaut)
 - **Avant chaque soumission**, vérifier que toute nouvelle permission est réellement utilisée par une installation depuis le Store, pas seulement en mode développeur
-- **Usage des données** : l'extension lit du texte dans les champs des pages visitées (fonctionnalité cœur) et récupère vos snippets depuis l'URL Google Sheets que *vous* configurez — aucune donnée n'est envoyée à un serveur tiers appartenant au développeur
+- **Usage des données** : l'extension lit du texte dans les champs des pages visitées (fonctionnalité cœur), sans jamais l'envoyer, et récupère vos snippets depuis l'URL Google Sheets que *vous* configurez. La seule donnée envoyée est la **copie anonyme du Clausier Personnel** (déclencheur, contenu, identifiant aléatoire, date) vers ce même Google Sheets ; elle est désactivable. À déclarer dans le formulaire comme « contenu généré par l'utilisateur » transmis à l'éditeur, non vendu ni utilisé à d'autres fins que l'amélioration du Clausier Commun
 - Fournissez une **URL de politique de confidentialité** (une simple page expliquant les points ci-dessus suffit ; ce README peut servir de base)
 - Cochez la case de certification de conformité au programme développeur
 
@@ -210,12 +213,14 @@ Dans l'onglet **"Privacy practices"** du dashboard :
 ```
 snippet-expander/
 ├── manifest.json          # Configuration de l'extension (Manifest V3)
-├── background.js          # Récupération Google Sheets, alarmes, vérification MAJ GitHub
+├── background.js          # Récupération Google Sheets, sauvegarde du Clausier Personnel, tutoriel, alarmes, MAJ GitHub
 ├── content.js              # Détection, temporisation et remplacement du texte + intégration Aviso
 ├── sitesecurite-articles.js # Table code d'article ERP -> page sitesecurite.com (générée, cf. en-tête)
 ├── imported-data.js         # Analyse du texte importé (données de dossier par article)
 ├── clausier-fichiers.js     # Import/export du Clausier Personnel (.xlsx, .csv), sans dépendance
 ├── popup.html/css/js       # Popup de l'icône (barre d'outils) : clausiers, DatAviso AI, avis, Paramètres
+├── tutoriel.html/css/js    # Tutoriel visuel, ouvert à l'installation et depuis le popup
+├── partage.js              # Lien d'installation à partager (popup et tutoriel)
 ├── options.html/css/js     # Page Paramètres : Clausier Personnel, DatAviso AI, paramètres avancés
 ├── icons/                  # Icônes de l'extension
 ├── CHANGELOG.md             # Historique des versions

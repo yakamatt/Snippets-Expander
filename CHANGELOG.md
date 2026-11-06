@@ -1,5 +1,18 @@
 # Changelog — Snippet Expander
 
+## v2.21.0 — 2026-11-06
+- **Tutoriel visuel en 8 étapes**, ouvert dans un onglet à la première installation, et une fois à la mise à jour pour les utilisateurs qui ne l'ont pas encore vu. Il présente l'expansion au clavier (avec une démonstration animée), les deux clausiers, les icônes d'Aviso, DatAviso AI, les liens d'affaire et le popup. Les visuels sont des maquettes HTML avec les vraies icônes de l'extension. La dernière étape invite à partager le lien d'installation. Il remplace l'ouverture des Paramètres à l'installation
+- **Lien « 🎓 Tutoriel » en haut du popup** pour le revoir à tout moment
+- **Sauvegarde anonyme du Clausier Personnel** dans un nouvel onglet `Local_Snippets_Backup` du tableau du Clausier Commun (`trigger | content | Ref_User | Date`), pour repérer les formulations utiles à intégrer au Clausier Commun. Elle part à chaque actualisation du Clausier Commun (toutes les heures par défaut), avec uniquement les snippets ajoutés ou modifiés depuis l'envoi précédent ; les snippets existants partent à l'installation de cette version
+  - `Ref_User` est un identifiant aléatoire, créé à l'installation et identique sur tous les postes du même compte Chrome. Aucun nom ni adresse n'est envoyé
+  - Une seule ligne par utilisateur et par déclencheur : la version modifiée remplace la précédente. Le même déclencheur peut exister chez plusieurs utilisateurs. Supprimer un snippet ne le retire pas de la sauvegarde
+  - Ce n'est pas une restauration : l'extension ne relit jamais cet onglet, l'export reste la copie personnelle de l'utilisateur, et les Paramètres y incitent
+  - Désactivable dans Paramètres avancés > Sauvegarde anonyme du Clausier Personnel
+  - ⚠️ **Le script Apps Script doit être redéployé** (API v4) : tant qu'il ne l'est pas, rien n'est envoyé (sonde `?probe=backup`) et l'envoi est retenté à chaque actualisation. L'onglet `Snippets` n'est pas modifié : il reste en ajout seul
+- **Les snippets fonctionnent dans le champ « Remarque » d'Aviso.** C'est un éditeur TinyMCE, logé dans une iframe sans adresse où Chrome n'injecte pas l'extension : la frappe n'y était pas vue. La page parente écoute désormais ce type d'éditeur, sur Aviso
+- **Infobulle des icônes snippet : plus de ligne vide** entre le titre et le texte du snippet
+- Aucune permission ajoutée
+
 ## v2.20.4 — 2026-11-04
 - **Liste Plans Affaires : libellés des boutons empilés plus grands.** « SGO » et « ShP » s'écrivent en vrai texte de 11 px, au lieu d'un dessin d'environ 7 px
 - **L'icône de l'Explorateur devient « C:\ »** au lieu d'un dossier, en texte comme « SGO » et « ShP » : elle dit à la fois l'outil et où il cherche. Dans la barre bleue, elle prend le même petit cadre que les deux autres

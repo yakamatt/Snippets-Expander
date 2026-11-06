@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Snippet Expander — Tutoriel</title>
+<link rel="stylesheet" href="tutoriel.css" />
+</head>
+<body>
+  <header class="barre">
+    <span class="marque"><img src="icons/icon32.png" alt="" /> Snippet Expander</span>
+    <span class="compteur" id="compteur"></span>
+    <button type="button" class="passer" id="passer">Passer le tutoriel</button>
+  </header>
+
+  <main class="scene">
+    <!-- 1. Bienvenue -->
+    <section class="etape" data-titre="Bienvenue">
+      <div class="texte">
+        <p class="sur-titre">Bienvenue 👋</p>
+        <h1>Rédigez vos rapports <em>beaucoup</em> plus vite</h1>
+        <p>Snippet Expander remplace un raccourci court par un texte complet, et ajoute à Aviso des icônes qui insèrent les dispositions types en un clic.</p>
+        <p>Une minute pour faire le tour : suivez les flèches.</p>
+      </div>
+      <div class="visuel">
+        <div class="maquette navigateur">
+          <div class="nav-barre">
+            <span class="pastilles"><i></i><i></i><i></i></span>
+            <span class="nav-adresse">aviso2.bureauveritas.com</span>
+            <span class="nav-icones">🧩 <img src="icons/icon16.png" alt="" class="epingle" /></span>
+          </div>
+          <div class="nav-corps epingle-aide">
+            <div class="bulle haut-droite">📌 Épinglez l'extension : cliquez sur 🧩 puis sur l'épingle, son icône reste à portée de main.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. Expansion au clavier -->
+    <section class="etape" data-titre="Le raccourci">
+      <div class="texte">
+        <p class="sur-titre">Étape 1 · Au clavier</p>
+        <h1>Tapez un déclencheur, il devient un texte</h1>
+        <p>Un déclencheur commence par <code>/</code>. Après une courte pause, il se remplace tout seul par son contenu.</p>
+        <ul class="puces">
+          <li>✅ Dans tous les champs de texte : Aviso, Gmail, formulaires…</li>
+          <li>✅ Y compris le champ <strong>Remarque</strong> d'Aviso</li>
+          <li>✅ <code>{date}</code> et <code>{time}</code> deviennent la date et l'heure du jour</li>
+        </ul>
+      </div>
+      <div class="visuel">
+        <div class="maquette champ">
+          <div class="champ-libelle">Dispositions réalisées</div>
+          <div class="champ-zone" id="demo-frappe"><span class="demo-texte"></span><span class="curseur"></span></div>
+          <div class="champ-note">⏱️ Remplacé après 0,5 s de pause (réglable dans les Paramètres)</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. Deux clausiers -->
+    <section class="etape" data-titre="Deux clausiers">
+      <div class="texte">
+        <p class="sur-titre">Étape 2 · D'où viennent les textes</p>
+        <h1>Deux clausiers, le vôtre passe en premier</h1>
+        <p>Si les deux ont le même déclencheur, c'est votre snippet personnel qui s'insère.</p>
+        <div class="encart">
+          <strong>🛟 Sauvegarde anonyme</strong>
+          <p>Une copie anonyme de votre Clausier Personnel est envoyée au tableau du Clausier Commun, pour l'enrichir des formulations utiles à tous. Elle ne permet pas de restaurer vos snippets : <strong>exportez-les régulièrement</strong> (Paramètres › Clausier Personnel). Désactivable dans Paramètres avancés.</p>
+        </div>
+      </div>
+      <div class="visuel deux-cartes">
+        <div class="carte-clausier commun">
+          <img src="icons/icon32.png" alt="" />
+          <h2>Clausier Commun</h2>
+          <p>Partagé par toute l'équipe, dans un Google Sheets.</p>
+          <p class="detail">🔄 Mis à jour automatiquement toutes les heures</p>
+        </div>
+        <div class="carte-clausier personnel">
+          <img src="icons/local16.svg" alt="" />
+          <h2>Clausier Personnel</h2>
+          <p>Vos propres textes, créés sur Aviso ou dans les Paramètres.</p>
+          <p class="detail">⭐ Prioritaire · 📤 import / export .xlsx et .csv</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. Icônes Aviso -->
+    <section class="etape" data-titre="Les icônes Aviso">
+      <div class="texte">
+        <p class="sur-titre">Étape 3 · Sur Aviso</p>
+        <h1>Des icônes dans « Dispositions réalisées »</h1>
+        <p>Elles apparaissent quand le code du Référentiel (par exemple <code>GN 4</code>) correspond à un snippet. Survolez une icône pour lire le texte avant de l'insérer : il s'ajoute toujours <strong>à la suite</strong> de ce qui est déjà écrit.</p>
+      </div>
+      <div class="visuel">
+        <div class="maquette aviso">
+          <table>
+            <thead><tr><th>Référentiel</th><th>Dispositions réalisées</th></tr></thead>
+            <tbody>
+              <tr>
+                <td class="ref">GN 4 - Procédure d'adaptation</td>
+                <td class="dispo">
+                  <div class="icones">
+                    <span class="ico" data-n="1"><img src="icons/local16.svg" alt="" /></span>
+                    <span class="ico" data-n="2"><img src="icons/edit16.svg" alt="" /></span>
+                    <span class="ico" data-n="3"><img src="icons/icon16.png" alt="" /></span>
+                    <span class="ico" data-n="4"><img src="icons/sitesecurite32.png" alt="" /></span>
+                    <span class="ico" data-n="5"><img src="icons/imported16.svg" alt="" /></span>
+                    <span class="ico corbeille" data-n="6"><svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 4.5h11M6.5 4.5V3a1 1 0 0 1 1-1h1a1 1 0 0 1 1 1v1.5M4 4.5l.7 8.6a1 1 0 0 0 1 .9h4.6a1 1 0 0 0 1-.9l.7-8.6M6.75 7v4.5M9.25 7v4.5"/></svg></span>
+                  </div>
+                  <div class="zone">Les dispositions prévues ont été vérifiées…</div>
+                </td>
+              </tr>
+              <tr>
+                <td class="ref">CO 24 - Isolement</td>
+                <td class="dispo">
+                  <div class="icones">
+                    <span class="ico" data-n="7"><img src="icons/add16.svg" alt="" /></span>
+                    <span class="ico"><img src="icons/icon16.png" alt="" /></span>
+                  </div>
+                  <div class="zone vide"></div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <ol class="legende">
+          <li><b>1</b> Votre snippet personnel</li>
+          <li><b>2</b> Le modifier sans quitter Aviso</li>
+          <li><b>3</b> Le snippet du Clausier Commun</li>
+          <li><b>4</b> Le texte réglementaire sur sitesecurite.com</li>
+          <li><b>5</b> Vos données DatAviso AI</li>
+          <li><b>6</b> Effacer le champ (s'annule d'un clic)</li>
+          <li><b>7</b> Créer un snippet personnel pour ce code</li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- 5. DatAviso AI -->
+    <section class="etape" data-titre="DatAviso AI">
+      <div class="texte">
+        <p class="sur-titre">Étape 4 · Vos données de dossier</p>
+        <h1>DatAviso AI : les données du dossier en un clic</h1>
+        <p>Importez le fichier <code>.txt</code> produit par DatAviso AI depuis le popup de l'icône. Sur chaque ligne dont le Référentiel y figure, une icône verte ajoute ces données dans « Dispositions réalisées ».</p>
+      </div>
+      <div class="visuel flux">
+        <div class="maquette mini-popup">
+          <div class="mp-titre"><img src="icons/icon16.png" alt="" /> Snippet Expander</div>
+          <div class="mp-section">📥 DatAviso AI</div>
+          <div class="mp-bouton clair">📄 Importer un fichier .txt</div>
+        </div>
+        <div class="fleche">➜</div>
+        <div class="maquette petite-ligne">
+          <span class="ref">GN 4</span>
+          <span class="ico vert"><img src="icons/imported16.svg" alt="" /></span>
+          <span class="zone">Établissement de type L, 2e catégorie…</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6. Liens d'affaire -->
+    <section class="etape" data-titre="Liens d'affaire">
+      <div class="texte">
+        <p class="sur-titre">Étape 5 · Retrouver l'affaire</p>
+        <h1>SGO, SharePoint et dossiers en un clic</h1>
+        <p>À partir du numéro d'affaire, trois liens ouvrent :</p>
+        <ul class="puces">
+          <li><span class="badge">SGO</span> la fiche de l'affaire dans SGO</li>
+          <li><span class="badge">ShP</span> la recherche du numéro dans SharePoint</li>
+          <li><span class="badge">C:\</span> la recherche dans l'Explorateur Windows</li>
+        </ul>
+        <p class="discret">Chacun se désactive dans Paramètres avancés.</p>
+      </div>
+      <div class="visuel pile">
+        <div class="maquette liste-plans">
+          <div class="lp-entete"><span>N° plan affaire</span><span>Actions</span></div>
+          <div class="lp-ligne">
+            <span>29462057 / 1</span>
+            <span class="lp-actions">
+              <span class="loupe">🔍</span>
+              <span class="lp-pile"><span>SGO</span><span>ShP</span><span>C:\</span></span>
+            </span>
+          </div>
+          <div class="maquette-legende">Liste Plans Affaires : à côté de la loupe</div>
+        </div>
+        <div class="maquette barre-bleue">
+          <span class="bb-titre">29462057 / 1 — Groupe scolaire</span>
+          <span class="bb-liens"><span>SGO</span><span>ShP</span><span>C:\</span></span>
+          <span class="bb-metier">BTS ▾</span>
+        </div>
+        <div class="maquette-legende">Affaire ouverte : dans la barre bleue, à gauche de « BTS »</div>
+      </div>
+    </section>
+
+    <!-- 7. Paramètres et avis -->
+    <section class="etape" data-titre="Le popup">
+      <div class="texte">
+        <p class="sur-titre">Étape 6 · Tout est dans l'icône</p>
+        <h1>Le popup, votre point de départ</h1>
+        <p>Cliquez sur l'icône de l'extension pour modifier votre Clausier Personnel, consulter le Clausier Commun, importer DatAviso AI, ou ouvrir les Paramètres.</p>
+        <p>Une idée, un bug ? Le bouton <strong>Donner mon avis</strong> nous l'envoie directement. Et ce tutoriel reste accessible par le lien <strong>🎓 Tutoriel</strong>.</p>
+      </div>
+      <div class="visuel">
+        <div class="maquette mini-popup grand">
+          <div class="mp-titre"><img src="icons/icon16.png" alt="" /> Snippet Expander <span class="mp-tuto">🎓 Tutoriel</span></div>
+          <div class="mp-bouton">📒 Modifier le Clausier Personnel</div>
+          <div class="mp-bouton clair">📄 Consulter le Clausier Commun</div>
+          <div class="mp-section">📥 DatAviso AI</div>
+          <div class="mp-section">💬 Une remarque, une idée, un bug ?</div>
+          <div class="mp-bouton clair">✉️ Donner mon avis</div>
+          <div class="mp-lien">⚙️ Paramètres</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 8. Partage -->
+    <section class="etape final" data-titre="Partager">
+      <div class="texte centre">
+        <p class="sur-titre">C'est tout ! 🎉</p>
+        <h1>Vous gagnez du temps ? Faites-en gagner à vos collègues</h1>
+        <p>Partagez le lien d'installation : ils l'installent en un clic depuis le Chrome Web Store, et reçoivent les mises à jour automatiquement.</p>
+        <div class="partage">
+          <button type="button" id="share-copy" class="bouton">🔗 Copier le lien</button>
+          <a href="#" id="share-mail" class="bouton clair">✉️ Envoyer par e-mail</a>
+        </div>
+        <p class="statut" id="share-status"></p>
+        <button type="button" class="bouton commencer" id="terminer">C'est parti !</button>
+      </div>
+    </section>
+  </main>
+
+  <nav class="navigation">
+    <button type="button" class="nav-btn" id="precedent">← Précédent</button>
+    <div class="points" id="points"></div>
+    <button type="button" class="nav-btn principal" id="suivant">Suivant →</button>
+  </nav>
+
+  <script src="partage.js"></script>
+  <script src="tutoriel.js"></script>
+</body>
+</html>
