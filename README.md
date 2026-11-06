@@ -125,6 +125,19 @@ L'extension lit le Sheet à chaque récupération ("🔄 Forcer l'actualisation 
 
 Pour ajouter, modifier ou supprimer un snippet du Clausier Commun : faites-le directement dans le Google Sheet (lien "📄 Consulter le Clausier Commun" du popup ou de la page Paramètres), puis forcez l'actualisation pour récupérer le résultat sans attendre la synchro automatique.
 
+### e. Revue du Clausier Commun à partir des sauvegardes (garant)
+Le menu **Clausier** du Google Sheets (ajouté par `Code.gs`, visible des éditeurs du tableau) aide le garant du Clausier Commun à profiter des Clausiers Personnels sauvegardés :
+
+1. **Clausier > Préparer la revue** remplit l'onglet `Revue`, une ligne par déclencheur, les plus partagés en premier :
+   - 🆕 **Nouveau** : un déclencheur absent du Clausier Commun ;
+   - ✏️ **Variante** : un déclencheur commun dont des utilisateurs ont écrit un autre texte. Un texte identique au texte commun n'est pas proposé.
+
+   Les déclencheurs sont rapprochés sans tenir compte de la casse, des espaces ni du préfixe (`/gn4` = `/GN4` = `GN4`). Chaque ligne donne le texte commun actuel, la proposition (le texte le plus répandu), le nombre d'utilisateurs et les autres variantes.
+2. Pour chaque ligne, choisir **Adopter** ou **Ignorer** dans la colonne *Décision*. *Adopter* enregistre la colonne *Texte final*, pré-remplie avec la proposition et modifiable ; pour un nouveau déclencheur, renseigner aussi le *Dossier*.
+3. **Clausier > Appliquer les décisions** ajoute les nouveaux snippets à `Snippets` et remplace le texte des variantes adoptées, après avoir copié l'ancien texte dans l'onglet `Historique`. Une ligne dont le texte commun a changé depuis la préparation n'est pas appliquée. Les variantes adoptées ou ignorées ne sont plus reproposées (onglet `Revue_Traités`), sauf si un utilisateur les modifie.
+
+Les onglets `Local_Snippets_Backup`, `Historique` et `Revue_Traités` sont **masqués** ; `Revue` ne s'affiche que pendant une revue. Masquer n'est pas protéger : toute personne qui a accès au tableau peut les réafficher ou en faire une copie. Le menu fonctionne dès l'enregistrement du code dans l'éditeur Apps Script, sans redéploiement (rechargez le tableau pour le voir apparaître).
+
 ## 4. Paramètres avancés
 
 Accessibles via le bouton "⚙️ Paramètres avancés" en bas de la page Options :

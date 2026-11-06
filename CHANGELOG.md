@@ -13,6 +13,7 @@
 - **Les snippets fonctionnent dans le champ « Remarque » d'Aviso.** C'est un éditeur TinyMCE, logé dans une iframe sans adresse où Chrome n'injecte pas l'extension : la frappe n'y était pas vue. La page parente écoute désormais ce type d'éditeur, sur Aviso
 - **Infobulle des icônes snippet : plus de ligne vide** entre le titre et le texte du snippet
 - **Nouveau déploiement du script Apps Script** (API v4) : l'adresse par défaut change. Les installations existantes qui utilisaient l'ancienne adresse par défaut basculent sur la nouvelle à la mise à jour ; une adresse saisie à la main dans Paramètres avancés est conservée
+- **Côté Google Sheets : menu « Clausier » de revue pour le garant du Clausier Commun** (`Code.gs`). *Préparer la revue* liste dans un onglet `Revue` les nouveaux déclencheurs et les variantes de snippets communs trouvés dans les sauvegardes, les plus partagés en premier. On décide ligne par ligne d'adopter (texte retouchable) ou d'ignorer ; *Appliquer les décisions* ajoute ou met à jour `Snippets`, garde l'ancien texte dans `Historique` et ne repropose pas ce qui a été traité. Les onglets de travail sont masqués
 - Aucune permission ajoutée
 
 ## v2.20.4 — 2026-11-04
