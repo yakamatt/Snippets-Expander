@@ -63,7 +63,8 @@ de « simplifier ».
 7. **Aucune permission que n'utilise pas une installation depuis le Store.** La v2.18.0 a été
    refusée pour `activeTab`, demandée mais jamais appelée. `host_permissions` liste les seuls
    hôtes contactés par `fetch` ; ajouter un hôte ou une API, c'est d'abord l'ajouter au manifeste
-   et à la justification « Privacy practices » (README, section 6 d).
+   et à la justification « Privacy practices » (README, section 6 d), et mettre à jour
+   `PRIVACY.md`, la politique de confidentialité publiée sur le Store.
 8. **Le Clausier Personnel ne se restaure que par l'export.** Il vit dans le navigateur, une
    désinstallation l'efface. La copie anonyme du Sheets n'est **jamais relue** par l'extension :
    c'est une matière pour enrichir le Clausier Commun, pas une sauvegarde. Elle reste
