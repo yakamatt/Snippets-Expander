@@ -213,7 +213,7 @@ Dans l'onglet **"Privacy practices"** du dashboard :
   - **`alarms`** : actualiser périodiquement le Clausier Commun (toutes les heures par défaut)
 - **Avant chaque soumission**, vérifier que toute nouvelle permission est réellement utilisée par une installation depuis le Store, pas seulement en mode développeur
 - **Usage des données** : l'extension lit du texte dans les champs des pages visitées (fonctionnalité cœur), sans jamais l'envoyer, et récupère vos snippets depuis l'URL Google Sheets que *vous* configurez. La seule donnée envoyée est la **copie anonyme du Clausier Personnel** (déclencheur, contenu, identifiant aléatoire, date) vers ce même Google Sheets ; elle est désactivable. À déclarer dans le formulaire comme « contenu généré par l'utilisateur » transmis à l'éditeur, non vendu ni utilisé à d'autres fins que l'amélioration du Clausier Commun
-- Fournissez une **URL de politique de confidentialité** (une simple page expliquant les points ci-dessus suffit ; ce README peut servir de base)
+- **URL de politique de confidentialité** : `https://github.com/yakamatt/Snippets-Expander/blob/main/PRIVACY.md` ([PRIVACY.md](PRIVACY.md)). À mettre à jour, avec la date en tête, dès qu'une donnée envoyée ou une permission change
 - Cochez la case de certification de conformité au programme développeur
 
 ### e. Soumettre pour examen
@@ -237,6 +237,7 @@ snippet-expander/
 ├── options.html/css/js     # Page Paramètres : Clausier Personnel, DatAviso AI, paramètres avancés
 ├── icons/                  # Icônes de l'extension
 ├── CHANGELOG.md             # Historique des versions
+├── PRIVACY.md               # Politique de confidentialité (URL déclarée sur le Chrome Web Store)
 └── google-apps-script/
     └── Code.gs               # Script à déployer sur Google Sheets (backend gratuit)
 ```
