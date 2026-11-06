@@ -1,5 +1,5 @@
 // tutoriel.js — navigation du tutoriel, animation de la frappe et partage.
-// Ouvert par background.js à l'installation (et à la mise à jour quand TUTORIEL_VERSION monte),
+// Ouvert par background.js à l'installation initiale (jamais à une mise à jour),
 // ou depuis le lien « Tutoriel » du popup. Les visuels sont des maquettes HTML avec les vraies
 // icônes de l'extension : à mettre à jour avec elles quand une icône ou un comportement change.
 

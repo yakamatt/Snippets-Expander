@@ -46,11 +46,11 @@ chrome.runtime.onInstalled.addListener((details) => {
       await pullFromSheet().catch(() => {});
     }
 
-    // Tutoriel : à la première installation, et à la mise à jour pour qui ne l'a pas encore vu
-    // dans sa version actuelle (tous les utilisateurs d'avant la v2.21.0). Il remplace
-    // l'ouverture des Paramètres et invite lui-même à épingler l'extension.
-    if (details.reason === 'install' || details.reason === 'update') {
-      await ouvrirTutorielSiNouveau();
+    // Tutoriel : à l'installation initiale seulement, jamais à une mise à jour (il reste
+    // accessible depuis le popup). Il remplace l'ouverture des Paramètres et invite lui-même à
+    // épingler l'extension.
+    if (details.reason === 'install') {
+      chrome.tabs.create({ url: chrome.runtime.getURL('tutoriel.html') });
     }
 
     // Première sauvegarde du Clausier Personnel dès l'installation de la mise à jour, sans
@@ -149,19 +149,6 @@ async function synchroniser() {
     await sauvegarderClausierPersonnel()
       .catch(e => console.error('[Snippet Expander] Sauvegarde du Clausier Personnel :', e.message));
   }
-}
-
-// ---------- Tutoriel ----------
-// À incrémenter quand le tutoriel change assez pour être remontré à tous : c'est aussi le moyen
-// d'annoncer des nouveautés (il n'y a pas de page « notes de mise à jour » séparée).
-const TUTORIEL_VERSION = 1;
-
-async function ouvrirTutorielSiNouveau() {
-  const { tutorielVu } = await chrome.storage.local.get(['tutorielVu']);
-  if ((tutorielVu || 0) >= TUTORIEL_VERSION) return;
-  // Marqué vu dès l'ouverture : un onglet fermé sans aller au bout ne se rouvre pas.
-  await chrome.storage.local.set({ tutorielVu: TUTORIEL_VERSION });
-  chrome.tabs.create({ url: chrome.runtime.getURL('tutoriel.html') });
 }
 
 // ---------- Sauvegarde du Clausier Personnel ----------

@@ -126,12 +126,12 @@ Quand tu touches au contrat du POST, prévois toujours le script resté en versi
 
 ## Tutoriel
 
-- Ouvert par `ouvrirTutorielSiNouveau` (background.js) à l'installation, et à une mise à jour si
-  `tutorielVu` < `TUTORIEL_VERSION`. Marqué vu dès l'ouverture : il ne se rouvre pas s'il est fermé.
+- Ouvert par `chrome.runtime.onInstalled` (background.js) **à l'installation initiale seulement**
+  (`reason === 'install'`), jamais à une mise à jour. Ensuite, seul le lien « 🎓 Tutoriel » du
+  popup l'ouvre.
 - **À chaque version destinée au Chrome Web Store, mettre le tutoriel à jour** avec ce qui change
-  pour l'utilisateur (étapes, maquettes, icônes). Il n'y a pas de page de notes de mise à jour :
-  pour annoncer des nouveautés à tous, on incrémente `TUTORIEL_VERSION`, après avoir demandé
-  quoi mettre en avant.
+  pour l'utilisateur (étapes, maquettes, icônes), pour les nouveaux utilisateurs et ceux qui le
+  rouvrent. Il n'y a pas de page de notes de mise à jour.
 
 ## Conventions de travail
 

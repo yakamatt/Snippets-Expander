@@ -1,7 +1,7 @@
 # Changelog — Snippet Expander
 
 ## v2.21.0 — 2026-11-06
-- **Tutoriel visuel en 8 étapes**, ouvert dans un onglet à la première installation, et une fois à la mise à jour pour les utilisateurs qui ne l'ont pas encore vu. Il présente l'expansion au clavier (avec une démonstration animée), les deux clausiers, les icônes d'Aviso, DatAviso AI, les liens d'affaire et le popup. Les visuels sont des maquettes HTML avec les vraies icônes de l'extension. La dernière étape invite à partager le lien d'installation. Il remplace l'ouverture des Paramètres à l'installation
+- **Tutoriel visuel en 8 étapes**, ouvert dans un onglet à l'installation initiale seulement (jamais à une mise à jour). Il présente l'expansion au clavier (avec une démonstration animée), les deux clausiers, les icônes d'Aviso, DatAviso AI, les liens d'affaire et le popup. Les visuels sont des maquettes HTML avec les vraies icônes de l'extension. La dernière étape invite à partager le lien d'installation. Il remplace l'ouverture des Paramètres à l'installation
 - **Lien « 🎓 Tutoriel » en haut du popup** pour le revoir à tout moment
 - **Sauvegarde anonyme du Clausier Personnel** dans un nouvel onglet `Local_Snippets_Backup` du tableau du Clausier Commun (`trigger | content | Ref_User | Date`), pour repérer les formulations utiles à intégrer au Clausier Commun. Elle part à chaque actualisation du Clausier Commun (toutes les heures par défaut), avec uniquement les snippets ajoutés ou modifiés depuis l'envoi précédent ; les snippets existants partent à l'installation de cette version
   - `Ref_User` est un identifiant aléatoire, créé à l'installation et identique sur tous les postes du même compte Chrome. Aucun nom ni adresse n'est envoyé
