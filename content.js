@@ -177,8 +177,10 @@ function tryExpandInInput(el) {
 
 // ---------- CONTENTEDITABLE (respecte les sauts de ligne avec <br>) ----------
 
-function doExpandInContentEditable(match) {
-  const sel = window.getSelection();
+// doc : le document du champ. Celui de la page, ou celui de l'iframe d'un éditeur riche
+// (TinyMCE sur Aviso), dans laquelle ce script ne tourne pas (voir lierEditeursRiches).
+function doExpandInContentEditable(match, doc = document) {
+  const sel = doc.getSelection();
   if (!sel || !sel.rangeCount) return;
   const range = sel.getRangeAt(0);
   const node = range.startContainer;
@@ -197,12 +199,12 @@ function doExpandInContentEditable(match) {
   const afterText = text.substring(offset);
   const beforeText = text.substring(0, triggerStart);
 
-  const frag = document.createDocumentFragment();
+  const frag = doc.createDocumentFragment();
   const lines = replacement.split('\n');
   let cursorNode = null, cursorOffsetInNode = 0;
   let consumed = 0;
   lines.forEach((line, idx) => {
-    const textNode = document.createTextNode(line);
+    const textNode = doc.createTextNode(line);
     frag.appendChild(textNode);
     if (cursorMarker >= 0 && cursorNode === null) {
       const lineEndInResolved = consumed + line.length;
@@ -213,18 +215,18 @@ function doExpandInContentEditable(match) {
     }
     consumed += line.length;
     if (idx < lines.length - 1) {
-      frag.appendChild(document.createElement('br'));
+      frag.appendChild(doc.createElement('br'));
     }
   });
 
   node.textContent = beforeText;
-  const afterNode = document.createTextNode(afterText);
+  const afterNode = doc.createTextNode(afterText);
   const parent = node.parentNode;
   const nextSibling = node.nextSibling;
   parent.insertBefore(frag, nextSibling);
   parent.insertBefore(afterNode, nextSibling);
 
-  const newRange = document.createRange();
+  const newRange = doc.createRange();
   if (cursorNode) {
     newRange.setStart(cursorNode, cursorOffsetInNode);
   } else {
@@ -233,10 +235,13 @@ function doExpandInContentEditable(match) {
   newRange.collapse(true);
   sel.removeAllRanges();
   sel.addRange(newRange);
+  // Prévient l'éditeur (TinyMCE, etc.) que le contenu a changé, comme pour un champ texte.
+  const racine = parent.nodeType === Node.ELEMENT_NODE ? parent.closest('[contenteditable]') || parent : null;
+  if (racine) racine.dispatchEvent(new Event('input', { bubbles: true }));
 }
 
-function tryExpandInContentEditable() {
-  const sel = window.getSelection();
+function tryExpandInContentEditable(doc = document) {
+  const sel = doc.getSelection();
   if (!sel || !sel.rangeCount) return;
   const range = sel.getRangeAt(0);
   const node = range.startContainer;
@@ -248,7 +253,7 @@ function tryExpandInContentEditable() {
   const before = text.substring(windowStart, offset);
   const match = findMatch(before);
   if (!match) return;
-  scheduleExpansion(() => doExpandInContentEditable(match));
+  scheduleExpansion(() => doExpandInContentEditable(match, doc));
 }
 
 // ---------- Temporisation ----------
@@ -268,16 +273,71 @@ function scheduleExpansion(fn) {
   }, EXPANSION_DELAY_MS);
 }
 
-document.addEventListener('input', (e) => {
+function surSaisie(e, doc) {
   if (!ACTIVE_SNIPPETS.length) return;
   const el = e.target;
 
   if (el && (el.tagName === 'TEXTAREA' || (el.tagName === 'INPUT' && /^(text|search|email|url)$/i.test(el.type)))) {
     tryExpandInInput(el);
   } else if (el && el.isContentEditable) {
-    tryExpandInContentEditable();
+    tryExpandInContentEditable(doc);
   }
-}, true);
+}
+
+document.addEventListener('input', (e) => surSaisie(e, document), true);
+
+// ---------- Éditeurs riches dans une iframe vide (TinyMCE) ----------
+// Le champ « Remarque » d'Aviso est un éditeur TinyMCE : un <body contenteditable> dans une
+// iframe sans src (about:blank). Chrome n'y injecte pas ce script (pas de match_about_blank),
+// la frappe n'y atteint donc pas le listener ci-dessus. La page parente, de même origine, peut
+// en revanche écouter ce document : on y branche le même listener.
+//
+// Plutôt que match_about_blank : TinyMCE remplit son iframe par document.write, qui efface les
+// listeners du document : on retient le <body> vu au branchement (une réécriture le remplace) et
+// le branchement est refait à chaque occasion : scan Aviso, survol de l'iframe, focus qui y entre.
+// L'ancien listener est retiré avant d'en poser un nouveau, pour ne jamais en avoir deux.
+// Les iframes à src, où ce script tourne déjà (all_frames), sont ignorées : sinon double expansion.
+// (srcdoc non plus n'est pas injecté : l'attribut src est alors absent, l'iframe est donc liée.)
+const editeursLies = new WeakMap(); // document de l'iframe -> { body, ecouteur }
+
+function lierEditeurRiche(iframe) {
+  // Sans src (ou about:, javascript:), Chrome n'injecte pas ce script dans l'iframe. On teste
+  // l'attribut et non l'URL du document : après document.write, celle-ci devient celle de la
+  // page parente.
+  const src = (iframe.getAttribute('src') || '').trim();
+  if (src && !/^(about|javascript):/i.test(src)) return;
+  let doc;
+  try {
+    doc = iframe.contentDocument; // null si l'iframe est d'une autre origine
+  } catch {
+    return;
+  }
+  if (!doc || !doc.body) return;
+  const lie = editeursLies.get(doc);
+  if (lie && lie.body === doc.body) return;
+  if (lie) doc.removeEventListener('input', lie.ecouteur, true);
+  const ecouteur = (e) => surSaisie(e, doc);
+  doc.addEventListener('input', ecouteur, true);
+  editeursLies.set(doc, { body: doc.body, ecouteur });
+}
+
+function lierEditeursRiches(racine = document) {
+  racine.querySelectorAll('iframe').forEach(lierEditeurRiche);
+}
+
+if (isAvisoSite()) {
+  document.addEventListener('mouseover', (e) => {
+    if (e.target && e.target.tagName === 'IFRAME') lierEditeurRiche(e.target);
+  }, true);
+  // Le focus qui passe dans une iframe fait perdre le focus à la fenêtre parente ; l'iframe est
+  // alors l'élément actif (navigation au clavier, focus posé par Aviso à l'ouverture).
+  window.addEventListener('blur', () => {
+    setTimeout(() => {
+      const actif = document.activeElement;
+      if (actif && actif.tagName === 'IFRAME') lierEditeurRiche(actif);
+    }, 0);
+  });
+}
 
 // ---------- Intégration Aviso ----------
 // Sur les tableaux de saisie de rapport (colonnes "Référentiel" / "Dispositions réalisées"),
@@ -1044,6 +1104,7 @@ function scanLiensAffaire() {
 }
 
 function scanAvisoTable() {
+  lierEditeursRiches();
   document.querySelectorAll('td.referentiel.content').forEach(refCell => {
     const tr = refCell.closest('tr');
     const dispoCell = tr && tr.querySelector('td.dispositions');
