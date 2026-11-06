@@ -12,6 +12,7 @@
   - ⚠️ **Le script Apps Script doit être redéployé** (API v4) : tant qu'il ne l'est pas, rien n'est envoyé (sonde `?probe=backup`) et l'envoi est retenté à chaque actualisation. L'onglet `Snippets` n'est pas modifié : il reste en ajout seul
 - **Les snippets fonctionnent dans le champ « Remarque » d'Aviso.** C'est un éditeur TinyMCE, logé dans une iframe sans adresse où Chrome n'injecte pas l'extension : la frappe n'y était pas vue. La page parente écoute désormais ce type d'éditeur, sur Aviso
 - **Infobulle des icônes snippet : plus de ligne vide** entre le titre et le texte du snippet
+- **Nouveau déploiement du script Apps Script** (API v4) : l'adresse par défaut change. Les installations existantes qui utilisaient l'ancienne adresse par défaut basculent sur la nouvelle à la mise à jour ; une adresse saisie à la main dans Paramètres avancés est conservée
 - Aucune permission ajoutée
 
 ## v2.20.4 — 2026-11-04

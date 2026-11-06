@@ -3,7 +3,14 @@
 const SYNC_ALARM = 'snippet-sync';
 const UPDATE_ALARM = 'snippet-update-check';
 const DEFAULT_GITHUB_URL = 'https://raw.githubusercontent.com/yakamatt/Snippets-Expander/main';
-const DEFAULT_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbwlew8sAl_APmmZS5bpedGnSf6Ukn0Tvs3S93BGGwt6pwUMzg1uwfOWq91zEhTUVJG9/exec';
+const DEFAULT_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbzEAXT4ew2XasiZ_e7m9wtalf5f-duBVVI7Apw5z28iPLGjbJU-tujy5dTDYlEvFgDe/exec';
+// Anciennes adresses par défaut du script. Le réglage webAppUrl est enregistré à l'installation et
+// survit aux mises à jour : sans cette liste, les utilisateurs existants resteraient sur l'ancien
+// déploiement, qui sert l'ancien code (pas de sauvegarde du Clausier Personnel avant l'API v4).
+// Une adresse saisie à la main dans Paramètres avancés n'est jamais remplacée.
+const ANCIENNES_WEBAPP_URLS = [
+  'https://script.google.com/macros/s/AKfycbwlew8sAl_APmmZS5bpedGnSf6Ukn0Tvs3S93BGGwt6pwUMzg1uwfOWq91zEhTUVJG9/exec'
+];
 const DEFAULT_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1H2rBzMQzZk74Bk2Z_Mo8lXAdYea7Mi7WfzVruBahd_I/edit';
 
 chrome.runtime.onInstalled.addListener((details) => {
@@ -27,6 +34,7 @@ chrome.runtime.onInstalled.addListener((details) => {
     // La synchro auto toutes les heures est active par défaut : si elle est encore désactivée
     // (valeur héritée d'avant l'introduction de ce défaut), on la (ré)active à chaque installation/mise à jour.
     if (!merged.autoSyncMinutes) merged.autoSyncMinutes = 60;
+    if (ANCIENNES_WEBAPP_URLS.includes(merged.webAppUrl)) merged.webAppUrl = DEFAULT_WEBAPP_URL;
     await chrome.storage.sync.set({ syncSettings: merged });
 
     const { snippets } = await chrome.storage.local.get(['snippets']);
