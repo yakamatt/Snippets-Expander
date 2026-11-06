@@ -99,7 +99,7 @@ function getSheet_() {
   let sheet = ss.getSheetByName(SHEET_NAME);
   if (!sheet) {
     sheet = ss.insertSheet(SHEET_NAME);
-    sheet.appendRow(['trigger', 'content', 'folder']);
+    sheet.appendRow(['trigger', 'content']);
   }
   return sheet;
 }
@@ -155,8 +155,7 @@ function doGet(e) {
     .filter(row => row[0])
     .map(row => ({
       trigger: String(row[0]),
-      content: String(row[1] || ''),
-      folder: String(row[2] || '')
+      content: String(row[1] || '')
     }));
   return json_(snippets);
 }
@@ -200,7 +199,7 @@ function doPost(e) {
       });
     }
 
-    sheet.appendRow([trigger, contenu, String(body.folder || '')]);
+    sheet.appendRow([trigger, contenu]);
     return json_({
       ok: true, created: true, row: sheet.getLastRow(),
       gid: sheet.getSheetId(), sheetUrl: ss.getUrl()
@@ -276,7 +275,9 @@ function sauvegarderClausier_(body) {
 const REVUE_SHEET_NAME = 'Revue';
 const HISTORIQUE_SHEET_NAME = 'Historique';
 const TRAITES_SHEET_NAME = 'Revue_Traités';
-const REVUE_HEADER = ['Type', 'Déclencheur', 'Dossier', 'Texte commun actuel', 'Proposition',
+// Colonnes lues par position dans appliquerDecisions : toute modification de cet en-tête s'y
+// reporte (une revue préparée avec un autre en-tête est refusée, voir plus bas).
+const REVUE_HEADER = ['Type', 'Déclencheur', 'Texte commun actuel', 'Proposition',
   'Utilisateurs', 'Autres variantes', 'Décision', 'Texte final', 'Clé', 'Variantes (JSON)'];
 const DECISION_ADOPTER = 'Adopter';
 const DECISION_IGNORER = 'Ignorer';
@@ -345,8 +346,7 @@ function lireSnippetsCommuns_() {
     communs[cle] = {
       ligne: i + 1,
       trigger: String(lignes[i][0]).trim(),
-      content: String(lignes[i][1] || ''),
-      folder: String(lignes[i][2] || '')
+      content: String(lignes[i][1] || '')
     };
   }
   return communs;
@@ -359,7 +359,7 @@ function preparerRevue() {
 
   // Régénérer efface l'onglet : on ne perd pas sans prévenir des décisions pas encore appliquées.
   const enCours = revue.getLastRow() > 1
-    ? revue.getRange(2, 8, revue.getLastRow() - 1, 1).getValues().filter(r => String(r[0]).trim()).length
+    ? revue.getRange(2, 7, revue.getLastRow() - 1, 1).getValues().filter(r => String(r[0]).trim()).length
     : 0;
   if (enCours && ui.alert('Revue en cours',
     `${enCours} décision(s) de l'onglet « Revue » n'ont pas encore été appliquées. Les effacer en préparant une nouvelle revue ?`,
@@ -398,7 +398,6 @@ function preparerRevue() {
     return [
       commun ? '✏️ Variante' : '🆕 Nouveau',
       commun ? commun.trigger : (g.trigger.charAt(0) === '/' ? g.trigger : '/' + g.trigger),
-      commun ? commun.folder : '',
       commun ? commun.content : '',
       variantes[0].texte,
       variantes.length > 1 ? `${variantes[0].nb} sur ${nbTotal}` : String(nbTotal),
@@ -408,21 +407,25 @@ function preparerRevue() {
       cle,
       JSON.stringify(variantes.map(v => v.texte))
     ];
-  }).sort((a, b) => parseInt(b[5], 10) - parseInt(a[5], 10) || String(a[1]).localeCompare(String(b[1])));
+  }).sort((a, b) => parseInt(b[4], 10) - parseInt(a[4], 10) || String(a[1]).localeCompare(String(b[1])));
 
   revue.clear();
+  // clear() garde les validations et les colonnes masquées : une revue préparée avec un autre
+  // en-tête laisserait sa liste déroulante sur une colonne qui n'est plus « Décision ».
+  revue.getRange(1, 1, revue.getMaxRows(), revue.getMaxColumns()).clearDataValidations();
+  revue.showColumns(1, revue.getMaxColumns());
   revue.getRange(1, 1, 1, REVUE_HEADER.length).setValues([REVUE_HEADER]).setFontWeight('bold');
   revue.setFrozenRows(1);
   if (lignes.length) {
     revue.getRange(2, 1, lignes.length, REVUE_HEADER.length).setValues(lignes);
     const regle = SpreadsheetApp.newDataValidation()
       .requireValueInList([DECISION_ADOPTER, DECISION_IGNORER], true).setAllowInvalid(false).build();
-    revue.getRange(2, 8, lignes.length, 1).setDataValidation(regle);
+    revue.getRange(2, 7, lignes.length, 1).setDataValidation(regle);
     revue.getRange(2, 1, lignes.length, REVUE_HEADER.length).setVerticalAlignment('top').setWrap(true);
   }
-  [110, 110, 90, 320, 320, 90, 280, 100, 320].forEach((l, i) => revue.setColumnWidth(i + 1, l));
-  revue.getRange('I:I').setBackground('#fff8e1'); // la colonne à retoucher
-  revue.hideColumns(10, 2); // clé et variantes : à l'usage d'« Appliquer les décisions »
+  [110, 110, 320, 320, 90, 280, 100, 320].forEach((l, i) => revue.setColumnWidth(i + 1, l));
+  revue.getRange('H:H').setBackground('#fff8e1'); // la colonne à retoucher
+  revue.hideColumns(9, 2); // clé et variantes : à l'usage d'« Appliquer les décisions »
 
   masquerOngletsGarant_();
   revue.showSheet();
@@ -431,8 +434,7 @@ function preparerRevue() {
     lignes.length
       ? `${lignes.length} proposition(s), les plus partagées en premier.\n\n` +
         `Pour chacune, choisissez « ${DECISION_ADOPTER} » ou « ${DECISION_IGNORER} » dans la colonne Décision. ` +
-        `« ${DECISION_ADOPTER} » enregistre la colonne Texte final, pré-remplie avec la proposition : retouchez-la si besoin. ` +
-        `Pour un nouveau déclencheur, indiquez aussi son dossier.\n\nPuis : Clausier > Appliquer les décisions.`
+        `« ${DECISION_ADOPTER} » enregistre la colonne Texte final, pré-remplie avec la proposition : retouchez-la si besoin.\n\nPuis : Clausier > Appliquer les décisions.`
       : 'Aucune nouvelle proposition dans les sauvegardes.',
     ui.ButtonSet.OK);
 }
@@ -443,6 +445,14 @@ function appliquerDecisions() {
   const revue = ss.getSheetByName(REVUE_SHEET_NAME);
   if (!revue || revue.getLastRow() < 2) {
     ui.alert('Rien à appliquer', 'Préparez d\'abord la revue : Clausier > Préparer la revue.', ui.ButtonSet.OK);
+    return;
+  }
+
+  const entete = revue.getRange(1, 1, 1, REVUE_HEADER.length).getValues()[0];
+  if (entete.join('|') !== REVUE_HEADER.join('|')) {
+    ui.alert('Revue à refaire',
+      'L\'onglet « Revue » a été préparé par une version précédente du script : ses colonnes ne ' +
+      'correspondent plus. Préparez à nouveau la revue (Clausier > Préparer la revue).', ui.ButtonSet.OK);
     return;
   }
 
@@ -464,26 +474,26 @@ function appliquerDecisions() {
     const memoire = [];
 
     lignes.forEach((r, i) => {
-      const decision = String(r[7]).trim();
+      const decision = String(r[6]).trim();
       if (!decision) return;
       const trigger = String(r[1]).trim();
-      const cle = String(r[9]);
-      const variantes = JSON.parse(String(r[10] || '[]'));
+      const cle = String(r[8]);
+      const variantes = JSON.parse(String(r[9] || '[]'));
 
       if (decision === DECISION_ADOPTER) {
-        const texte = String(r[8] || '').trim();
+        const texte = String(r[7] || '').trim();
         if (!texte) { bilan.ecartes.push(`${trigger} : Texte final vide`); return; }
         const commun = communs[cle];
         if (String(r[0]).indexOf('Nouveau') >= 0) {
           if (commun) { bilan.ecartes.push(`${trigger} : ajouté au Clausier Commun depuis la revue, à revoir`); return; }
-          sheet.appendRow([trigger, texte, String(r[2] || '')]);
-          communs[cle] = { ligne: sheet.getLastRow(), trigger, content: texte, folder: String(r[2] || '') };
+          sheet.appendRow([trigger, texte]);
+          communs[cle] = { ligne: sheet.getLastRow(), trigger, content: texte };
           bilan.ajoutes++;
         } else {
           if (!commun) { bilan.ecartes.push(`${trigger} : n'existe plus dans le Clausier Commun`); return; }
           // Modifié dans "Snippets" depuis la préparation : on ne remplace pas un texte que la
           // revue n'a pas montré.
-          if (texteNormalise_(commun.content) !== texteNormalise_(r[3])) {
+          if (texteNormalise_(commun.content) !== texteNormalise_(r[2])) {
             bilan.ecartes.push(`${trigger} : texte commun modifié depuis la préparation de la revue`);
             return;
           }

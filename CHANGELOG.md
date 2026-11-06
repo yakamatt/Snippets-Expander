@@ -1,5 +1,10 @@
 # Changelog — Snippet Expander
 
+## Script Google Sheets — 2026-11-07
+*`Code.gs` seul, sans nouvelle version de l'extension : à recoller dans l'éditeur Apps Script.*
+- **Plus de colonne « folder » dans l'onglet `Snippets`.** L'extension ne s'en servait plus depuis la v2.18.0 (plus d'affichage par dossier dans les Paramètres). Le script ne la lit plus, ne l'écrit plus, et un tableau neuf ne la crée plus ; elle peut être supprimée du tableau sans effet. La colonne « Dossier » de l'onglet `Revue` disparaît aussi
+- Une revue préparée avec l'ancien script (11 colonnes) est refusée à l'application, avec un message invitant à la préparer de nouveau : ses colonnes ne correspondent plus
+
 ## v2.21.0 — 2026-11-06
 - **Tutoriel visuel en 8 étapes**, ouvert dans un onglet à l'installation initiale seulement (jamais à une mise à jour). Il présente l'expansion au clavier (avec une démonstration animée), les deux clausiers, les icônes d'Aviso, DatAviso AI, les liens d'affaire et le popup. Les visuels sont des maquettes HTML avec les vraies icônes de l'extension. La dernière étape invite à partager le lien d'installation. Il remplace l'ouverture des Paramètres à l'installation
 - **Lien « 🎓 Tutoriel » en haut du popup** pour le revoir à tout moment
