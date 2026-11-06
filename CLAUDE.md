@@ -5,7 +5,8 @@ l'application **Aviso** (contrôle technique bâtiment). Deux sources de snippet
 
 - le **Clausier Commun** : un Google Sheets partagé, lu par l'extension (clé `snippets`) ;
 - le **Clausier Personnel** : propre à chaque utilisateur, dans `chrome.storage.local` (clé
-  `localSnippets`). À déclencheur égal, il l'emporte au clavier (`rebuildActiveSnippets`).
+  `localSnippets`). À déclencheur égal, il l'emporte au clavier (`rebuildActiveSnippets`). Une
+  copie anonyme part dans l'onglet `Local_Snippets_Backup` du même classeur (voir Apps Script).
 
 JavaScript natif, aucune dépendance, **aucune étape de build**. Pas de `node` sur cette machine :
 la vérification est manuelle dans Chrome (`chrome://extensions` > « Charger l'extension non
@@ -17,13 +18,15 @@ jamais avoir « testé », dis ce que tu as vérifié et comment.
 | Fichier | Rôle |
 |---|---|
 | `manifest.json` | MV3. La version y est la source de vérité, à monter avec le CHANGELOG |
-| `content.js` | Expansion de texte sur toute page **et** toute l'intégration Aviso, fenêtre d'édition du Clausier Personnel comprise (le plus gros fichier : 853 lignes) |
+| `content.js` | Expansion de texte sur toute page **et** toute l'intégration Aviso, fenêtre d'édition du Clausier Personnel comprise (le plus gros fichier : ~1 150 lignes) |
 | `imported-data.js` | Parseur des données « DatAviso AI » (fichier `.txt`) |
 | `clausier-fichiers.js` | Import/export du Clausier Personnel en `.xlsx` et `.csv`, zip et XML écrits à la main |
 | `sitesecurite-articles.js` | Table des articles ERP → URL sitesecurite.com |
-| `background.js` | Service worker : synchro Sheets, alarmes, vérification de MAJ GitHub |
+| `background.js` | Service worker : synchro Sheets, sauvegarde du Clausier Personnel, ouverture du tutoriel, alarmes, vérification de MAJ GitHub |
 | `options.js/html/css` | Page Paramètres : Clausier Personnel, DatAviso AI, paramètres avancés |
-| `popup.js/html/css` | Popup de l'icône : liens vers les deux clausiers, import DatAviso AI, formulaire de retour |
+| `popup.js/html/css` | Popup de l'icône : lien du tutoriel, liens vers les deux clausiers, import DatAviso AI, formulaire de retour, partage |
+| `tutoriel.js/html/css` | Tutoriel visuel en étapes : maquettes HTML avec les vraies icônes, pas de captures d'écran |
+| `partage.js` | Lien d'installation du Store à copier ou envoyer, partagé par le popup et le tutoriel |
 | `google-apps-script/Code.gs` | Mini-API côté Sheets. **Copie de référence** : le code qui tourne vit dans l'éditeur Apps Script, ce fichier ne se déploie pas tout seul |
 
 ## Invariants — à ne jamais casser
@@ -31,14 +34,17 @@ jamais avoir « testé », dis ce que tu as vérifié et comment.
 Chacun vient d'un incident réel. Les commentaires du code expliquent le pourquoi : lis-les avant
 de « simplifier ».
 
-1. **Le Google Sheets fait autorité, et l'extension n'y écrit plus.** Depuis la v2.18.0, le « + »
-   crée le snippet dans le Clausier Personnel. `createSnippetRow` (background.js) est conservé
+1. **Le Google Sheets fait autorité, et l'extension n'écrit plus dans l'onglet `Snippets`.** Depuis
+   la v2.18.0, le « + » crée le snippet dans le Clausier Personnel. Sa seule écriture est la
+   sauvegarde anonyme, confinée à l'onglet `Local_Snippets_Backup`. `createSnippetRow` (background.js) est conservé
    mais sans appelant ; s'il est rebranché, il reste en ajout seul : jamais de suppression,
    jamais de remplacement d'un contenu non vide.
-2. **`doPost` reste en ajout seul.** Une version ancienne faisait `clearContents()` puis
-   réécrivait : un POST vers un script non redéployé a réellement vidé le tableau (v2.15.0).
-3. **Sonder avant d'écrire.** `verifierApiAjout()` fait un GET `?probe=append` et n'émet le POST
-   que si la signature revient. Un ancien script répond un tableau — `Array.isArray` le démasque.
+2. **`doPost` reste en ajout seul sur l'onglet `Snippets`.** Une version ancienne faisait
+   `clearContents()` puis réécrivait : un POST vers un script non redéployé a réellement vidé le
+   tableau (v2.15.0). Seul `sauvegarderClausier_` met à jour des lignes, et uniquement dans
+   `Local_Snippets_Backup` (une ligne par couple `Ref_User` + déclencheur), jamais ailleurs.
+3. **Sonder avant d'écrire.** `verifierApiAjout()` fait un GET `?probe=append`, la sauvegarde un
+   GET `?probe=backup`, et le POST n'est émis que si la signature revient. Un ancien script répond un tableau — `Array.isArray` le démasque.
 4. **Une synchro ne remplace jamais des snippets par un tableau vide** (`pullFromSheet`). La copie
    locale est conservée et un bandeau s'affiche dans les Paramètres. La synchro ne touche jamais
    au Clausier Personnel.
@@ -54,8 +60,12 @@ de « simplifier ».
    refusée pour `activeTab`, demandée mais jamais appelée. `host_permissions` liste les seuls
    hôtes contactés par `fetch` ; ajouter un hôte ou une API, c'est d'abord l'ajouter au manifeste
    et à la justification « Privacy practices » (README, section 6 d).
-8. **Le Clausier Personnel ne vit que dans le navigateur.** Une désinstallation l'efface : l'export
-   est sa seule sauvegarde. Un import ne remplace jamais un snippet existant sans accord (fenêtre
+8. **Le Clausier Personnel ne se restaure que par l'export.** Il vit dans le navigateur, une
+   désinstallation l'efface. La copie anonyme du Sheets n'est **jamais relue** par l'extension :
+   c'est une matière pour enrichir le Clausier Commun, pas une sauvegarde. Elle reste
+   désactivable (`sauvegardeClausier`), ne transmet ni nom ni adresse (`refUser` aléatoire dans
+   `storage.sync`), et ne part qu'avec la synchro (empreintes `backupEmpreintes` : seul ce qui
+   a changé est envoyé, un échec est retenté). Un import ne remplace jamais un snippet existant sans accord (fenêtre
    de conflit), et n'écrit rien avant la fin.
 
 ## Intégration Aviso
@@ -96,18 +106,32 @@ Les icônes s'insèrent dans la cellule « Dispositions réalisées », dans l'o
   de `#metier_header_selector`, dont le parent est en flex `row-reverse` — le côté d'insertion
   suit le sens réel d'affichage. Repli après `#cur_plan_aff` si le sélecteur est absent.
   Un réglage par lien (`lienSgo`, `lienSharepoint`, `lienExplorateur`, actifs par défaut).
+- **Champ « Remarque »** : un éditeur TinyMCE dans une iframe sans `src`, que Chrome n'injecte
+  pas et que TinyMCE remplit par `document.write` (qui efface les listeners et donne à l'iframe
+  l'URL de la page). `lierEditeurRiche` y branche depuis la page parente le listener de saisie,
+  rebranché au scan, au survol et au focus. Le critère est l'**attribut** `src` absent, jamais
+  l'URL du document. Ne pas ajouter `match_about_blank` : l'expansion s'y ferait deux fois.
 - L'intégration est toujours active sur Aviso (le réglage « Intégration Aviso » a été retiré en
   v2.18.0) et sans effet ailleurs (`isAvisoSite`).
 
 ## Apps Script
 
-`API_VERSION` dans `Code.gs` (v3 aujourd'hui) est la poignée de main avec l'extension. Après
+`API_VERSION` dans `Code.gs` (v4 aujourd'hui) est la poignée de main avec l'extension. Après
 **toute** modification : Déployer > Gérer les déploiements > crayon > **« Nouvelle version »**.
 Choisir « Version la plus récente » laisse l'ancien code en service — c'est l'erreur classique, le
 guide complet est en commentaire en tête de `Code.gs`.
 
 Quand tu touches au contrat du POST, prévois toujours le script resté en version précédente :
 **dégrader, jamais casser** (la ligne se crée sans contenu, le tableau s'ouvre quand même).
+
+## Tutoriel
+
+- Ouvert par `ouvrirTutorielSiNouveau` (background.js) à l'installation, et à une mise à jour si
+  `tutorielVu` < `TUTORIEL_VERSION`. Marqué vu dès l'ouverture : il ne se rouvre pas s'il est fermé.
+- **À chaque version destinée au Chrome Web Store, mettre le tutoriel à jour** avec ce qui change
+  pour l'utilisateur (étapes, maquettes, icônes). Il n'y a pas de page de notes de mise à jour :
+  pour annoncer des nouveautés à tous, on incrémente `TUTORIEL_VERSION`, après avoir demandé
+  quoi mettre en avant.
 
 ## Conventions de travail
 

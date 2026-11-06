@@ -1,4 +1,4 @@
-// background.js — récupération en lecture seule depuis Google Sheets, ouverture des options, vérification de mise à jour
+// background.js — récupération du Clausier Commun, sauvegarde du Clausier Personnel, tutoriel, vérification de mise à jour
 
 const SYNC_ALARM = 'snippet-sync';
 const UPDATE_ALARM = 'snippet-update-check';
@@ -20,7 +20,8 @@ chrome.runtime.onInstalled.addListener((details) => {
       sheetUrl: DEFAULT_SHEET_URL,
       autoSyncMinutes: 60,
       expansionDelayMs: 500,
-      autoCheckUpdates: true
+      autoCheckUpdates: true,
+      sauvegardeClausier: true
     };
     const merged = { ...defaults, ...(syncSettings || {}) };
     // La synchro auto toutes les heures est active par défaut : si elle est encore désactivée
@@ -35,8 +36,19 @@ chrome.runtime.onInstalled.addListener((details) => {
       // Première installation : importe les snippets partagés AVANT d'ouvrir les paramètres
       // (pour inciter à épingler l'extension), afin que la page affiche déjà les snippets dès son ouverture.
       await pullFromSheet().catch(() => {});
-      chrome.runtime.openOptionsPage();
     }
+
+    // Tutoriel : à la première installation, et à la mise à jour pour qui ne l'a pas encore vu
+    // dans sa version actuelle (tous les utilisateurs d'avant la v2.21.0). Il remplace
+    // l'ouverture des Paramètres et invite lui-même à épingler l'extension.
+    if (details.reason === 'install' || details.reason === 'update') {
+      await ouvrirTutorielSiNouveau();
+    }
+
+    // Première sauvegarde du Clausier Personnel dès l'installation de la mise à jour, sans
+    // attendre l'alarme : c'est elle qui récupère les snippets locaux déjà existants.
+    await sauvegarderClausierPersonnel()
+      .catch(e => console.error('[Snippet Expander] Sauvegarde du Clausier Personnel :', e.message));
 
     scheduleAlarms();
   })();
@@ -72,7 +84,7 @@ function scheduleAlarms() {
 // simple "Failed to fetch" devenait une promesse rejetée non gérée ("Uncaught (in promise)").
 chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name === SYNC_ALARM) {
-    pullFromSheet().catch(e => console.error('[Snippet Expander] Échec de la synchro automatique :', e.message));
+    synchroniser().catch(e => console.error('[Snippet Expander] Échec de la synchro automatique :', e.message));
   }
   if (alarm.name === UPDATE_ALARM) {
     checkForUpdates().catch(e => console.error('[Snippet Expander] Échec de la vérification de mise à jour :', e.message));
@@ -117,6 +129,110 @@ async function pullFromSheet() {
 
   await chrome.storage.local.set({ snippets, lastSync: new Date().toISOString(), syncWarning: null });
   return snippets;
+}
+
+// Synchro complète : récupération du Clausier Commun, puis sauvegarde du Clausier Personnel, à
+// la même fréquence. La sauvegarde a lieu même si la récupération échoue (et inversement) : les
+// deux sont indépendantes, seule l'erreur de récupération est renvoyée à l'appelant.
+async function synchroniser() {
+  try {
+    return await pullFromSheet();
+  } finally {
+    await sauvegarderClausierPersonnel()
+      .catch(e => console.error('[Snippet Expander] Sauvegarde du Clausier Personnel :', e.message));
+  }
+}
+
+// ---------- Tutoriel ----------
+// À incrémenter quand le tutoriel change assez pour être remontré à tous : c'est aussi le moyen
+// d'annoncer des nouveautés (il n'y a pas de page « notes de mise à jour » séparée).
+const TUTORIEL_VERSION = 1;
+
+async function ouvrirTutorielSiNouveau() {
+  const { tutorielVu } = await chrome.storage.local.get(['tutorielVu']);
+  if ((tutorielVu || 0) >= TUTORIEL_VERSION) return;
+  // Marqué vu dès l'ouverture : un onglet fermé sans aller au bout ne se rouvre pas.
+  await chrome.storage.local.set({ tutorielVu: TUTORIEL_VERSION });
+  chrome.tabs.create({ url: chrome.runtime.getURL('tutoriel.html') });
+}
+
+// ---------- Sauvegarde du Clausier Personnel ----------
+// Copie anonyme des snippets locaux dans l'onglet "Local_Snippets_Backup" du Google Sheets, pour
+// enrichir le Clausier Commun. Ce n'est pas une sauvegarde restaurable : l'extension ne relit
+// jamais cet onglet, l'export reste la copie personnelle de l'utilisateur.
+//
+// Seuls les snippets ajoutés ou modifiés depuis la dernière sauvegarde réussie partent : on garde
+// une empreinte du contenu envoyé par déclencheur (backupEmpreintes). Comparer à l'état stocké
+// plutôt que d'intercepter chaque écriture couvre d'un coup l'édition sur Aviso, les Paramètres,
+// l'import, et les snippets antérieurs à cette fonction (aucune empreinte : tout part la première
+// fois). Un échec ne met pas les empreintes à jour : l'envoi est retenté à la synchro suivante.
+const SAUVEGARDE_LOT = 200;
+
+function empreinte(texte) {
+  // FNV-1a 32 bits : il ne s'agit que de détecter un changement, pas de sécurité.
+  let h = 0x811c9dc5;
+  for (let i = 0; i < texte.length; i++) {
+    h ^= texte.charCodeAt(i);
+    h = Math.imul(h, 0x01000193) >>> 0;
+  }
+  return h.toString(16);
+}
+
+async function refUtilisateur() {
+  // Identifiant aléatoire, sans lien avec le compte : stocké dans storage.sync pour rester le
+  // même sur tous les postes de l'utilisateur.
+  const { refUser } = await chrome.storage.sync.get(['refUser']);
+  if (refUser) return refUser;
+  const nouveau = crypto.randomUUID();
+  await chrome.storage.sync.set({ refUser: nouveau });
+  return nouveau;
+}
+
+async function sauvegarderClausierPersonnel() {
+  const { syncSettings } = await chrome.storage.sync.get(['syncSettings']);
+  const settings = syncSettings || {};
+  if (settings.sauvegardeClausier === false || !settings.webAppUrl) return;
+
+  const { localSnippets, backupEmpreintes } = await chrome.storage.local.get(['localSnippets', 'backupEmpreintes']);
+  const liste = (localSnippets || []).filter(s => s && s.trigger);
+  const empreintes = {};
+  // Les déclencheurs supprimés sont oubliés : recréés plus tard, ils repartiront.
+  liste.forEach(s => {
+    if (backupEmpreintes && backupEmpreintes[s.trigger]) empreintes[s.trigger] = backupEmpreintes[s.trigger];
+  });
+  const aEnvoyer = liste.filter(s => empreintes[s.trigger] !== empreinte(String(s.content || '')));
+  if (!aEnvoyer.length) {
+    await chrome.storage.local.set({ backupEmpreintes: empreintes });
+    return;
+  }
+
+  // Même garde-fou que le "+" : rien n'est posté à un script qui ne se déclare pas compatible.
+  const sonde = settings.webAppUrl + (settings.webAppUrl.includes('?') ? '&' : '?') + 'probe=backup';
+  let signature;
+  try {
+    signature = await (await fetch(sonde, { cache: 'no-store' })).json();
+  } catch {
+    throw new Error('Script Google Sheets injoignable ou réponse illisible');
+  }
+  if (Array.isArray(signature) || !signature || signature.api !== 'backup') {
+    throw new Error('Script Google Sheets sans sauvegarde (à redéployer en "Nouvelle version") : envoi reporté');
+  }
+
+  const refUser = await refUtilisateur();
+  for (let i = 0; i < aEnvoyer.length; i += SAUVEGARDE_LOT) {
+    const lot = aEnvoyer.slice(i, i + SAUVEGARDE_LOT)
+      .map(s => ({ trigger: s.trigger, content: String(s.content || '') }));
+    const res = await fetch(settings.webAppUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'backup', refUser, snippets: lot })
+    });
+    const data = res.ok ? await res.json().catch(() => null) : null;
+    if (!data || !data.ok) throw new Error((data && data.error) || `Sauvegarde refusée (${res.status})`);
+    // Enregistré lot par lot : un échec au milieu ne renvoie pas ce qui est déjà passé.
+    lot.forEach(s => { empreintes[s.trigger] = empreinte(s.content); });
+    await chrome.storage.local.set({ backupEmpreintes: empreintes, lastBackup: new Date().toISOString() });
+  }
 }
 
 // ---------- Création d'un snippet dans le Google Sheets ----------
@@ -236,7 +352,7 @@ function compareVersions(a, b) {
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg.type === 'PULL_FROM_SHEET') {
-    pullFromSheet().then(merged => sendResponse({ ok: true, merged })).catch(e => sendResponse({ ok: false, error: e.message }));
+    synchroniser().then(merged => sendResponse({ ok: true, merged })).catch(e => sendResponse({ ok: false, error: e.message }));
     return true;
   }
   if (msg.type === 'RESCHEDULE_ALARM') {

@@ -41,7 +41,8 @@
         </div>
       </div>
       <p class="hint">Vos propres snippets. Au clavier, un snippet personnel l'emporte sur celui du Clausier Commun de même déclencheur ; sur Aviso, il s'insère avec l'icône jaune, et le crayon jaune à côté permet de le modifier sans quitter la page.</p>
-      <p class="hint local-warning">⚠️ Ils sont enregistrés <strong>dans ce navigateur uniquement</strong> : ils ne sont ni partagés, ni sauvegardés en ligne, et désinstaller l'extension les efface. Exportez-les régulièrement.</p>
+      <p class="hint local-warning">⚠️ Ils sont enregistrés <strong>dans ce navigateur</strong> : désinstaller l'extension les efface. Pour garder votre copie, <strong>exportez-les régulièrement</strong> — c'est la seule façon de les retrouver.</p>
+      <p class="hint">🛟 Une copie <strong>anonyme</strong> de vos snippets est aussi envoyée au tableau du Clausier Commun, à chaque actualisation, pour l'enrichir des formulations utiles à tous. Elle ne permet pas de les restaurer. Désactivable dans Paramètres avancés.</p>
       <div class="button-row">
         <label class="file-label" for="local-import-file">📥 Importer un fichier (.xlsx, .csv)</label>
         <input type="file" id="local-import-file" accept=".xlsx,.csv,.xls,text/csv" hidden />
@@ -145,6 +146,15 @@
             <div class="inline-input">
               <input type="number" id="autosync-minutes" min="0" max="1440" step="5" value="60" /> min
             </div>
+          </div>
+        </div>
+
+        <div class="advanced-block">
+          <h3>Sauvegarde anonyme du Clausier Personnel</h3>
+          <p class="hint">À chaque actualisation, les snippets personnels ajoutés ou modifiés sont copiés dans l'onglet « Local_Snippets_Backup » du tableau du Clausier Commun, avec un identifiant aléatoire à la place de votre nom. Ils servent à améliorer le Clausier Commun ; supprimer un snippet ne le retire pas de cette copie.</p>
+          <div class="row-between">
+            <label for="sauvegarde-clausier">Partager une copie anonyme de mon Clausier Personnel</label>
+            <input type="checkbox" id="sauvegarde-clausier" checked />
           </div>
         </div>
 
