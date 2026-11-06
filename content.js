@@ -437,7 +437,7 @@ function insertAvisoSnippetButton(container, dispoCell, snippet, className, icon
   // {date}/{time}, que resolveContent remplace par l'instant présent.
   const majTitre = () => {
     const texte = resolveContent(snippet.content);
-    btn.title = `${libelle} "${snippet.trigger}" :\n\n${tronquerPourInfobulle(texte)}`;
+    btn.title = `${libelle} "${snippet.trigger}" :\n${tronquerPourInfobulle(texte)}`;
   };
   majTitre();
   btn.addEventListener('mouseenter', majTitre);
