@@ -88,14 +88,27 @@ document.getElementById('refresh-btn').addEventListener('click', () => {
       statusEl.textContent = '❌ Erreur : ' + chrome.runtime.lastError.message;
       return;
     }
-    if (resp && resp.ok) {
-      load();
-      statusEl.textContent = '✅ Données actualisées.';
-    } else {
-      statusEl.textContent = '❌ Erreur : ' + (resp && resp.error);
-    }
+    const commun = resp && resp.ok
+      ? '✅ Clausier Commun actualisé.'
+      : '❌ Clausier Commun : ' + (resp && resp.error);
+    if (resp && resp.ok) load();
+    const sauvegarde = texteSauvegarde(resp && resp.sauvegarde);
+    statusEl.textContent = sauvegarde ? `${commun}  ${sauvegarde}` : commun;
   });
 });
+
+// Résultat de la sauvegarde anonyme du Clausier Personnel, lancée par le même bouton.
+function texteSauvegarde(s) {
+  if (!s) return '';
+  if (!s.ok) return '⚠️ Sauvegarde du Clausier Personnel en attente : ' + s.error;
+  const n = s.envoyes;
+  switch (s.statut) {
+    case 'envoyee': return `🛟 ${n} snippet${n > 1 ? 's' : ''} personnel${n > 1 ? 's' : ''} sauvegardé${n > 1 ? 's' : ''}.`;
+    case 'a-jour': return '🛟 Clausier Personnel déjà sauvegardé, rien de nouveau à envoyer.';
+    case 'desactivee': return '🛟 Sauvegarde du Clausier Personnel désactivée (Paramètres avancés).';
+    default: return '';
+  }
+}
 
 function escapeHtml(str) {
   const div = document.createElement('div');

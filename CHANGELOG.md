@@ -8,6 +8,7 @@
   - Une seule ligne par utilisateur et par déclencheur : la version modifiée remplace la précédente. Le même déclencheur peut exister chez plusieurs utilisateurs. Supprimer un snippet ne le retire pas de la sauvegarde
   - Ce n'est pas une restauration : l'extension ne relit jamais cet onglet, l'export reste la copie personnelle de l'utilisateur, et les Paramètres y incitent
   - Désactivable dans Paramètres avancés > Sauvegarde anonyme du Clausier Personnel
+  - Le bouton « 🔄 Forcer l'actualisation du Clausier Commun » lance aussi la sauvegarde et en affiche le résultat : nombre de snippets envoyés, « déjà sauvegardé », ou la raison d'une sauvegarde en attente (script pas encore redéployé, par exemple)
   - ⚠️ **Le script Apps Script doit être redéployé** (API v4) : tant qu'il ne l'est pas, rien n'est envoyé (sonde `?probe=backup`) et l'envoi est retenté à chaque actualisation. L'onglet `Snippets` n'est pas modifié : il reste en ajout seul
 - **Les snippets fonctionnent dans le champ « Remarque » d'Aviso.** C'est un éditeur TinyMCE, logé dans une iframe sans adresse où Chrome n'injecte pas l'extension : la frappe n'y était pas vue. La page parente écoute désormais ce type d'éditeur, sur Aviso
 - **Infobulle des icônes snippet : plus de ligne vide** entre le titre et le texte du snippet

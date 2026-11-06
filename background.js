@@ -191,7 +191,8 @@ async function refUtilisateur() {
 async function sauvegarderClausierPersonnel() {
   const { syncSettings } = await chrome.storage.sync.get(['syncSettings']);
   const settings = syncSettings || {};
-  if (settings.sauvegardeClausier === false || !settings.webAppUrl) return;
+  if (settings.sauvegardeClausier === false) return { statut: 'desactivee', envoyes: 0 };
+  if (!settings.webAppUrl) return { statut: 'sans-tableau', envoyes: 0 };
 
   const { localSnippets, backupEmpreintes } = await chrome.storage.local.get(['localSnippets', 'backupEmpreintes']);
   const liste = (localSnippets || []).filter(s => s && s.trigger);
@@ -203,7 +204,7 @@ async function sauvegarderClausierPersonnel() {
   const aEnvoyer = liste.filter(s => empreintes[s.trigger] !== empreinte(String(s.content || '')));
   if (!aEnvoyer.length) {
     await chrome.storage.local.set({ backupEmpreintes: empreintes });
-    return;
+    return { statut: liste.length ? 'a-jour' : 'vide', envoyes: 0 };
   }
 
   // Même garde-fou que le "+" : rien n'est posté à un script qui ne se déclare pas compatible.
@@ -233,6 +234,7 @@ async function sauvegarderClausierPersonnel() {
     lot.forEach(s => { empreintes[s.trigger] = empreinte(s.content); });
     await chrome.storage.local.set({ backupEmpreintes: empreintes, lastBackup: new Date().toISOString() });
   }
+  return { statut: 'envoyee', envoyes: aEnvoyer.length };
 }
 
 // ---------- Création d'un snippet dans le Google Sheets ----------
@@ -351,8 +353,26 @@ function compareVersions(a, b) {
 // ---------- Messages depuis options.js ----------
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+  // Bouton « Forcer l'actualisation » des Paramètres : même enchaînement que synchroniser(), mais
+  // le résultat de la sauvegarde est renvoyé à part, pour être affiché sous le bouton (c'est là
+  // qu'on voit si le script Apps Script a bien été redéployé).
   if (msg.type === 'PULL_FROM_SHEET') {
-    synchroniser().then(merged => sendResponse({ ok: true, merged })).catch(e => sendResponse({ ok: false, error: e.message }));
+    (async () => {
+      const reponse = {};
+      try {
+        reponse.merged = await pullFromSheet();
+        reponse.ok = true;
+      } catch (e) {
+        reponse.ok = false;
+        reponse.error = e.message;
+      }
+      try {
+        reponse.sauvegarde = { ok: true, ...(await sauvegarderClausierPersonnel()) };
+      } catch (e) {
+        reponse.sauvegarde = { ok: false, error: e.message };
+      }
+      sendResponse(reponse);
+    })();
     return true;
   }
   if (msg.type === 'RESCHEDULE_ALARM') {
