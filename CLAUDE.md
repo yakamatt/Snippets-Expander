@@ -22,7 +22,7 @@ jamais avoir « testé », dis ce que tu as vérifié et comment.
 | `imported-data.js` | Parseur des données « DatAviso AI » (fichier `.txt`) |
 | `clausier-fichiers.js` | Import/export du Clausier Personnel en `.xlsx` et `.csv`, zip et XML écrits à la main |
 | `sitesecurite-articles.js` | Table des articles ERP → URL sitesecurite.com |
-| `background.js` | Service worker : synchro Sheets, sauvegarde du Clausier Personnel, ouverture du tutoriel, alarmes, vérification de MAJ GitHub |
+| `background.js` | Service worker : synchro Sheets, sauvegarde du Clausier Personnel, statistiques d'utilisation, ouverture du tutoriel, alarmes, vérification de MAJ GitHub |
 | `options.js/html/css` | Page Paramètres : Clausier Personnel, DatAviso AI, paramètres avancés |
 | `popup.js/html/css` | Popup de l'icône : lien du tutoriel, liens vers les deux clausiers, import DatAviso AI, formulaire de retour, partage |
 | `tutoriel.js/html/css` | Tutoriel visuel en étapes : maquettes HTML avec les vraies icônes, pas de captures d'écran |
@@ -72,6 +72,13 @@ de « simplifier ».
    `storage.sync`), et ne part qu'avec la synchro (empreintes `backupEmpreintes` : seul ce qui
    a changé est envoyé, un échec est retenté). Un import ne remplace jamais un snippet existant sans accord (fenêtre
    de conflit), et n'écrit rien avant la fin.
+9. **Les statistiques ne comptent que la nature d'un usage.** Une clé de `STATS_CLES`
+   (background.js) par fonction, jamais un texte, une adresse, un déclencheur ni une donnée
+   d'Aviso. Tout passe par le message `STAT` et la file `fileStats`, sous réserve de
+   `statistiquesUtilisation`. L'envoi porte les **totaux** du jour et le script remplace la ligne
+   (`Ref_User` + date) : ne jamais envoyer d'écart, un renvoi compterait double. Une nouvelle
+   fonction comptée = une clé dans `STATS_CLES`, un libellé dans `STATS_LIBELLES` (Code.gs), et
+   la liste de PRIVACY.md si sa nature change.
 
 ## Intégration Aviso
 
@@ -121,7 +128,7 @@ Les icônes s'insèrent dans la cellule « Dispositions réalisées », dans l'o
 
 ## Apps Script
 
-`API_VERSION` dans `Code.gs` (v4 aujourd'hui) est la poignée de main avec l'extension. Après
+`API_VERSION` dans `Code.gs` (v5 aujourd'hui) est la poignée de main avec l'extension. Après
 **toute** modification : Déployer > Gérer les déploiements > crayon > **« Nouvelle version »**.
 Choisir « Version la plus récente » laisse l'ancien code en service — c'est l'erreur classique, le
 guide complet est en commentaire en tête de `Code.gs`.
@@ -129,7 +136,11 @@ guide complet est en commentaire en tête de `Code.gs`.
 Le menu **Clausier** (`onOpen`, `preparerRevue`, `appliquerDecisions`) s'exécute dans le tableau
 avec le code enregistré, sans redéploiement. Il rapproche les déclencheurs par `cleDeclencheur_`
 (casse, espaces et préfixe ignorés) ; les onglets du garant (`Local_Snippets_Backup`,
-`Historique`, `Revue_Traités`) restent masqués — masquer n'est pas protéger.
+`Statistiques`, `Historique`, `Revue_Traités`) restent masqués — masquer n'est pas protéger.
+Régénérer la revue reporte décisions et « Texte final » retouchés (`lireRevueEnCours_`, colonnes
+lues par nom) : le travail du garant ne se perd jamais sans confirmation.
+« Synthèse des statistiques » lit `Statistiques`, dont les lignes de plus de 24 mois sont
+purgées au plus une fois par jour, au fil des envois (`purgerStatistiques_`).
 
 Quand tu touches au contrat du POST, prévois toujours le script resté en version précédente :
 **dégrader, jamais casser** (la ligne se crée sans contenu, le tableau s'ouvre quand même).

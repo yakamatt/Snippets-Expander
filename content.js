@@ -111,6 +111,21 @@ chrome.storage.onChanged.addListener((changes, area) => {
   }
 });
 
+// Statistiques d'utilisation : signale au service worker qu'une fonction a servi. Seule la nature
+// de l'usage part (voir STATS_CLES dans background.js), jamais le texte, la page ni le snippet.
+// Après une mise à jour de l'extension, l'ancien script de contenu n'a plus de service worker à
+// qui parler : l'appel échoue, on l'ignore.
+function compterUsage(cle) {
+  try {
+    chrome.runtime.sendMessage({ type: 'STAT', cle }, () => void chrome.runtime.lastError);
+  } catch { /* contexte de l'extension invalidé */ }
+}
+
+function compterExpansion(match) {
+  compterUsage(LOCAL_SNIPPETS.includes(match) ? 'clavier_perso' : 'clavier_commun');
+  if (!isAvisoSite()) compterUsage('clavier_hors_aviso');
+}
+
 function resolveContent(text) {
   const now = new Date();
   return text
@@ -162,6 +177,7 @@ function doExpandInInput(el, match) {
   }
   el.setSelectionRange(newPos, newPos);
   el.dispatchEvent(new Event('input', { bubbles: true }));
+  compterExpansion(match);
 }
 
 function tryExpandInInput(el) {
@@ -238,6 +254,7 @@ function doExpandInContentEditable(match, doc = document) {
   // Prévient l'éditeur (TinyMCE, etc.) que le contenu a changé, comme pour un champ texte.
   const racine = parent.nodeType === Node.ELEMENT_NODE ? parent.closest('[contenteditable]') || parent : null;
   if (racine) racine.dispatchEvent(new Event('input', { bubbles: true }));
+  compterExpansion(match);
 }
 
 function tryExpandInContentEditable(doc = document) {
@@ -506,6 +523,7 @@ function insertAvisoSnippetButton(container, dispoCell, snippet, className, icon
     e.preventDefault();
     e.stopPropagation();
     appendAvisoSnippet(dispoCell, snippet);
+    compterUsage(className === AVISO_LOCAL_CLASS ? 'aviso_perso' : 'aviso_commun');
   });
 
   placerIcone(container, btn);
@@ -531,6 +549,7 @@ function insertAvisoEditIcon(container, snippet) {
     e.preventDefault();
     e.stopPropagation();
     ouvrirEditeurLocal(snippet.trigger, snippet.content, true);
+    compterUsage('aviso_crayon');
   });
 
   placerIcone(container, btn);
@@ -564,7 +583,10 @@ function insertAvisoLawLink(container, refCode) {
 
   // Seulement stopPropagation : sans preventDefault, la navigation par défaut du lien a bien
   // lieu — on empêche juste Aviso de réagir au clic (bascule lecture/édition de la cellule).
-  link.addEventListener('click', (e) => e.stopPropagation());
+  link.addEventListener('click', (e) => {
+    e.stopPropagation();
+    compterUsage('aviso_sitesecurite');
+  });
 
   placerIcone(container, link);
 }
@@ -596,6 +618,7 @@ function insertAvisoImportIcon(container, dispoCell, article) {
     e.preventDefault();
     e.stopPropagation();
     appendAvisoText(dispoCell, texte);
+    compterUsage('aviso_dataviso');
   });
 
   placerIcone(container, btn);
@@ -636,6 +659,7 @@ function insertAvisoAddIcon(container, dispoCell, refCode) {
     e.preventDefault();
     e.stopPropagation();
     ouvrirEditeurLocal(trigger, lireDispositions(), false, dispoCell);
+    compterUsage('aviso_plus');
   });
 
   placerIcone(container, btn);
@@ -859,10 +883,12 @@ function insertAvisoClearButton(container, dispoCell) {
     if (texteEfface === null) {
       texteEfface = textarea.value;
       ecrireAvisoValeur(dispoCell, '');
+      compterUsage('aviso_corbeille');
     } else {
       const aRemettre = texteEfface;
       texteEfface = null; // avant l'écriture : son évènement 'change' ne doit plus voir le mode annulation
       ecrireAvisoValeur(dispoCell, aRemettre);
+      compterUsage('aviso_annuler');
     }
     majAffichage();
   });
@@ -1011,7 +1037,10 @@ function creerLiensAffaire(numero, { couleur, couleurSurvol, espacement, taille 
       a.addEventListener('mouseleave', () => { a.style.opacity = String(opacite); a.style.color = couleur; });
     }
     // Ni la ligne du tableau ni la barre ne doivent réagir au clic (ouverture de l'affaire, menu).
-    a.addEventListener('click', (e) => e.stopPropagation());
+    a.addEventListener('click', (e) => {
+      e.stopPropagation();
+      compterUsage('lien_' + d.cle);
+    });
     groupe.appendChild(a);
   });
   return groupe;

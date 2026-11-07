@@ -1,6 +1,6 @@
 # Politique de confidentialité — Snippet Expander
 
-*Dernière mise à jour : 7 novembre 2026 (version 2.21.0)*
+*Dernière mise à jour : 7 novembre 2026 (version 2.22.0)*
 
 Snippet Expander est une extension Chrome gratuite qui remplace un raccourci court (un « déclencheur », par exemple `/GN4`) par un texte complet, dans les champs de texte du navigateur, et ajoute des raccourcis à l'application Aviso. Cette page explique quelles données l'extension utilise, où elles vont, et comment garder la main dessus.
 
@@ -18,11 +18,15 @@ Snippet Expander est une extension Chrome gratuite qui remplace un raccourci cou
 
 Depuis la version 2.21.0, l'extension envoie au Google Sheets du Clausier Commun une copie des snippets personnels ajoutés ou modifiés : déclencheur, texte, identifiant aléatoire et date. L'identifiant est créé à l'installation et ne contient ni nom, ni adresse e-mail, ni information sur le compte. Cette copie ne sert qu'à enrichir le Clausier Commun ; elle n'est ni vendue, ni partagée avec des tiers, ni relue par l'extension. L'utilisateur peut la désactiver dans Paramètres avancés > Sauvegarde anonyme du Clausier Personnel. Le texte saisi dans les pages web n'est jamais envoyé.
 
+### Statistiques d'utilisation anonymes
+
+Depuis la version 2.22.0, l'extension compte combien de fois chacune de ses fonctions a servi (une expansion au clavier, un clic sur une icône d'Aviso ou un lien d'affaire, un import, l'ouverture du popup…) et envoie ces totaux, par jour, au même Google Sheets, avec la version installée, le nombre de snippets personnels et le nombre d'articles DatAviso AI importés. Ils sont rattachés au même identifiant aléatoire que la sauvegarde, sans nom, ni adresse e-mail, ni information sur le compte. Ils ne contiennent jamais le texte tapé ou inséré, les pages visitées, les déclencheurs ni les données d'Aviso. Ils servent uniquement à mesurer l'adoption de l'extension et à savoir quelles fonctions servent ; ils sont conservés 24 mois, puis supprimés. L'utilisateur peut les désactiver dans Paramètres avancés > Statistiques d'utilisation anonymes ; les compteurs pas encore envoyés sont alors effacés.
+
 ## Ce que l'extension ne fait pas
 
-- Aucune publicité, aucun outil de mesure d'audience, aucun traceur.
+- Aucune publicité, aucun service de mesure d'audience tiers, aucun traceur : les seules statistiques sont les compteurs anonymes décrits ci-dessus, envoyés au Google Sheets du Clausier Commun et à nul autre.
 - Aucune donnée vendue ou cédée à des tiers.
-- Aucune donnée utilisée à d'autres fins que le fonctionnement de l'extension et l'amélioration du Clausier Commun, ni pour évaluer une solvabilité ou accorder un crédit.
+- Aucune donnée utilisée à d'autres fins que le fonctionnement et l'amélioration de l'extension et du Clausier Commun, ni pour évaluer une solvabilité ou accorder un crédit.
 - Aucun historique de navigation collecté.
 
 ## Permissions demandées
@@ -31,13 +35,14 @@ Depuis la version 2.21.0, l'extension envoie au Google Sheets du Clausier Commun
 |---|---|
 | Accès aux pages (`<all_urls>`) | Repérer un déclencheur dans le champ où vous tapez, sur n'importe quel site, et afficher les icônes sur Aviso |
 | `storage`, `unlimitedStorage` | Enregistrer les snippets, les données DatAviso AI et les réglages dans le navigateur |
-| `alarms` | Actualiser le Clausier Commun et envoyer la sauvegarde anonyme à intervalle régulier |
-| `script.google.com`, `script.googleusercontent.com` | Lire le Clausier Commun et y envoyer la sauvegarde anonyme |
+| `alarms` | Actualiser le Clausier Commun et envoyer la sauvegarde et les statistiques anonymes à intervalle régulier |
+| `script.google.com`, `script.googleusercontent.com` | Lire le Clausier Commun et y envoyer la sauvegarde et les statistiques anonymes |
 | `raw.githubusercontent.com` | Vérifier les mises à jour d'une installation en mode développeur uniquement |
 
 ## Vos choix
 
 - **Désactiver la sauvegarde anonyme** : Paramètres avancés > Sauvegarde anonyme du Clausier Personnel.
+- **Désactiver les statistiques d'utilisation** : Paramètres avancés > Statistiques d'utilisation anonymes.
 - **Effacer vos données locales** : bouton « Supprimer tout le Clausier Personnel » et effacement des données DatAviso AI dans les Paramètres, ou désinstallation de l'extension, qui efface tout ce qu'elle a enregistré dans le navigateur.
 - **Garder votre propre copie** : l'export `.xlsx` ou `.csv` du Clausier Personnel, dans les Paramètres. La sauvegarde anonyme ne permet pas de restaurer vos snippets.
 
