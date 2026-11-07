@@ -1,9 +1,10 @@
 // background.js — récupération du Clausier Commun, sauvegarde du Clausier Personnel, statistiques
-// d'utilisation, tutoriel, vérification de mise à jour
+// d'utilisation, tutoriel
 
 const SYNC_ALARM = 'snippet-sync';
-const UPDATE_ALARM = 'snippet-update-check';
-const DEFAULT_GITHUB_URL = 'https://raw.githubusercontent.com/yakamatt/Snippets-Expander/main';
+// Alarme de l'ancienne vérification de mise à jour GitHub (mode développeur), retirée en v2.23.0 :
+// gardée ici pour être effacée chez ceux qui l'avaient (les alarmes survivent aux mises à jour).
+const ANCIENNE_ALARME_MAJ = 'snippet-update-check';
 const DEFAULT_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbzEAXT4ew2XasiZ_e7m9wtalf5f-duBVVI7Apw5z28iPLGjbJU-tujy5dTDYlEvFgDe/exec';
 // Anciennes adresses par défaut du script. Le réglage webAppUrl est enregistré à l'installation et
 // survit aux mises à jour : sans cette liste, les utilisateurs existants resteraient sur l'ancien
@@ -28,7 +29,6 @@ chrome.runtime.onInstalled.addListener((details) => {
       sheetUrl: DEFAULT_SHEET_URL,
       autoSyncMinutes: 60,
       expansionDelayMs: 500,
-      autoCheckUpdates: true,
       sauvegardeClausier: true,
       statistiquesUtilisation: true
     };
@@ -37,7 +37,13 @@ chrome.runtime.onInstalled.addListener((details) => {
     // (valeur héritée d'avant l'introduction de ce défaut), on la (ré)active à chaque installation/mise à jour.
     if (!merged.autoSyncMinutes) merged.autoSyncMinutes = 60;
     if (ANCIENNES_WEBAPP_URLS.includes(merged.webAppUrl)) merged.webAppUrl = DEFAULT_WEBAPP_URL;
+    // Réglages de la mise à jour en mode développeur, retirée en v2.23.0.
+    delete merged.autoCheckUpdates;
+    delete merged.localFolderPath;
     await chrome.storage.sync.set({ syncSettings: merged });
+    await chrome.storage.local.remove(['updateCheck']);
+    chrome.alarms.clear(ANCIENNE_ALARME_MAJ);
+    chrome.action.setBadgeText({ text: '' }); // le badge « ⬆ » d'une mise à jour signalée
 
     const { snippets } = await chrome.storage.local.get(['snippets']);
     if (!snippets) await chrome.storage.local.set({ snippets: [] });
@@ -77,27 +83,15 @@ function scheduleAlarms() {
     if (settings.autoSyncMinutes > 0) {
       chrome.alarms.create(SYNC_ALARM, { periodInMinutes: settings.autoSyncMinutes });
     }
-    chrome.alarms.clear(UPDATE_ALARM);
-    // La vérification GitHub n'a de sens qu'en mode développeur ("non empaquetée") : une fois
-    // publiée sur le Chrome Web Store, Chrome met à jour l'extension tout seul.
-    chrome.management.getSelf((info) => {
-      const isDev = info.installType === 'development';
-      if (isDev && settings.autoCheckUpdates) {
-        chrome.alarms.create(UPDATE_ALARM, { periodInMinutes: 720 }); // 2x/jour
-      }
-    });
   });
 }
 
-// Les erreurs (réseau hors ligne, Web App inaccessible, dépôt GitHub injoignable...) sont
+// Les erreurs (réseau hors ligne, Web App inaccessible...) sont
 // attendues de temps en temps sur un déclenchement en arrière-plan : sans .catch() ici, un
 // simple "Failed to fetch" devenait une promesse rejetée non gérée ("Uncaught (in promise)").
 chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name === SYNC_ALARM) {
     synchroniser().catch(e => console.error('[Snippet Expander] Échec de la synchro automatique :', e.message));
-  }
-  if (alarm.name === UPDATE_ALARM) {
-    checkForUpdates().catch(e => console.error('[Snippet Expander] Échec de la vérification de mise à jour :', e.message));
   }
 });
 
@@ -440,47 +434,6 @@ async function createSnippetRow(trigger, content) {
   return { created: data.created !== false, row: data.row };
 }
 
-// ---------- Vérification de mise à jour via GitHub ----------
-// Compare le "version" du manifest.json publié sur GitHub (raw) à la version installée.
-// Auto-update silencieux impossible pour une extension chargée en mode développeur (Chrome ne
-// permet pas à une extension de réécrire ses propres fichiers) : on notifie seulement l'utilisateur.
-
-async function checkForUpdates() {
-  const manifestUrl = `${DEFAULT_GITHUB_URL}/manifest.json`;
-  const res = await fetch(manifestUrl, { cache: 'no-store' });
-  if (!res.ok) throw new Error('Impossible de lire manifest.json sur GitHub (' + res.status + ')');
-  const remoteManifest = await res.json();
-  const remoteVersion = remoteManifest.version;
-  const localVersion = chrome.runtime.getManifest().version;
-
-  const isNewer = compareVersions(remoteVersion, localVersion) > 0;
-  await chrome.storage.local.set({
-    updateCheck: { remoteVersion, localVersion, isNewer, checkedAt: new Date().toISOString() }
-  });
-
-  // Signalée par le badge de l'icône et le bandeau de la page Paramètres. Plus de notification
-  // système depuis la v2.18.1 : la permission "notifications" ne servait qu'en mode développeur,
-  // et le Chrome Web Store refuse une permission qu'une installation depuis le Store n'utilise pas.
-  if (isNewer) {
-    chrome.action.setBadgeText({ text: '⬆' });
-    chrome.action.setBadgeBackgroundColor({ color: '#dc2626' });
-  } else {
-    chrome.action.setBadgeText({ text: '' });
-  }
-  return { remoteVersion, localVersion, isNewer };
-}
-
-function compareVersions(a, b) {
-  const pa = String(a).split('.').map(Number);
-  const pb = String(b).split('.').map(Number);
-  for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
-    const x = pa[i] || 0, y = pb[i] || 0;
-    if (x > y) return 1;
-    if (x < y) return -1;
-  }
-  return 0;
-}
-
 // ---------- Messages des pages de l'extension et du script de contenu ----------
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
@@ -525,10 +478,6 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     createSnippetRow(msg.trigger, msg.content)
       .then(r => sendResponse({ ok: true, ...r }))
       .catch(e => sendResponse({ ok: false, error: e.message }));
-    return true;
-  }
-  if (msg.type === 'CHECK_FOR_UPDATES') {
-    checkForUpdates().then(r => sendResponse({ ok: true, ...r })).catch(e => sendResponse({ ok: false, error: e.message }));
     return true;
   }
 });

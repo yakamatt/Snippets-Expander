@@ -22,7 +22,7 @@ jamais avoir « testé », dis ce que tu as vérifié et comment.
 | `imported-data.js` | Parseur des données « DatAviso AI » (fichier `.txt`) |
 | `clausier-fichiers.js` | Import/export du Clausier Personnel en `.xlsx` et `.csv`, zip et XML écrits à la main |
 | `sitesecurite-articles.js` | Table des articles ERP → URL sitesecurite.com |
-| `background.js` | Service worker : synchro Sheets, sauvegarde du Clausier Personnel, statistiques d'utilisation, ouverture du tutoriel, alarmes, vérification de MAJ GitHub |
+| `background.js` | Service worker : synchro Sheets, sauvegarde du Clausier Personnel, statistiques d'utilisation, ouverture du tutoriel, alarmes |
 | `options.js/html/css` | Page Paramètres : Clausier Personnel, DatAviso AI, paramètres avancés |
 | `popup.js/html/css` | Popup de l'icône : lien du tutoriel, liens vers les deux clausiers, import DatAviso AI, formulaire de retour, partage |
 | `tutoriel.js/html/css` | Tutoriel visuel en étapes : maquettes HTML avec les vraies icônes, pas de captures d'écran |

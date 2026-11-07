@@ -1,6 +1,6 @@
 # Politique de confidentialité — Snippet Expander
 
-*Dernière mise à jour : 7 novembre 2026 (version 2.22.0)*
+*Dernière mise à jour : 7 novembre 2026 (version 2.23.0)*
 
 Snippet Expander est une extension Chrome gratuite qui remplace un raccourci court (un « déclencheur », par exemple `/GN4`) par un texte complet, dans les champs de texte du navigateur, et ajoute des raccourcis à l'application Aviso. Cette page explique quelles données l'extension utilise, où elles vont, et comment garder la main dessus.
 
@@ -37,7 +37,6 @@ Depuis la version 2.22.0, l'extension compte combien de fois chacune de ses fonc
 | `storage`, `unlimitedStorage` | Enregistrer les snippets, les données DatAviso AI et les réglages dans le navigateur |
 | `alarms` | Actualiser le Clausier Commun et envoyer la sauvegarde et les statistiques anonymes à intervalle régulier |
 | `script.google.com`, `script.googleusercontent.com` | Lire le Clausier Commun et y envoyer la sauvegarde et les statistiques anonymes |
-| `raw.githubusercontent.com` | Vérifier les mises à jour d'une installation en mode développeur uniquement |
 
 ## Vos choix
 

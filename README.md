@@ -155,7 +155,7 @@ Accessibles via le bouton "⚙️ Paramètres avancés" en bas de la page Option
 - **Fréquence d'actualisation des données** : intervalle entre deux récupérations automatiques depuis le Google Sheet (minutes, 60 par défaut)
 - **Liens vers l'affaire** : une case par lien (SGO, SharePoint, Explorateur Windows), tous activés par défaut
 - **Temporisation avant expansion** : délai (ms) après la fin de la frappe avant remplacement (évite qu'un mot plus long contenant un déclencheur ne s'expanse par erreur)
-- **Mise à jour de l'extension** : voir section suivante
+- **Mise à jour de l'extension** : la version installée. Chrome installe les mises à jour depuis le Chrome Web Store, sans action de votre part
 
 ## 5. Mettre l'extension sur GitHub
 
@@ -174,28 +174,12 @@ git push -u origin main
 
 (Remplacez l'URL par celle de votre dépôt. Git vous demandera de vous authentifier — utilisez un token d'accès personnel GitHub si le mot de passe classique est refusé : **Settings > Developer settings > Personal access tokens**.)
 
-### c. Utiliser GitHub comme source de mise à jour (mode développeur uniquement)
-Cette section ne s'applique que si l'extension reste chargée en **mode développeur** ("non empaquetée"). Si vous l'avez publiée sur le Chrome Web Store (voir section 6), ignorez-la : Chrome gère les mises à jour tout seul et ce bloc de paramètres est automatiquement masqué dans la page Options.
-
-L'URL du dépôt (`DEFAULT_GITHUB_URL`, dans `background.js` et `options.js`) est fixée dans le code — il n'y a pas de champ à renseigner dans l'interface. Si vous forkez ce dépôt, remplacez cette constante par l'URL raw du vôtre avant de charger l'extension, par exemple :
-`https://raw.githubusercontent.com/VOTRE-UTILISATEUR/snippet-expander/main`
-
-Dans Options > Paramètres avancés > "Mise à jour de l'extension (mode développeur)" :
-1. **Optionnel mais recommandé** : renseignez le chemin absolu du dossier contenant l'extension dans "Dossier local de l'extension" (ex : `/Users/vous/snippet-expander`) — Chrome ne permet pas à une extension de connaître ce chemin automatiquement, ce champ le mémorise une bonne fois pour toutes pour générer un lien direct lors des prochaines mises à jour
-2. Cochez "Vérifier automatiquement les mises à jour" si souhaité (s'enregistre automatiquement), ou cliquez sur "Vérifier une mise à jour maintenant"
-3. L'extension compare le numéro de version de `manifest.json` sur GitHub avec la version installée
-
-⚠️ **Limite technique importante** : une extension chargée en mode développeur ne peut pas se ré-écrire elle-même — Chrome ne l'autorise pas, pour des raisons de sécurité. Quand une nouvelle version est détectée (badge rouge sur l'icône), l'extension affiche une **marche à suivre détaillée avec liens cliquables** (dans la bannière en haut de la page Options, ou dans "Paramètres avancés > Mise à jour de l'extension") :
-1. Cliquez sur le lien **"⬇️ Télécharger le zip de la version..."** — le téléchargement démarre directement
-2. Décompressez-le et remplacez les fichiers dans **le dossier de l'extension** — un lien direct est affiché si vous avez renseigné son chemin à l'étape précédente, sinon un rappel générique s'affiche à la place (ne créez pas un nouveau dossier)
-3. Cliquez sur le lien **"chrome://extensions"** affiché dans la liste (ouvre directement la page)
-4. Cliquez sur l'icône **Actualiser** ⟳ de la carte "Snippet Expander"
-
-Comme `chrome.storage` est lié à l'identifiant de l'extension (dérivé du chemin du dossier), **vos snippets et paramètres sont automatiquement conservés** tant que vous réutilisez le même dossier — aucune perte de données.
+### c. Mettre à jour une installation en mode développeur
+Une extension chargée en mode développeur (« non empaquetée ») ne se met pas à jour toute seule, et l'extension ne vérifie plus GitHub elle-même depuis la v2.23.0 (le bloc « Mise à jour de l'extension (mode développeur) » des Paramètres a été retiré, avec l'accès à `raw.githubusercontent.com`). Pour passer à une nouvelle version : remplacez les fichiers dans **le même dossier**, puis cliquez sur **Actualiser** ⟳ sur la carte « Snippet Expander » de `chrome://extensions`. Comme `chrome.storage` est lié à l'identifiant de l'extension (dérivé du chemin du dossier), vos snippets et paramètres sont conservés tant que vous réutilisez ce dossier.
 
 ## 6. Publier sur le Chrome Web Store
 
-Une fois publiée, l'extension se met à jour **automatiquement et silencieusement** — Chrome vérifie et installe les nouvelles versions tout seul, comme pour n'importe quelle extension du Store. La page Options détecte ce mode d'installation (`chrome.management.getSelf()`) et masque alors tout le bloc "mise à jour manuelle via GitHub" décrit ci-dessus, qui ne concerne que le mode développeur.
+Une fois publiée, l'extension se met à jour **automatiquement et silencieusement** — Chrome vérifie et installe les nouvelles versions tout seul, comme pour n'importe quelle extension du Store.
 
 ### a. Créer un compte développeur Chrome Web Store
 1. Rendez-vous sur [chrome.google.com/webstore/devconsole](https://chrome.google.com/webstore/devconsole)
@@ -218,12 +202,12 @@ Une fois publiée, l'extension se met à jour **automatiquement et silencieuseme
 Dans l'onglet **"Privacy practices"** du dashboard :
 - **Chaque permission est à justifier** ; le Store refuse toute permission demandée mais non utilisée (refus « Purple Potassium » en v2.18.0, pour `activeTab`). Justifications à reprendre :
   - **Scripts de contenu sur `<all_urls>`** : détecter la frappe d'un déclencheur et le remplacer par son texte dans n'importe quel champ, sur n'importe quel site ; intégration Aviso
-  - **`host_permissions`** (`script.google.com`, `script.googleusercontent.com`, `raw.githubusercontent.com`) : lire le Clausier Commun depuis le script Apps Script (qui redirige sa réponse vers `googleusercontent.com`), y envoyer la sauvegarde anonyme du Clausier Personnel et les statistiques d'utilisation anonymes, et vérifier les mises à jour sur GitHub en mode développeur
+  - **`host_permissions`** (`script.google.com`, `script.googleusercontent.com`) : lire le Clausier Commun depuis le script Apps Script (qui redirige sa réponse vers `googleusercontent.com`), et y envoyer la sauvegarde anonyme du Clausier Personnel et les statistiques d'utilisation anonymes
   - **`storage`** : enregistrer les snippets, les réglages et les données DatAviso AI
   - **`unlimitedStorage`** : le Clausier Personnel et les données DatAviso AI, conservés dans le navigateur, peuvent dépasser la limite de 10 Mo de `chrome.storage.local`
   - **`alarms`** : actualiser périodiquement le Clausier Commun (toutes les heures par défaut), et envoyer à ce moment la sauvegarde et les statistiques anonymes
 - **Avant chaque soumission**, vérifier que toute nouvelle permission est réellement utilisée par une installation depuis le Store, pas seulement en mode développeur
-- **Usage des données** : l'extension lit du texte dans les champs des pages visitées (fonctionnalité cœur), sans jamais l'envoyer, et récupère vos snippets depuis l'URL Google Sheets que *vous* configurez. Deux données sont envoyées vers ce même Google Sheets, chacune désactivable : la **copie anonyme du Clausier Personnel** (déclencheur, contenu, identifiant aléatoire, date), à déclarer comme « contenu généré par l'utilisateur », et les **statistiques d'utilisation anonymes** (nombre d'utilisations de chaque fonction par jour, version, nombre de snippets personnels et d'articles DatAviso AI, identifiant aléatoire), à déclarer comme « activité de l'utilisateur ». Ni l'une ni l'autre n'est vendue ou utilisée à d'autres fins que l'amélioration de l'extension et du Clausier Commun
+- **Usage des données** : l'extension lit du texte dans les champs des pages visitées (fonctionnalité cœur), sans jamais l'envoyer, et récupère vos snippets depuis l'URL Google Sheets que *vous* configurez. Deux données sont envoyées vers ce même Google Sheets, chacune désactivable : la **copie anonyme du Clausier Personnel** (déclencheur, contenu, identifiant aléatoire, date), à déclarer comme « Website content » (la catégorie du formulaire la plus proche d'un texte rédigé par l'utilisateur), et les **statistiques d'utilisation anonymes** (nombre d'utilisations de chaque fonction par jour, version, nombre de snippets personnels et d'articles DatAviso AI, identifiant aléatoire), à déclarer comme « activité de l'utilisateur ». Ni l'une ni l'autre n'est vendue ou utilisée à d'autres fins que l'amélioration de l'extension et du Clausier Commun
 - **URL de politique de confidentialité** : `https://github.com/yakamatt/Snippets-Expander/blob/main/PRIVACY.md` ([PRIVACY.md](PRIVACY.md)). À mettre à jour, avec la date en tête, dès qu'une donnée envoyée ou une permission change
 - Cochez la case de certification de conformité au programme développeur
 
@@ -237,7 +221,7 @@ Dans l'onglet **"Privacy practices"** du dashboard :
 ```
 snippet-expander/
 ├── manifest.json          # Configuration de l'extension (Manifest V3)
-├── background.js          # Récupération Google Sheets, sauvegarde du Clausier Personnel, tutoriel, alarmes, MAJ GitHub
+├── background.js          # Récupération Google Sheets, sauvegarde du Clausier Personnel, statistiques, tutoriel, alarmes
 ├── content.js              # Détection, temporisation et remplacement du texte + intégration Aviso
 ├── sitesecurite-articles.js # Table code d'article ERP -> page sitesecurite.com (générée, cf. en-tête)
 ├── imported-data.js         # Analyse du texte importé (données de dossier par article)
