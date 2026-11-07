@@ -13,7 +13,8 @@
 //                               communs trouvés dans les sauvegardes, à adopter ou ignorer
 //   Appliquer les décisions  -> reporte dans "Snippets" ce qui a été adopté (ancien texte copié
 //                               dans "Historique"), et retient ce qui a été traité
-//   Synthèse des statistiques -> onglet "Statistiques_Synthèse" : utilisateurs et usage par mois
+//   Synthèse hebdomadaire / mensuelle -> onglets "Synthèse_Hebdo" / "Synthèse_Mensuelle" :
+//                               utilisateurs et usage par semaine ou par mois
 // Ce menu s'exécute avec le code enregistré dans l'éditeur, sans redéploiement.
 //
 // Le POST sert au bouton "+" de l'intégration Aviso : il crée la ligne en y reprenant le texte
@@ -300,7 +301,8 @@ function onOpen() {
     .addItem('Préparer la revue', 'preparerRevue')
     .addItem('Appliquer les décisions', 'appliquerDecisions')
     .addSeparator()
-    .addItem('Synthèse des statistiques', 'syntheseStatistiques')
+    .addItem('Synthèse hebdomadaire des statistiques', 'syntheseHebdomadaire')
+    .addItem('Synthèse mensuelle des statistiques', 'syntheseMensuelle')
     .addToUi();
 }
 
@@ -617,7 +619,15 @@ function appliquerDecisions() {
 // Conservation : 24 mois, purgés au plus une fois par jour au fil des envois.
 
 const STATS_SHEET_NAME = 'Statistiques';
-const STATS_SYNTHESE_SHEET_NAME = 'Statistiques_Synthèse';
+const STATS_SYNTHESE_HEBDO_SHEET_NAME = 'Synthèse_Hebdo';
+const STATS_SYNTHESE_MOIS_SHEET_NAME = 'Synthèse_Mensuelle';
+// Totaux mis en tête des synthèses : ce que le garant suit d'abord. Le détail de chaque usage
+// suit dans les colonnes d'après.
+const STATS_REGROUPEMENTS = [
+  ['Clausier Personnel (clavier + icône jaune)', ['clavier_perso', 'aviso_perso']],
+  ['Clausier Commun (clavier + icône bleue)', ['clavier_commun', 'aviso_commun']],
+  ['Sites externes (SGO, SharePoint, sitesecurite)', ['lien_sgo', 'lien_sharepoint', 'aviso_sitesecurite']]
+];
 const STATS_COLONNES_FIXES = ['Ref_User', 'Date', 'Version', 'Snippets personnels', 'Articles DatAviso'];
 const STATS_CONSERVATION_MOIS = 24;
 // Libellés de la synthèse ; une clé absente d'ici s'affiche telle quelle.
@@ -739,10 +749,31 @@ function purgerStatistiques_(sheet) {
   if (garder.length) sheet.getRange(2, 1, garder.length, valeurs[0].length).setValues(garder);
 }
 
-// Menu « Clausier > Synthèse des statistiques » : un mois par ligne, du plus récent au plus ancien.
-// Installations actives : extension ouverte au moins un jour du mois. Utilisateurs actifs : au
-// moins une fonction utilisée. Les colonnes suivantes totalisent chaque usage.
-function syntheseStatistiques() {
+// Menu « Clausier > Synthèse hebdomadaire / mensuelle » : une période par ligne, de la plus
+// récente à la plus ancienne. Installations actives : extension ouverte au moins un jour de la
+// période. Utilisateurs actifs : au moins une fonction utilisée. Puis les totaux de
+// STATS_REGROUPEMENTS, et le détail de chaque usage.
+function syntheseHebdomadaire() { syntheseStatistiques_('semaine'); }
+function syntheseMensuelle() { syntheseStatistiques_('mois'); }
+
+// "2026-11-07" -> semaine ISO (du lundi au dimanche). La clé est la date du lundi, ce qui trie
+// les semaines dans l'ordre, y compris d'une année sur l'autre.
+function semaineIso_(jour) {
+  const p = jour.split('-').map(Number);
+  const date = new Date(Date.UTC(p[0], p[1] - 1, p[2]));
+  const lundi = new Date(date.getTime() - ((date.getUTCDay() + 6) % 7) * 86400000);
+  const dimanche = new Date(lundi.getTime() + 6 * 86400000);
+  const jeudi = new Date(lundi.getTime() + 3 * 86400000); // l'année ISO est celle du jeudi
+  const debutAnnee = new Date(Date.UTC(jeudi.getUTCFullYear(), 0, 1));
+  const numero = Math.floor((jeudi - debutAnnee) / 86400000 / 7) + 1;
+  const jm = d => `${String(d.getUTCDate()).padStart(2, '0')}/${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
+  return {
+    cle: lundi.toISOString().slice(0, 10),
+    libelle: `${jeudi.getUTCFullYear()} S${String(numero).padStart(2, '0')} (${jm(lundi)} au ${jm(dimanche)})`
+  };
+}
+
+function syntheseStatistiques_(periode) {
   const ui = SpreadsheetApp.getUi();
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const source = ss.getSheetByName(STATS_SHEET_NAME);
@@ -752,46 +783,60 @@ function syntheseStatistiques() {
       'dont l\'extension est en version 2.22.0 ou plus, une fois ce script redéployé.', ui.ButtonSet.OK);
     return;
   }
+  const hebdo = periode === 'semaine';
   const valeurs = source.getDataRange().getValues();
   const entete = valeurs[0].map(String);
   const cles = entete.slice(STATS_COLONNES_FIXES.length);
-  const mois = {};
+  const groupes = {};
   valeurs.slice(1).forEach(r => {
-    const m = String(r[1]).slice(0, 7);
-    if (!/^\d{4}-\d{2}$/.test(m)) return;
-    const g = mois[m] = mois[m] || { installes: {}, actifs: {}, versions: {}, totaux: cles.map(() => 0) };
+    const jour = String(r[1]);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(jour)) return;
+    const p = hebdo ? semaineIso_(jour) : { cle: jour.slice(0, 7), libelle: jour.slice(0, 7) };
+    const g = groupes[p.cle] = groupes[p.cle] ||
+      { libelle: p.libelle, installes: {}, actifs: {}, versions: {}, totaux: {} };
     g.installes[r[0]] = true;
     let usage = 0;
-    cles.forEach((_, i) => {
+    cles.forEach((cle, i) => {
       const n = Number(r[STATS_COLONNES_FIXES.length + i]) || 0;
-      g.totaux[i] += n;
+      g.totaux[cle] = (g.totaux[cle] || 0) + n;
       usage += n;
     });
     if (usage) g.actifs[r[0]] = true;
-    if (r[2]) g.versions[r[0]] = String(r[2]); // dernière version vue pour cet utilisateur
+    // Dernière version vue pour cet utilisateur dans la période (les jours arrivent dans l'ordre
+    // de leur envoi : on garde la plus récente par date).
+    if (r[2] && (!g.versions[r[0]] || g.versions[r[0]].jour <= jour)) g.versions[r[0]] = { v: String(r[2]), jour };
   });
 
-  const lignes = Object.keys(mois).sort().reverse().map(m => {
-    const g = mois[m];
+  const lignes = Object.keys(groupes).sort().reverse().map(cle => {
+    const g = groupes[cle];
     const parVersion = {};
-    Object.values(g.versions).forEach(v => { parVersion[v] = (parVersion[v] || 0) + 1; });
+    Object.values(g.versions).forEach(x => { parVersion[x.v] = (parVersion[x.v] || 0) + 1; });
     const versions = Object.keys(parVersion).sort().reverse().map(v => `${v} : ${parVersion[v]}`).join(', ');
-    return [m, Object.keys(g.installes).length, Object.keys(g.actifs).length, versions].concat(g.totaux);
+    return [g.libelle, Object.keys(g.installes).length, Object.keys(g.actifs).length]
+      .concat(STATS_REGROUPEMENTS.map(([, cs]) => cs.reduce((t, c) => t + (g.totaux[c] || 0), 0)))
+      .concat(cles.map(c => g.totaux[c] || 0))
+      .concat([versions]);
   });
 
-  const synthese = feuille_(STATS_SYNTHESE_SHEET_NAME);
+  const nom = hebdo ? STATS_SYNTHESE_HEBDO_SHEET_NAME : STATS_SYNTHESE_MOIS_SHEET_NAME;
+  const synthese = feuille_(nom);
   synthese.clear();
-  const titres = ['Mois', 'Installations actives', 'Utilisateurs actifs', 'Versions (utilisateurs)']
-    .concat(cles.map(c => STATS_LIBELLES[c] || c));
+  const titres = [hebdo ? 'Semaine' : 'Mois', 'Installations actives', 'Utilisateurs actifs']
+    .concat(STATS_REGROUPEMENTS.map(([libelle]) => libelle))
+    .concat(cles.map(c => STATS_LIBELLES[c] || c))
+    .concat(['Versions (utilisateurs)']);
   synthese.getRange(1, 1, 1, titres.length).setValues([titres]).setFontWeight('bold').setWrap(true);
   synthese.setFrozenRows(1);
   synthese.setFrozenColumns(1);
   // En texte avant d'écrire : sinon le tableau lit « 2026-11 » comme une date.
   synthese.getRange('A:A').setNumberFormat('@');
   if (lignes.length) synthese.getRange(2, 1, lignes.length, titres.length).setValues(lignes);
+  // Les totaux suivis d'abord, en évidence.
+  synthese.getRange(1, 4, Math.max(lignes.length + 1, 1), STATS_REGROUPEMENTS.length).setBackground('#fff8e1');
+  synthese.setColumnWidth(1, hebdo ? 190 : 90);
   synthese.showSheet();
   ss.setActiveSheet(synthese);
   ui.alert('Synthèse prête',
-    `${lignes.length} mois, du plus récent au plus ancien. Les données détaillées restent dans ` +
+    `${lignes.length} ${hebdo ? 'semaine(s)' : 'mois'}, du plus récent au plus ancien. Les données détaillées restent dans ` +
     `l'onglet masqué « ${STATS_SHEET_NAME} », conservées ${STATS_CONSERVATION_MOIS} mois.`, ui.ButtonSet.OK);
 }

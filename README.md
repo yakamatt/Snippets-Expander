@@ -140,7 +140,12 @@ Le menu **Clausier** du Google Sheets (ajouté par `Code.gs`, visible des édite
    Relancer *Préparer la revue* ne perd pas ce travail : les décisions pas encore appliquées et les *Texte final* retouchés à la main sont repris pour le même déclencheur, même si la proposition a changé entre-temps. La colonne *Type* le signale : ✍️ *retouche conservée*, ou 🔄 *proposition changée* quand la proposition n'est plus celle sur laquelle vous aviez travaillé (à relire). Une ligne travaillée qui ne revient pas dans la nouvelle revue est listée, et la préparation demande confirmation avant de l'effacer.
 3. **Clausier > Appliquer les décisions** ajoute les nouveaux snippets à `Snippets` et remplace le texte des variantes adoptées, après avoir copié l'ancien texte dans l'onglet `Historique`. Une ligne dont le texte commun a changé depuis la préparation n'est pas appliquée. Les variantes adoptées ou ignorées ne sont plus reproposées (onglet `Revue_Traités`), sauf si un utilisateur les modifie.
 
-**Clausier > Synthèse des statistiques** remplit l'onglet `Statistiques_Synthèse`, un mois par ligne : installations actives (extension ouverte au moins un jour), utilisateurs actifs (au moins une fonction utilisée), versions en service, et le total de chaque usage. Les lignes de plus de 24 mois sont supprimées de l'onglet `Statistiques` au fil des envois.
+**Clausier > Synthèse hebdomadaire des statistiques** (onglet `Synthèse_Hebdo`, une semaine du lundi au dimanche par ligne) et **Synthèse mensuelle** (onglet `Synthèse_Mensuelle`, un mois par ligne) donnent, de la période la plus récente à la plus ancienne :
+- les installations actives (extension ouverte au moins un jour) et les utilisateurs actifs (au moins une fonction utilisée) ;
+- trois totaux, en jaune : **Clausier Personnel** (expansions au clavier + icône jaune), **Clausier Commun** (expansions au clavier + icône bleue) et **Sites externes** (SGO, SharePoint, sitesecurite ; le lien Explorateur, qui ouvre un dossier du poste et non un site, a sa colonne à part) ;
+- le détail de chaque usage, puis les versions en service.
+
+ Les lignes de plus de 24 mois sont supprimées de l'onglet `Statistiques` au fil des envois.
 
 Les onglets `Local_Snippets_Backup`, `Statistiques`, `Historique` et `Revue_Traités` sont **masqués** ; `Revue` ne s'affiche que pendant une revue. Masquer n'est pas protéger : toute personne qui a accès au tableau peut les réafficher ou en faire une copie. Le menu fonctionne dès l'enregistrement du code dans l'éditeur Apps Script, sans redéploiement (rechargez le tableau pour le voir apparaître).
 
