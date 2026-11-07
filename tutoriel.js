@@ -96,3 +96,9 @@ brancherPartage(
 );
 
 afficher(0);
+
+// Statistiques d'utilisation : seule la nature de l'usage part (voir STATS_CLES, background.js).
+function compterUsage(cle) {
+  chrome.runtime.sendMessage({ type: 'STAT', cle }, () => void chrome.runtime.lastError);
+}
+compterUsage('tutoriel');

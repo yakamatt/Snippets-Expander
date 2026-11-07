@@ -5,12 +5,15 @@
 //   POST {action:"append", ...}  -> ajoute une ligne (déclencheur + contenu, ce dernier facultatif)
 //   POST {action:"backup", ...}  -> sauvegarde le Clausier Personnel d'un utilisateur dans
 //                                   l'onglet "Local_Snippets_Backup" (jamais dans "Snippets")
+//   POST {action:"stats", ...}   -> statistiques d'utilisation anonymes, dans l'onglet
+//                                   "Statistiques" (une ligne par utilisateur et par jour)
 //
 // Et, dans le tableau lui-même, un menu « Clausier » pour le garant du Clausier Commun :
 //   Préparer la revue        -> onglet "Revue" : nouveaux déclencheurs et variantes de snippets
 //                               communs trouvés dans les sauvegardes, à adopter ou ignorer
 //   Appliquer les décisions  -> reporte dans "Snippets" ce qui a été adopté (ancien texte copié
 //                               dans "Historique"), et retient ce qui a été traité
+//   Synthèse des statistiques -> onglet "Statistiques_Synthèse" : utilisateurs et usage par mois
 // Ce menu s'exécute avec le code enregistré dans l'éditeur, sans redéploiement.
 //
 // Le POST sert au bouton "+" de l'intégration Aviso : il crée la ligne en y reprenant le texte
@@ -138,7 +141,9 @@ function json_(obj) {
 // Version 4 : POST {action:"backup"} pour la sauvegarde du Clausier Personnel, sondée par
 // ?probe=backup. Un script resté en version 3 renvoie le tableau des snippets à cette sonde :
 // l'extension ne lui envoie alors rien et réessaie à la synchro suivante.
-const API_VERSION = 4;
+// Version 5 : POST {action:"stats"} pour les statistiques d'utilisation, sondée par ?probe=stats,
+// avec le même repli : un script resté en version 4 ne reçoit rien.
+const API_VERSION = 5;
 
 function doGet(e) {
   if (e && e.parameter && e.parameter.probe === 'append') {
@@ -146,6 +151,9 @@ function doGet(e) {
   }
   if (e && e.parameter && e.parameter.probe === 'backup') {
     return json_({ ok: true, api: 'backup', version: API_VERSION });
+  }
+  if (e && e.parameter && e.parameter.probe === 'stats') {
+    return json_({ ok: true, api: 'stats', version: API_VERSION });
   }
 
   const sheet = getSheet_();
@@ -167,6 +175,7 @@ function doPost(e) {
   try {
     const body = JSON.parse(e.postData.contents);
     if (body.action === 'backup') return json_(sauvegarderClausier_(body));
+    if (body.action === 'stats') return json_(enregistrerStatistiques_(body));
     if (body.action !== 'append') {
       return json_({ ok: false, error: 'Action inconnue : ' + body.action });
     }
@@ -287,6 +296,8 @@ function onOpen() {
     .createMenu('Clausier')
     .addItem('Préparer la revue', 'preparerRevue')
     .addItem('Appliquer les décisions', 'appliquerDecisions')
+    .addSeparator()
+    .addItem('Synthèse des statistiques', 'syntheseStatistiques')
     .addToUi();
 }
 
@@ -318,7 +329,7 @@ function feuille_(nom, entete) {
 // Onglets de travail du garant : masqués sauf "Revue" pendant qu'il s'en sert.
 function masquerOngletsGarant_() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  [BACKUP_SHEET_NAME, HISTORIQUE_SHEET_NAME, TRAITES_SHEET_NAME].forEach(nom => {
+  [BACKUP_SHEET_NAME, HISTORIQUE_SHEET_NAME, TRAITES_SHEET_NAME, STATS_SHEET_NAME].forEach(nom => {
     const sheet = ss.getSheetByName(nom);
     if (sheet && !sheet.isSheetHidden()) sheet.hideSheet();
   });
@@ -526,4 +537,195 @@ function appliquerDecisions() {
     (bilan.ecartes.length ? `\n\nNon appliqués, restés dans la revue :\n- ${bilan.ecartes.join('\n- ')}` : '') +
     '\n\nLes utilisateurs recevront les changements à leur prochaine actualisation.',
     ui.ButtonSet.OK);
+}
+
+// ============================================================================
+// STATISTIQUES D'UTILISATION (anonymes)
+// ============================================================================
+//
+// Onglet "Statistiques", masqué : une ligne par utilisateur (Ref_User aléatoire) et par jour. Les
+// colonnes fixes disent l'installation (version, taille du Clausier Personnel, articles DatAviso
+// AI importés), les suivantes comptent les usages, une colonne par fonction. L'extension envoie
+// les totaux du jour, que la ligne reçoit en remplacement : un envoi répété ne compte rien deux
+// fois. Une fonction ajoutée à l'extension crée sa colonne au premier envoi, sans changer ce script.
+// Conservation : 24 mois, purgés au plus une fois par jour au fil des envois.
+
+const STATS_SHEET_NAME = 'Statistiques';
+const STATS_SYNTHESE_SHEET_NAME = 'Statistiques_Synthèse';
+const STATS_COLONNES_FIXES = ['Ref_User', 'Date', 'Version', 'Snippets personnels', 'Articles DatAviso'];
+const STATS_CONSERVATION_MOIS = 24;
+// Libellés de la synthèse ; une clé absente d'ici s'affiche telle quelle.
+const STATS_LIBELLES = {
+  clavier_commun: 'Expansions au clavier, Clausier Commun',
+  clavier_perso: 'Expansions au clavier, Clausier Personnel',
+  clavier_hors_aviso: '… dont hors Aviso',
+  aviso_commun: 'Aviso : icône bleue (Clausier Commun)',
+  aviso_perso: 'Aviso : icône jaune (Clausier Personnel)',
+  aviso_crayon: 'Aviso : crayon (modifier un snippet)',
+  aviso_plus: 'Aviso : « + » (créer un snippet)',
+  aviso_dataviso: 'Aviso : icône verte (DatAviso AI)',
+  aviso_sitesecurite: 'Aviso : lien sitesecurite',
+  aviso_corbeille: 'Aviso : corbeille',
+  aviso_annuler: 'Aviso : annuler l\'effacement',
+  lien_sgo: 'Lien SGO',
+  lien_sharepoint: 'Lien SharePoint',
+  lien_explorateur: 'Lien Explorateur',
+  import_dataviso: 'Imports DatAviso AI',
+  clausier_import: 'Imports du Clausier Personnel',
+  clausier_export: 'Exports du Clausier Personnel',
+  popup: 'Ouvertures du popup',
+  parametres: 'Ouvertures des Paramètres',
+  tutoriel: 'Ouvertures du tutoriel'
+};
+
+function getStatsSheet_() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName(STATS_SHEET_NAME);
+  if (!sheet) {
+    sheet = ss.insertSheet(STATS_SHEET_NAME);
+    sheet.appendRow(STATS_COLONNES_FIXES);
+    sheet.setFrozenRows(1);
+    sheet.getRange('B:C').setNumberFormat('@'); // date et version en texte, comme dans la sauvegarde
+    sheet.hideSheet();
+  }
+  return sheet;
+}
+
+function entier_(v) {
+  const n = Number(v);
+  return Number.isFinite(n) && n >= 0 ? Math.min(Math.floor(n), 1000000) : null;
+}
+
+function enregistrerStatistiques_(body) {
+  const refUser = String(body.refUser || '').trim();
+  if (!/^[A-Za-z0-9-]{8,64}$/.test(refUser)) return { ok: false, error: 'Ref_User invalide' };
+  const jours = (Array.isArray(body.jours) ? body.jours : []).slice(0, 400)
+    .filter(j => j && /^\d{4}-\d{2}-\d{2}$/.test(String(j.date)));
+
+  const lock = LockService.getScriptLock();
+  lock.waitLock(20000);
+  try {
+    const sheet = getStatsSheet_();
+    const valeurs = sheet.getDataRange().getValues();
+    const entete = valeurs[0].map(String);
+    // Seules des clés de la forme attendue deviennent des colonnes : un envoi malformé ne doit
+    // pas fabriquer des centaines de colonnes.
+    jours.forEach(j => Object.keys(j.compteurs || {}).slice(0, 60).forEach(cle => {
+      if (/^[a-z0-9_]{1,40}$/.test(cle) && entier_(j.compteurs[cle]) !== null && entete.indexOf(cle) < 0) entete.push(cle);
+    }));
+    if (entete.length > valeurs[0].length) {
+      sheet.getRange(1, 1, 1, entete.length).setValues([entete]);
+    }
+
+    const index = {};
+    for (let i = 1; i < valeurs.length; i++) index[valeurs[i][0] + '\u0000' + valeurs[i][1]] = i;
+
+    const ajouts = [];
+    let maj = 0;
+    jours.forEach(j => {
+      const existante = index[refUser + '\u0000' + j.date];
+      // Une ligne existante garde ce que l'envoi ne redonne pas (l'état d'un jour passé, une
+      // colonne qu'une version plus ancienne de l'extension ne connaît pas).
+      const ligne = entete.map((_, c) => existante !== undefined ? (valeurs[existante][c] ?? '') : '');
+      ligne[0] = refUser;
+      ligne[1] = String(j.date);
+      if (j.version !== undefined) ligne[2] = String(j.version).slice(0, 20);
+      if (entier_(j.snippetsPerso) !== null) ligne[3] = entier_(j.snippetsPerso);
+      if (entier_(j.articlesDataviso) !== null) ligne[4] = entier_(j.articlesDataviso);
+      Object.keys(j.compteurs || {}).forEach(cle => {
+        const c = entete.indexOf(cle);
+        const n = entier_(j.compteurs[cle]);
+        if (c >= STATS_COLONNES_FIXES.length && n !== null) ligne[c] = n;
+      });
+      if (existante !== undefined) {
+        sheet.getRange(existante + 1, 1, 1, entete.length).setValues([ligne]);
+        maj++;
+      } else {
+        ajouts.push(ligne);
+      }
+    });
+    if (ajouts.length) {
+      sheet.getRange(sheet.getLastRow() + 1, 1, ajouts.length, entete.length).setValues(ajouts);
+    }
+    purgerStatistiques_(sheet);
+    return { ok: true, api: 'stats', updated: maj, added: ajouts.length };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+// Supprime les lignes de plus de 24 mois, au plus une fois par jour (le premier envoi du jour).
+function purgerStatistiques_(sheet) {
+  const props = PropertiesService.getScriptProperties();
+  const aujourdhui = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd');
+  if (props.getProperty('statsPurge') === aujourdhui) return;
+  props.setProperty('statsPurge', aujourdhui);
+
+  const limite = new Date();
+  limite.setMonth(limite.getMonth() - STATS_CONSERVATION_MOIS);
+  const seuil = Utilities.formatDate(limite, Session.getScriptTimeZone(), 'yyyy-MM-dd');
+  const valeurs = sheet.getDataRange().getValues();
+  const garder = valeurs.slice(1).filter(r => String(r[1]) >= seuil);
+  if (garder.length === valeurs.length - 1) return;
+  // Réécrit les lignes gardées en une fois : supprimer des milliers de lignes une à une dépasse
+  // vite le temps d'exécution d'Apps Script.
+  sheet.getRange(2, 1, valeurs.length - 1, valeurs[0].length).clearContent();
+  if (garder.length) sheet.getRange(2, 1, garder.length, valeurs[0].length).setValues(garder);
+}
+
+// Menu « Clausier > Synthèse des statistiques » : un mois par ligne, du plus récent au plus ancien.
+// Installations actives : extension ouverte au moins un jour du mois. Utilisateurs actifs : au
+// moins une fonction utilisée. Les colonnes suivantes totalisent chaque usage.
+function syntheseStatistiques() {
+  const ui = SpreadsheetApp.getUi();
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const source = ss.getSheetByName(STATS_SHEET_NAME);
+  if (!source || source.getLastRow() < 2) {
+    ui.alert('Pas encore de statistiques',
+      'Aucune statistique reçue pour l\'instant : elles arrivent avec les actualisations des utilisateurs ' +
+      'dont l\'extension est en version 2.22.0 ou plus, une fois ce script redéployé.', ui.ButtonSet.OK);
+    return;
+  }
+  const valeurs = source.getDataRange().getValues();
+  const entete = valeurs[0].map(String);
+  const cles = entete.slice(STATS_COLONNES_FIXES.length);
+  const mois = {};
+  valeurs.slice(1).forEach(r => {
+    const m = String(r[1]).slice(0, 7);
+    if (!/^\d{4}-\d{2}$/.test(m)) return;
+    const g = mois[m] = mois[m] || { installes: {}, actifs: {}, versions: {}, totaux: cles.map(() => 0) };
+    g.installes[r[0]] = true;
+    let usage = 0;
+    cles.forEach((_, i) => {
+      const n = Number(r[STATS_COLONNES_FIXES.length + i]) || 0;
+      g.totaux[i] += n;
+      usage += n;
+    });
+    if (usage) g.actifs[r[0]] = true;
+    if (r[2]) g.versions[r[0]] = String(r[2]); // dernière version vue pour cet utilisateur
+  });
+
+  const lignes = Object.keys(mois).sort().reverse().map(m => {
+    const g = mois[m];
+    const parVersion = {};
+    Object.values(g.versions).forEach(v => { parVersion[v] = (parVersion[v] || 0) + 1; });
+    const versions = Object.keys(parVersion).sort().reverse().map(v => `${v} : ${parVersion[v]}`).join(', ');
+    return [m, Object.keys(g.installes).length, Object.keys(g.actifs).length, versions].concat(g.totaux);
+  });
+
+  const synthese = feuille_(STATS_SYNTHESE_SHEET_NAME);
+  synthese.clear();
+  const titres = ['Mois', 'Installations actives', 'Utilisateurs actifs', 'Versions (utilisateurs)']
+    .concat(cles.map(c => STATS_LIBELLES[c] || c));
+  synthese.getRange(1, 1, 1, titres.length).setValues([titres]).setFontWeight('bold').setWrap(true);
+  synthese.setFrozenRows(1);
+  synthese.setFrozenColumns(1);
+  // En texte avant d'écrire : sinon le tableau lit « 2026-11 » comme une date.
+  synthese.getRange('A:A').setNumberFormat('@');
+  if (lignes.length) synthese.getRange(2, 1, lignes.length, titres.length).setValues(lignes);
+  synthese.showSheet();
+  ss.setActiveSheet(synthese);
+  ui.alert('Synthèse prête',
+    `${lignes.length} mois, du plus récent au plus ancien. Les données détaillées restent dans ` +
+    `l'onglet masqué « ${STATS_SHEET_NAME} », conservées ${STATS_CONSERVATION_MOIS} mois.`, ui.ButtonSet.OK);
 }

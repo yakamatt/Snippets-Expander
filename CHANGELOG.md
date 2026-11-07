@@ -1,5 +1,14 @@
 # Changelog — Snippet Expander
 
+## v2.22.0 — 2026-11-07
+- **Statistiques d'utilisation anonymes**, pour mesurer l'adoption de l'extension et savoir quelles fonctions servent vraiment. L'extension compte combien de fois chaque fonction a servi, par jour : expansion au clavier (Clausier Commun ou Personnel, et hors Aviso), chaque icône d'Aviso (bleue, jaune, crayon, « + », verte, sitesecurite, corbeille, annulation), liens SGO, SharePoint et Explorateur, imports DatAviso AI, imports et exports du Clausier Personnel, ouvertures du popup, des Paramètres et du tutoriel
+  - Les totaux partent avec l'actualisation du Clausier Commun (toutes les heures par défaut) dans un nouvel onglet masqué `Statistiques` du tableau : une ligne par utilisateur (le même `Ref_User` aléatoire que la sauvegarde) et par jour, avec la version, le nombre de snippets personnels et d'articles DatAviso AI. La ligne du jour est remplacée à chaque envoi, jamais additionnée : un envoi retenté ne compte rien deux fois
+  - Jamais le texte tapé ou inséré, les pages visitées, les déclencheurs ni les données d'Aviso. Les jours envoyés sont oubliés par le navigateur ; le tableau les garde 24 mois
+  - Activées par défaut, désactivables dans Paramètres avancés > Statistiques d'utilisation anonymes (les compteurs pas encore envoyés sont alors effacés). Le tutoriel (étape « Le popup ») et la politique de confidentialité le mentionnent
+  - Côté Google Sheets : **menu « Clausier > Synthèse des statistiques »**, un mois par ligne (installations actives, utilisateurs actifs, versions en service, total de chaque usage), dans l'onglet `Statistiques_Synthèse`
+  - ⚠️ **Le script Apps Script doit être redéployé** (API v5) : tant qu'il ne l'est pas, rien n'est envoyé (sonde `?probe=stats`) et les compteurs attendent dans le navigateur
+- Aucune permission ajoutée : le tableau du Clausier Commun était déjà autorisé. À déclarer dans l'onglet « Privacy practices » du Store comme « activité de l'utilisateur » (README, section 6 d)
+
 ## v2.21.1 — 2026-11-07
 - **Paramètres : la page ne saute plus à la fin de « 🔄 Forcer l'actualisation du Clausier Commun ».** Ouverte depuis le lien « Modifier le Clausier Personnel » du popup (`options.html#clausier`), elle redescendait jusqu'au Clausier Personnel à chaque actualisation : le rechargement des données refaisait le défilement prévu pour l'ouverture. Il n'a plus lieu qu'à l'ouverture de la page, et l'on reste en haut, sur le résultat de l'actualisation
 - **Paramètres : la liste « Afficher les snippets » du Clausier Personnel est ouverte par défaut**, au lieu d'être repliée à chaque ouverture de la page. Elle se replie toujours d'un clic

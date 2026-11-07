@@ -1,4 +1,5 @@
-// background.js — récupération du Clausier Commun, sauvegarde du Clausier Personnel, tutoriel, vérification de mise à jour
+// background.js — récupération du Clausier Commun, sauvegarde du Clausier Personnel, statistiques
+// d'utilisation, tutoriel, vérification de mise à jour
 
 const SYNC_ALARM = 'snippet-sync';
 const UPDATE_ALARM = 'snippet-update-check';
@@ -28,7 +29,8 @@ chrome.runtime.onInstalled.addListener((details) => {
       autoSyncMinutes: 60,
       expansionDelayMs: 500,
       autoCheckUpdates: true,
-      sauvegardeClausier: true
+      sauvegardeClausier: true,
+      statistiquesUtilisation: true
     };
     const merged = { ...defaults, ...(syncSettings || {}) };
     // La synchro auto toutes les heures est active par défaut : si elle est encore désactivée
@@ -148,6 +150,8 @@ async function synchroniser() {
   } finally {
     await sauvegarderClausierPersonnel()
       .catch(e => console.error('[Snippet Expander] Sauvegarde du Clausier Personnel :', e.message));
+    await envoyerStatistiques()
+      .catch(e => console.error('[Snippet Expander] Statistiques d\'utilisation :', e.message));
   }
 }
 
@@ -231,6 +235,138 @@ async function sauvegarderClausierPersonnel() {
   }
   return { statut: 'envoyee', envoyes: aEnvoyer.length };
 }
+
+// ---------- Statistiques d'utilisation ----------
+// Compteurs anonymes, pour mesurer l'adoption et savoir quelles fonctions servent : combien de
+// fois chaque fonction a servi, par jour. Jamais le texte tapé ou inséré, ni l'adresse d'une page,
+// ni un déclencheur, ni une donnée d'Aviso. Les pages et le script de contenu signalent un usage
+// par un message STAT ; tout est compté ici, à la file (fileStats), pour que deux onglets qui
+// comptent en même temps ne s'écrasent pas.
+//
+// Envoi avec la synchro, dans l'onglet "Statistiques" du Google Sheets : une ligne par
+// utilisateur et par jour, que le script remplace à chaque envoi. On envoie donc les totaux du
+// jour, jamais un écart : un envoi répété ou retenté ne compte rien deux fois. Le jour courant
+// part même sans aucun usage (la ligne dit alors seulement que l'extension est installée et
+// active), puis à nouveau dès qu'un compteur bouge. Une fois envoyés, les jours passés sont
+// oubliés : rien ne s'accumule dans le navigateur.
+const STATS_CLES = [
+  'clavier_commun', 'clavier_perso', 'clavier_hors_aviso',
+  'aviso_commun', 'aviso_perso', 'aviso_crayon', 'aviso_plus', 'aviso_dataviso',
+  'aviso_sitesecurite', 'aviso_corbeille', 'aviso_annuler',
+  'lien_sgo', 'lien_sharepoint', 'lien_explorateur',
+  'import_dataviso', 'clausier_import', 'clausier_export',
+  'popup', 'parametres', 'tutoriel'
+];
+let fileStats = Promise.resolve();
+
+function aLaFileStats(tache) {
+  const suite = fileStats.then(tache);
+  fileStats = suite.catch(() => {});
+  return suite;
+}
+
+// Date locale (et non UTC) : une journée de travail ne doit pas se couper à 1 h du matin.
+function jourLocal(d = new Date()) {
+  const n = (x) => String(x).padStart(2, '0');
+  return `${d.getFullYear()}-${n(d.getMonth() + 1)}-${n(d.getDate())}`;
+}
+
+async function statistiquesActives() {
+  const { syncSettings } = await chrome.storage.sync.get(['syncSettings']);
+  return (syncSettings || {}).statistiquesUtilisation !== false;
+}
+
+function compterUsage(cle) {
+  if (!STATS_CLES.includes(cle)) return Promise.resolve();
+  return aLaFileStats(async () => {
+    if (!(await statistiquesActives())) return;
+    const jour = jourLocal();
+    const { statsJours } = await chrome.storage.local.get(['statsJours']);
+    const jours = statsJours || {};
+    const compteurs = jours[jour] = jours[jour] || {};
+    compteurs[cle] = (compteurs[cle] || 0) + 1;
+    await chrome.storage.local.set({ statsJours: jours });
+  });
+}
+
+async function envoyerStatistiques() {
+  const { syncSettings } = await chrome.storage.sync.get(['syncSettings']);
+  const settings = syncSettings || {};
+  if (settings.statistiquesUtilisation === false) {
+    // Désactivé : ce qui n'est pas encore parti ne partira jamais.
+    await aLaFileStats(() => chrome.storage.local.remove(['statsJours', 'statsEnvoyes']));
+    return { statut: 'desactivee', envoyes: 0 };
+  }
+  if (!settings.webAppUrl) return { statut: 'sans-tableau', envoyes: 0 };
+
+  const aujourdhui = jourLocal();
+  const { statsJours, statsEnvoyes, localSnippets, importedArticles } = await chrome.storage.local.get(
+    ['statsJours', 'statsEnvoyes', 'localSnippets', 'importedArticles']);
+  const envoyes = statsEnvoyes || {};
+  const jours = { ...(statsJours || {}) };
+  jours[aujourdhui] = jours[aujourdhui] || {};
+  // État de l'installation, joint au jour courant seulement : il dit l'adoption (version déployée,
+  // Clausier Personnel commencé, DatAviso AI utilisé), pas un usage.
+  const etat = {
+    version: chrome.runtime.getManifest().version,
+    snippetsPerso: (localSnippets || []).length,
+    articlesDataviso: (importedArticles || []).length
+  };
+  // Le jour courant repart quand ses compteurs ou l'état changent. Un jour passé repart une
+  // dernière fois avec ses totaux définitifs, sans l'état (le script garde celui déjà reçu), puis
+  // il est oublié.
+  const marque = (date) => empreinte(JSON.stringify(jours[date]) + (date === aujourdhui ? JSON.stringify(etat) : ''));
+  const lot = Object.keys(jours).sort()
+    .filter(date => envoyes[date] !== marque(date))
+    .map(date => ({ date, ...(date === aujourdhui ? etat : {}), compteurs: jours[date] }));
+  if (!lot.length) return { statut: 'a-jour', envoyes: 0 };
+
+  const sonde = settings.webAppUrl + (settings.webAppUrl.includes('?') ? '&' : '?') + 'probe=stats';
+  let signature;
+  try {
+    signature = await (await fetch(sonde, { cache: 'no-store' })).json();
+  } catch {
+    throw new Error('Script Google Sheets injoignable ou réponse illisible');
+  }
+  if (Array.isArray(signature) || !signature || signature.api !== 'stats') {
+    throw new Error('Script Google Sheets sans statistiques (à redéployer en "Nouvelle version") : envoi reporté');
+  }
+
+  const refUser = await refUtilisateur();
+  const res = await fetch(settings.webAppUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ action: 'stats', refUser, jours: lot })
+  });
+  const data = res.ok ? await res.json().catch(() => null) : null;
+  if (!data || !data.ok) throw new Error((data && data.error) || `Statistiques refusées (${res.status})`);
+
+  // Relu dans la file : un usage compté pendant l'envoi ne doit pas être effacé. Le jour courant
+  // reste (il continue de compter) ; les jours passés envoyés sont oubliés.
+  await aLaFileStats(async () => {
+    const etatActuel = await chrome.storage.local.get(['statsJours', 'statsEnvoyes']);
+    const restants = etatActuel.statsJours || {};
+    const memo = etatActuel.statsEnvoyes || {};
+    lot.forEach(j => {
+      if (j.date === aujourdhui) memo[j.date] = empreinte(JSON.stringify(j.compteurs) + JSON.stringify(etat));
+      else { delete restants[j.date]; delete memo[j.date]; }
+    });
+    // Un jour passé qui n'a plus rien à envoyer n'a plus besoin de son empreinte.
+    Object.keys(memo).forEach(d => { if (d < aujourdhui && !restants[d]) delete memo[d]; });
+    await chrome.storage.local.set({ statsJours: restants, statsEnvoyes: memo });
+  });
+  return { statut: 'envoyee', envoyes: lot.length };
+}
+
+// Un import DatAviso AI peut partir du popup comme des Paramètres : on le compte à sa source
+// commune, la date d'import qu'ils écrivent tous deux. Supprimer un article ne la change pas.
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area !== 'local' || !changes.importedMeta) return;
+  const avant = changes.importedMeta.oldValue, apres = changes.importedMeta.newValue;
+  if (apres && apres.importedAt && (!avant || avant.importedAt !== apres.importedAt)) {
+    compterUsage('import_dataviso');
+  }
+});
 
 // ---------- Création d'un snippet dans le Google Sheets ----------
 // Depuis la v2.18.0, le bouton "+" d'Aviso crée un snippet dans le Clausier Personnel (local) :
@@ -345,7 +481,7 @@ function compareVersions(a, b) {
   return 0;
 }
 
-// ---------- Messages depuis options.js ----------
+// ---------- Messages des pages de l'extension et du script de contenu ----------
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   // Bouton « Forcer l'actualisation » des Paramètres : même enchaînement que synchroniser(), mais
@@ -366,9 +502,19 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       } catch (e) {
         reponse.sauvegarde = { ok: false, error: e.message };
       }
+      try {
+        reponse.statistiques = { ok: true, ...(await envoyerStatistiques()) };
+      } catch (e) {
+        reponse.statistiques = { ok: false, error: e.message };
+      }
       sendResponse(reponse);
     })();
     return true;
+  }
+  if (msg.type === 'STAT') {
+    compterUsage(msg.cle);
+    sendResponse({ ok: true });
+    return false;
   }
   if (msg.type === 'RESCHEDULE_ALARM') {
     scheduleAlarms();

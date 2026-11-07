@@ -1,4 +1,4 @@
-const BUILD_DATE = '2026-11-07'; // v2.21.1
+const BUILD_DATE = '2026-11-07'; // v2.22.0
 const DEFAULT_GITHUB_URL = 'https://raw.githubusercontent.com/yakamatt/Snippets-Expander/main';
 const DEFAULT_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1H2rBzMQzZk74Bk2Z_Mo8lXAdYea7Mi7WfzVruBahd_I/edit';
 
@@ -30,6 +30,7 @@ function load(ouverture = false) {
     document.getElementById('lien-sharepoint').checked = s.lienSharepoint !== false;
     document.getElementById('lien-explorateur').checked = s.lienExplorateur !== false;
     document.getElementById('sauvegarde-clausier').checked = s.sauvegardeClausier !== false;
+    document.getElementById('statistiques-utilisation').checked = s.statistiquesUtilisation !== false;
     document.getElementById('local-folder-path').value = s.localFolderPath || '';
     document.getElementById('auto-check-updates').checked = !!s.autoCheckUpdates;
     document.getElementById('sheet-url').value = s.sheetUrl || '';
@@ -353,6 +354,7 @@ async function importerClausier(file) {
   if (identiques) parties.push(`${identiques} déjà identique${identiques > 1 ? 's' : ''}`);
   if (ignorees) parties.push(`${ignorees} ligne${ignorees > 1 ? 's' : ''} sans déclencheur ou sans contenu ignorée${ignorees > 1 ? 's' : ''}`);
   localStatusEl.textContent = `✅ Import de ${file.name} : ${parties.join(', ')}.`;
+  compterUsage('clausier_import');
 }
 
 document.getElementById('local-import-file').addEventListener('change', (e) => {
@@ -376,6 +378,7 @@ function exporterClausier(format) {
   const liste = localSnippets.slice().sort((a, b) => a.trigger.localeCompare(b.trigger, 'fr', { numeric: true }));
   telechargerFichier(format === 'xlsx' ? clausierVersXlsx(liste) : clausierVersCsv(liste), nomFichierExport(format));
   localStatusEl.textContent = `📤 ${liste.length} snippet${liste.length > 1 ? 's' : ''} exporté${liste.length > 1 ? 's' : ''} en .${format}.`;
+  compterUsage('clausier_export');
 }
 
 document.getElementById('local-export-xlsx').addEventListener('click', () => exporterClausier('xlsx'));
@@ -554,6 +557,12 @@ document.getElementById('toggle-advanced').addEventListener('click', () => {
 // qui a changé entre-temps.
 document.getElementById('sauvegarde-clausier').addEventListener('change', (e) => {
   updateSyncSettings({ sauvegardeClausier: e.target.checked });
+});
+
+// Décocher efface aussi les compteurs pas encore envoyés : ils ne partiront jamais.
+document.getElementById('statistiques-utilisation').addEventListener('change', (e) => {
+  updateSyncSettings({ statistiquesUtilisation: e.target.checked });
+  if (!e.target.checked) chrome.storage.local.remove(['statsJours', 'statsEnvoyes']);
 });
 
 // Liens vers l'affaire (SGO, SharePoint, Explorateur) : content.js écoute syncSettings et pose ou
@@ -795,3 +804,9 @@ document.getElementById('test-area').addEventListener('input', (e) => {
 });
 
 load(true);
+
+// Statistiques d'utilisation : seule la nature de l'usage part (voir STATS_CLES, background.js).
+function compterUsage(cle) {
+  chrome.runtime.sendMessage({ type: 'STAT', cle }, () => void chrome.runtime.lastError);
+}
+compterUsage('parametres');

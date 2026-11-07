@@ -1,5 +1,11 @@
 const DEFAULT_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1H2rBzMQzZk74Bk2Z_Mo8lXAdYea7Mi7WfzVruBahd_I/edit';
 
+// Statistiques d'utilisation : seule la nature de l'usage part (voir STATS_CLES, background.js).
+function compterUsage(cle) {
+  chrome.runtime.sendMessage({ type: 'STAT', cle }, () => void chrome.runtime.lastError);
+}
+compterUsage('popup');
+
 // Clausier Commun : le tableau visé est configurable (Paramètres avancés), le lien suit ce réglage.
 chrome.storage.sync.get(['syncSettings'], (res) => {
   const s = res.syncSettings || {};
