@@ -3,6 +3,7 @@
 ## v2.21.1 — 2026-11-07
 - **Paramètres : la page ne saute plus à la fin de « 🔄 Forcer l'actualisation du Clausier Commun ».** Ouverte depuis le lien « Modifier le Clausier Personnel » du popup (`options.html#clausier`), elle redescendait jusqu'au Clausier Personnel à chaque actualisation : le rechargement des données refaisait le défilement prévu pour l'ouverture. Il n'a plus lieu qu'à l'ouverture de la page, et l'on reste en haut, sur le résultat de l'actualisation
 - **Paramètres : la liste « Afficher les snippets » du Clausier Personnel est ouverte par défaut**, au lieu d'être repliée à chaque ouverture de la page. Elle se replie toujours d'un clic
+- **Tutoriel** : le titre d'accueil devient « Rédigez vos rapports AVISO beaucoup plus vite »
 
 ## Script Google Sheets — 2026-11-07
 *`Code.gs` seul, sans nouvelle version de l'extension : à recoller dans l'éditeur Apps Script.*
