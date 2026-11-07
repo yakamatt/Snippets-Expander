@@ -622,11 +622,12 @@ const STATS_SHEET_NAME = 'Statistiques';
 const STATS_SYNTHESE_HEBDO_SHEET_NAME = 'Synthèse_Hebdo';
 const STATS_SYNTHESE_MOIS_SHEET_NAME = 'Synthèse_Mensuelle';
 // Colonnes mises en tête des synthèses : ce que le garant suit d'abord. Un total pour chaque
-// clausier, et chaque lien externe à part. Le détail des autres usages suit dans les colonnes
+// clausier, l'icône verte DatAviso AI, et chaque lien externe à part. Le détail des autres usages suit dans les colonnes
 // d'après (un usage déjà montré seul en tête n'y est pas répété).
 const STATS_REGROUPEMENTS = [
   ['Clausier Personnel (clavier + icône jaune)', ['clavier_perso', 'aviso_perso']],
   ['Clausier Commun (clavier + icône bleue)', ['clavier_commun', 'aviso_commun']],
+  ['DatAviso AI (icône verte)', ['aviso_dataviso']],
   ['Lien SGO', ['lien_sgo']],
   ['Lien SharePoint', ['lien_sharepoint']],
   ['Lien sitesecurite', ['aviso_sitesecurite']],
