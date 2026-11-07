@@ -621,13 +621,16 @@ function appliquerDecisions() {
 const STATS_SHEET_NAME = 'Statistiques';
 const STATS_SYNTHESE_HEBDO_SHEET_NAME = 'Synthèse_Hebdo';
 const STATS_SYNTHESE_MOIS_SHEET_NAME = 'Synthèse_Mensuelle';
-// Totaux mis en tête des synthèses : ce que le garant suit d'abord. Le détail de chaque usage
-// suit dans les colonnes d'après.
+// Colonnes mises en tête des synthèses : ce que le garant suit d'abord. Un total pour chaque
+// clausier, et chaque lien externe à part. Le détail des autres usages suit dans les colonnes
+// d'après (un usage déjà montré seul en tête n'y est pas répété).
 const STATS_REGROUPEMENTS = [
   ['Clausier Personnel (clavier + icône jaune)', ['clavier_perso', 'aviso_perso']],
   ['Clausier Commun (clavier + icône bleue)', ['clavier_commun', 'aviso_commun']],
-  ['Liens externes (SGO, SharePoint, sitesecurite, Explorateur)',
-    ['lien_sgo', 'lien_sharepoint', 'aviso_sitesecurite', 'lien_explorateur']]
+  ['Lien SGO', ['lien_sgo']],
+  ['Lien SharePoint', ['lien_sharepoint']],
+  ['Lien sitesecurite', ['aviso_sitesecurite']],
+  ['Lien Explorateur', ['lien_explorateur']]
 ];
 const STATS_COLONNES_FIXES = ['Ref_User', 'Date', 'Version', 'Snippets personnels', 'Articles DatAviso'];
 const STATS_CONSERVATION_MOIS = 24;
@@ -788,6 +791,8 @@ function syntheseStatistiques_(periode) {
   const valeurs = source.getDataRange().getValues();
   const entete = valeurs[0].map(String);
   const cles = entete.slice(STATS_COLONNES_FIXES.length);
+  const seulsEnTete = STATS_REGROUPEMENTS.filter(([, cs]) => cs.length === 1).map(([, cs]) => cs[0]);
+  const detail = cles.filter(c => seulsEnTete.indexOf(c) < 0);
   const groupes = {};
   valeurs.slice(1).forEach(r => {
     const jour = String(r[1]);
@@ -815,7 +820,7 @@ function syntheseStatistiques_(periode) {
     const versions = Object.keys(parVersion).sort().reverse().map(v => `${v} : ${parVersion[v]}`).join(', ');
     return [g.libelle, Object.keys(g.installes).length, Object.keys(g.actifs).length]
       .concat(STATS_REGROUPEMENTS.map(([, cs]) => cs.reduce((t, c) => t + (g.totaux[c] || 0), 0)))
-      .concat(cles.map(c => g.totaux[c] || 0))
+      .concat(detail.map(c => g.totaux[c] || 0))
       .concat([versions]);
   });
 
@@ -824,7 +829,7 @@ function syntheseStatistiques_(periode) {
   synthese.clear();
   const titres = [hebdo ? 'Semaine' : 'Mois', 'Installations actives', 'Utilisateurs actifs']
     .concat(STATS_REGROUPEMENTS.map(([libelle]) => libelle))
-    .concat(cles.map(c => STATS_LIBELLES[c] || c))
+    .concat(detail.map(c => STATS_LIBELLES[c] || c))
     .concat(['Versions (utilisateurs)']);
   synthese.getRange(1, 1, 1, titres.length).setValues([titres]).setFontWeight('bold').setWrap(true);
   synthese.setFrozenRows(1);

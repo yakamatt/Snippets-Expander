@@ -3,7 +3,7 @@
 ## Script Google Sheets — 2026-11-07 (synthèses)
 *`Code.gs` seul, sans nouvelle version de l'extension : à recoller dans l'éditeur Apps Script.*
 - **Synthèse des statistiques hebdomadaire et mensuelle.** Le menu « Clausier » propose deux entrées au lieu d'une : *Synthèse hebdomadaire* (onglet `Synthèse_Hebdo`, semaines ISO du lundi au dimanche, par exemple « 2026 S45 (02/11 au 08/11) ») et *Synthèse mensuelle* (onglet `Synthèse_Mensuelle`)
-- **Trois totaux en tête, en jaune** : utilisations du Clausier Personnel (clavier + icône jaune), du Clausier Commun (clavier + icône bleue), et clics sur les liens externes (SGO, SharePoint, sitesecurite, Explorateur). Le détail de chaque usage suit, puis les versions en service
+- **En tête, en jaune** : les utilisations du Clausier Personnel (clavier + icône jaune) et du Clausier Commun (clavier + icône bleue), puis les clics sur chaque lien externe, une colonne par lien (SGO, SharePoint, sitesecurite, Explorateur). Le détail des autres usages de chaque usage suit, puis les versions en service
 - L'ancien onglet `Statistiques_Synthèse` n'est plus mis à jour : il peut être supprimé
 
 ## v2.22.0 — 2026-11-07
