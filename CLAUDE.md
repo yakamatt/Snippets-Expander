@@ -129,7 +129,9 @@ guide complet est en commentaire en tête de `Code.gs`.
 Le menu **Clausier** (`onOpen`, `preparerRevue`, `appliquerDecisions`) s'exécute dans le tableau
 avec le code enregistré, sans redéploiement. Il rapproche les déclencheurs par `cleDeclencheur_`
 (casse, espaces et préfixe ignorés) ; les onglets du garant (`Local_Snippets_Backup`,
-`Historique`, `Revue_Traités`) restent masqués — masquer n'est pas protéger.
+`Historique`, `Revue_Traités`) restent masqués — masquer n'est pas protéger. Régénérer la revue
+reporte décisions et « Texte final » retouchés (`lireRevueEnCours_`, colonnes lues par nom) : le
+travail du garant ne se perd jamais sans confirmation.
 
 Quand tu touches au contrat du POST, prévois toujours le script resté en version précédente :
 **dégrader, jamais casser** (la ligne se crée sans contenu, le tableau s'ouvre quand même).

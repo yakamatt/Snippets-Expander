@@ -3,6 +3,7 @@
 ## Script Google Sheets — 2026-11-07
 *`Code.gs` seul, sans nouvelle version de l'extension : à recoller dans l'éditeur Apps Script.*
 - **Plus de colonne « folder » dans l'onglet `Snippets`.** L'extension ne s'en servait plus depuis la v2.18.0 (plus d'affichage par dossier dans les Paramètres). Le script ne la lit plus, ne l'écrit plus, et un tableau neuf ne la crée plus ; elle peut être supprimée du tableau sans effet. La colonne « Dossier » de l'onglet `Revue` disparaît aussi
+- **Relancer « Préparer la revue » garde le travail en cours.** Les décisions pas encore appliquées et les « Texte final » retouchés à la main étaient effacés : la revue repartait de la proposition, et l'avertissement ne comptait que les décisions, si bien qu'une retouche sans décision se perdait sans prévenir. Ils sont désormais repris par déclencheur, même si la proposition a changé, avec une marque dans la colonne Type (« ✍️ retouche conservée », « 🔄 proposition changée » à relire). Une ligne travaillée qui ne revient pas dans la nouvelle revue est listée avant d'être effacée, sur confirmation
 - Une revue préparée avec l'ancien script (11 colonnes) est refusée à l'application, avec un message invitant à la préparer de nouveau : ses colonnes ne correspondent plus
 
 ## v2.21.0 — 2026-11-06
