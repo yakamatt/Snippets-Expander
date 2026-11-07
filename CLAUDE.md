@@ -34,21 +34,25 @@ jamais avoir « testé », dis ce que tu as vérifié et comment.
 Chacun vient d'un incident réel. Les commentaires du code expliquent le pourquoi : lis-les avant
 de « simplifier ».
 
-1. **Le Google Sheets fait autorité, et l'extension n'écrit plus dans l'onglet `Snippets`.** Depuis
-   la v2.18.0, le « + » crée le snippet dans le Clausier Personnel. Sa seule écriture est la
-   sauvegarde anonyme, confinée à l'onglet `Local_Snippets_Backup`. `createSnippetRow` (background.js) est conservé
-   mais sans appelant ; s'il est rebranché, il reste en ajout seul : jamais de suppression,
-   jamais de remplacement d'un contenu non vide.
-2. **`doPost` reste en ajout seul sur l'onglet `Snippets`.** Une version ancienne faisait
-   `clearContents()` puis réécrivait : un POST vers un script non redéployé a réellement vidé le
-   tableau (v2.15.0). Seul `sauvegarderClausier_` met à jour des lignes, et uniquement dans
-   `Local_Snippets_Backup` (une ligne par couple `Ref_User` + déclencheur), jamais ailleurs.
-   L'unique autre écriture dans `Snippets` est le menu **Clausier > Appliquer les décisions**,
-   lancé par le garant depuis le tableau : il remplace un texte commun seulement sur sa
-   décision, après l'avoir copié dans `Historique`, et jamais si ce texte a changé depuis la
-   préparation de la revue.
-3. **Sonder avant d'écrire.** `verifierApiAjout()` fait un GET `?probe=append`, la sauvegarde un
-   GET `?probe=backup`, et le POST n'est émis que si la signature revient. Un ancien script répond un tableau — `Array.isArray` le démasque.
+1. **Le Google Sheets fait autorité, et rien d'extérieur n'écrit dans l'onglet `Snippets`.**
+   Depuis la v2.18.0, le « + » crée le snippet dans le Clausier Personnel. L'ajout de ligne par
+   POST a été **retiré** (API v6, v2.23.1) : le script est ouvert à « N'importe quel utilisateur »
+   et son adresse est publique (background.js, sur GitHub), un simple POST injectait un snippet
+   chez tous les utilisateurs (un déclencheur `e` aurait remplacé chaque « e » tapé). Ne jamais
+   rouvrir d'écriture publique vers `Snippets`. L'unique écriture dans cet onglet est le menu
+   **Clausier > Appliquer les décisions**, lancé par le garant depuis le tableau : il remplace un
+   texte commun seulement sur sa décision, après l'avoir copié dans `Historique`, et jamais si ce
+   texte a changé depuis la préparation de la revue.
+2. **`doPost` n'accepte que `backup` et `stats`, chacun confiné à son onglet.** Une version
+   ancienne faisait `clearContents()` puis réécrivait : un POST vers un script non redéployé a
+   réellement vidé le tableau (v2.15.0). `sauvegarderClausier_` met à jour une ligne par couple
+   `Ref_User` + déclencheur dans `Local_Snippets_Backup`, `enregistrerStatistiques_` une ligne par
+   `Ref_User` + date dans `Statistiques`, jamais ailleurs. **Tout texte d'utilisateur écrit dans
+   une cellule passe par `texteBrut_`** : sans l'apostrophe qu'elle ajoute, Sheets lit « => voir
+   plan » comme une formule (#ERROR!, texte perdu, puis propagé au Clausier Commun par la revue).
+3. **Sonder avant d'écrire.** La sauvegarde fait un GET `?probe=backup`, les statistiques
+   `?probe=stats`, et le POST n'est émis que si la signature revient. Un ancien script répond un
+   tableau — `Array.isArray` le démasque.
 4. **Une synchro ne remplace jamais des snippets par un tableau vide** (`pullFromSheet`). La copie
    locale est conservée et un bandeau s'affiche dans les Paramètres. La synchro ne touche jamais
    au Clausier Personnel.
@@ -128,7 +132,7 @@ Les icônes s'insèrent dans la cellule « Dispositions réalisées », dans l'o
 
 ## Apps Script
 
-`API_VERSION` dans `Code.gs` (v5 aujourd'hui) est la poignée de main avec l'extension. Après
+`API_VERSION` dans `Code.gs` (v6 aujourd'hui) est la poignée de main avec l'extension. Après
 **toute** modification : Déployer > Gérer les déploiements > crayon > **« Nouvelle version »**.
 Choisir « Version la plus récente » laisse l'ancien code en service — c'est l'erreur classique, le
 guide complet est en commentaire en tête de `Code.gs`.

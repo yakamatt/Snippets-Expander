@@ -2,7 +2,6 @@
 //
 // Expose le Sheet "Snippets" comme mini-API gratuite :
 //   GET                          -> renvoie tous les snippets (lecture, utilisée à chaque synchro)
-//   POST {action:"append", ...}  -> ajoute une ligne (déclencheur + contenu, ce dernier facultatif)
 //   POST {action:"backup", ...}  -> sauvegarde le Clausier Personnel d'un utilisateur dans
 //                                   l'onglet "Local_Snippets_Backup" (jamais dans "Snippets")
 //   POST {action:"stats", ...}   -> statistiques d'utilisation anonymes, dans l'onglet
@@ -17,9 +16,10 @@
 //                               utilisateurs et usage par semaine ou par mois
 // Ce menu s'exécute avec le code enregistré dans l'éditeur, sans redéploiement.
 //
-// Le POST sert au bouton "+" de l'intégration Aviso : il crée la ligne en y reprenant le texte
-// déjà saisi dans la cellule "Dispositions réalisées" (vide si la cellule l'était), puis
-// l'extension rouvre le tableau sur la cellule "content" pour compléter ou relire.
+// Aucun POST n'écrit dans "Snippets" : le script est ouvert à tous (« N'importe quel
+// utilisateur ») et son adresse est publique, une action d'ajout permettait à n'importe qui
+// d'injecter un snippet chez tous les utilisateurs (retirée en API v6). Seul le menu du garant,
+// lancé depuis le tableau, modifie cet onglet.
 //
 // ⚠️ Après toute modification de ce fichier : Déployer > Gérer les déploiements > (crayon) >
 // Version : "Nouvelle version" > Déployer. Sans nouvelle version, l'URL /exec continue de
@@ -31,9 +31,8 @@
 //
 // Le script Apps Script doit être déployé en tant qu'application web, accessible via une URL
 // /exec. Sans redéploiement après chaque modification, l'extension utilise l'ancienne version.
-// C'est critique, car le bouton "+" de l'extension vérifie la version du script AVANT d'écrire
-// (v2.15.1) : si le script n'a pas été redéployé, le bouton refuse proprement plutôt que de
-// risquer d'écraser le tableau.
+// L'extension sonde la version du script AVANT chaque envoi (?probe=backup, ?probe=stats) : si
+// le script n'a pas été redéployé, elle n'envoie rien et réessaie à l'actualisation suivante.
 //
 // ÉTAPES POUR DÉPLOYER (première fois, ou après modification du code)
 // ==================================================================
@@ -70,13 +69,13 @@
 //
 // ⚠️ ERREUR COURANTE : choisir "Version la plus récente" au lieu de "Nouvelle version"
 //    └─ L'URL ne change pas, mais elle continue de servir l'ANCIEN code
-//    └─ L'extension s'en protège (v2.15.1+) : elle vérifie la version avant d'écrire
-//    └─ Si le script n'a pas été redéployé, le bouton "+" refusera proprement
+//    └─ L'extension s'en protège : elle vérifie la version avant d'envoyer quoi que ce soit
+//    └─ Si le script n'a pas été redéployé, la sauvegarde et les statistiques attendent
 //
 // DÉPANNAGE
 // =========
 //
-// Q: Pourquoi le bouton "+" me dit "Script Google Sheets obsolète" ?
+// Q: Pourquoi « Forcer l'actualisation » dit "à redéployer en Nouvelle version" ?
 // R: Le script n'a pas été redéployé en "Nouvelle version" après sa modification.
 //    Suis les étapes 4 ci-dessus, puis recharge l'extension Chrome.
 //
@@ -85,9 +84,9 @@
 //    Ce qui change, c'est la version du code qu'elle sert.
 //
 // Q: Comment savoir si mon script fonctionne correctement ?
-// R: Dans l'extension, cliquer le bouton "+" sur une ligne Aviso.
-//    Si le tableau Google Sheets s'ouvre sur la ligne créée, c'est bon.
-//    S'il affiche "Script Google Sheets obsolète", c'est qu'il faut redéployer.
+// R: Ouvrir l'adresse /exec suivie de ?probe=stats dans le navigateur : elle doit répondre
+//    {"ok":true,"api":"stats","version":...} avec la version de API_VERSION ci-dessous.
+//    Une liste de snippets à la place veut dire qu'il faut redéployer.
 //
 // Q: Puis-je utiliser la même URL /exec pour plusieurs tableaux ?
 // R: Non. Chaque tableau (chaque projet Apps Script) a sa propre URL.
@@ -144,12 +143,11 @@ function json_(obj) {
 // l'extension ne lui envoie alors rien et réessaie à la synchro suivante.
 // Version 5 : POST {action:"stats"} pour les statistiques d'utilisation, sondée par ?probe=stats,
 // avec le même repli : un script resté en version 4 ne reçoit rien.
-const API_VERSION = 5;
+// Version 6 : plus de POST {action:"append"} ni de ?probe=append (voir doPost). L'extension ne
+// s'en servait plus depuis la v2.18.0.
+const API_VERSION = 6;
 
 function doGet(e) {
-  if (e && e.parameter && e.parameter.probe === 'append') {
-    return json_({ ok: true, api: 'append', version: API_VERSION });
-  }
   if (e && e.parameter && e.parameter.probe === 'backup') {
     return json_({ ok: true, api: 'backup', version: API_VERSION });
   }
@@ -169,54 +167,27 @@ function doGet(e) {
   return json_(snippets);
 }
 
-// Ajout d'une seule ligne. Volontairement non destructif : la version précédente de ce script
-// vidait tout le tableau avant de le réécrire (héritage d'avant le passage en lecture seule de
-// l'extension, qui ne l'appelait plus). Un appel inattendu aurait effacé les snippets.
+// Les seules écritures ouvertes au public, toutes deux confinées à leur onglet. Aucune action
+// n'écrit dans "Snippets" (voir l'en-tête) : une version ancienne de ce script vidait même tout le
+// tableau sur n'importe quel POST.
 function doPost(e) {
   try {
     const body = JSON.parse(e.postData.contents);
     if (body.action === 'backup') return json_(sauvegarderClausier_(body));
     if (body.action === 'stats') return json_(enregistrerStatistiques_(body));
-    if (body.action !== 'append') {
-      return json_({ ok: false, error: 'Action inconnue : ' + body.action });
-    }
-
-    const trigger = String(body.trigger || '').trim();
-    if (!trigger) return json_({ ok: false, error: 'Déclencheur vide' });
-
-    // Contenu pré-rempli : le texte déjà saisi dans la cellule Aviso au moment du clic sur "+".
-    // Vide si la cellule l'était — la ligne est alors créée sans contenu, comme avant.
-    const contenu = String(body.content || '').trim();
-
-    const sheet = getSheet_();
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const rows = sheet.getDataRange().getValues().slice(1);
-    const triggers = rows.map(r => String(r[0]).trim());
-
-    // Déjà présent : on renvoie sa ligne au lieu d'en créer une seconde au même déclencheur,
-    // que l'expansion de texte départagerait de façon arbitraire.
-    const deja = triggers.indexOf(trigger);
-    if (deja >= 0) {
-      const ligne = deja + 2;
-      // Le contenu existant n'est jamais remplacé : on ne remplit que si la cellule est vide,
-      // pour ne pas écraser un texte rédigé dans le tableau par un texte venu d'Aviso.
-      if (contenu && !String(rows[deja][1] || '').trim()) {
-        sheet.getRange(ligne, 2).setValue(contenu);
-      }
-      return json_({
-        ok: true, created: false, row: ligne,
-        gid: sheet.getSheetId(), sheetUrl: ss.getUrl()
-      });
-    }
-
-    sheet.appendRow([trigger, contenu]);
-    return json_({
-      ok: true, created: true, row: sheet.getLastRow(),
-      gid: sheet.getSheetId(), sheetUrl: ss.getUrl()
-    });
+    return json_({ ok: false, error: 'Action inconnue : ' + body.action });
   } catch (err) {
     return json_({ ok: false, error: String(err) });
   }
+}
+
+// Texte d'un utilisateur à écrire dans une cellule. Sans l'apostrophe, Google Sheets interprète
+// ce qu'il reconnaît : « => voir plan » devient une formule invalide (#ERROR!, texte perdu),
+// « 0612 » un nombre, « 12/03 » une date. L'apostrophe force le texte tel quel ; elle ne
+// s'affiche pas et getValues() ne la renvoie pas, la relecture rend donc le texte d'origine.
+function texteBrut_(v) {
+  const t = String(v ?? '');
+  return t ? "'" + t : t;
 }
 
 // Sauvegarde anonyme des Clausiers Personnels, pour repérer les snippets utiles à intégrer au
@@ -249,7 +220,7 @@ function sauvegarderClausier_(body) {
     recus.forEach(s => {
       const trigger = String((s && s.trigger) || '').trim();
       if (!trigger) return;
-      const ligne = [trigger, String(s.content || ''), refUser, date];
+      const ligne = [texteBrut_(trigger), texteBrut_(s.content), refUser, date];
       const existante = index[refUser + '\u0000' + trigger];
       if (existante) {
         sheet.getRange(existante, 1, 1, 4).setValues([ligne]);
@@ -491,7 +462,8 @@ function preparerRevue() {
   revue.getRange(1, 1, 1, REVUE_HEADER.length).setValues([REVUE_HEADER]).setFontWeight('bold');
   revue.setFrozenRows(1);
   if (lignes.length) {
-    revue.getRange(2, 1, lignes.length, REVUE_HEADER.length).setValues(lignes);
+    revue.getRange(2, 1, lignes.length, REVUE_HEADER.length)
+      .setValues(lignes.map(l => l.map(v => typeof v === 'string' ? texteBrut_(v) : v)));
     const regle = SpreadsheetApp.newDataValidation()
       .requireValueInList([DECISION_ADOPTER, DECISION_IGNORER], true).setAllowInvalid(false).build();
     revue.getRange(2, 7, lignes.length, 1).setDataValidation(regle);
@@ -565,7 +537,7 @@ function appliquerDecisions() {
         const commun = communs[cle];
         if (String(r[0]).indexOf('Nouveau') >= 0) {
           if (commun) { bilan.ecartes.push(`${trigger} : ajouté au Clausier Commun depuis la revue, à revoir`); return; }
-          sheet.appendRow([trigger, texte]);
+          sheet.appendRow([texteBrut_(trigger), texteBrut_(texte)]);
           communs[cle] = { ligne: sheet.getLastRow(), trigger, content: texte };
           bilan.ajoutes++;
         } else {
@@ -576,8 +548,8 @@ function appliquerDecisions() {
             bilan.ecartes.push(`${trigger} : texte commun modifié depuis la préparation de la revue`);
             return;
           }
-          historique.appendRow([date, commun.trigger, commun.content, texte]);
-          sheet.getRange(commun.ligne, 2).setValue(texte);
+          historique.appendRow([date, texteBrut_(commun.trigger), texteBrut_(commun.content), texteBrut_(texte)]);
+          sheet.getRange(commun.ligne, 2).setValue(texteBrut_(texte));
           commun.content = texte;
           bilan.modifies++;
         }
@@ -587,7 +559,7 @@ function appliquerDecisions() {
         return;
       }
       // Adopter ou ignorer tranche pour toutes les variantes montrées : aucune ne revient.
-      variantes.forEach(t => memoire.push([cle, t, decision, date]));
+      variantes.forEach(t => memoire.push([texteBrut_(cle), texteBrut_(t), decision, date]));
       aSupprimer.push(i + 2);
     });
 

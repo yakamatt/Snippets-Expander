@@ -1,5 +1,10 @@
 # Changelog — Snippet Expander
 
+## v2.23.1 — 2026-11-07
+- **Sécurité : plus aucun ajout de ligne public dans le Clausier Commun** (`Code.gs`, API v6). Le script acceptait encore l'action « append », héritée de l'ancien bouton « + » qui ne s'en sert plus depuis la v2.18.0. Le script étant ouvert à tous et son adresse publique, n'importe qui pouvait ajouter un snippet chez tous les utilisateurs : un déclencheur `e` aurait remplacé chaque « e » tapé, sur tous les sites. L'action et sa sonde `?probe=append` sont retirées du script, et le code de l'extension qui les appelait (sans appelant depuis la v2.18.0) est supprimé
+- **Les textes commençant par « = » ne deviennent plus des formules cassées dans le tableau.** Google Sheets lisait « => voir plan » comme une formule invalide : la sauvegarde et la revue affichaient `#ERROR!` et le texte était perdu ; adopté dans la revue, `#ERROR!` partait dans le Clausier Commun. Il transformait aussi « 0612 » en nombre et « 12/03 » en date. Tout texte d'utilisateur est désormais écrit précédé d'une apostrophe, invisible et absente à la relecture : sauvegarde, revue, application des décisions, historique. Les lignes déjà abîmées dans `Local_Snippets_Backup` ne se réparent pas : elles se rectifient au prochain envoi d'un snippet modifié
+- ⚠️ **Le script Apps Script doit être redéployé** (« Nouvelle version »). L'extension n'a pas besoin de ce redéploiement pour fonctionner : elle ne se servait plus de l'ajout de ligne
+
 ## v2.23.0 — 2026-11-07
 - **Retrait de la mise à jour en mode développeur.** Le bloc « Mise à jour de l'extension (mode développeur) » des Paramètres avancés (vérification de la version publiée sur GitHub, deux fois par jour ou à la demande, lien de téléchargement du zip, dossier local), le bandeau « Nouvelle version disponible » et le badge « ⬆ » de l'icône disparaissent. Ils ne servaient qu'à une extension chargée non empaquetée : depuis le Chrome Web Store, Chrome installe les mises à jour tout seul
   - Le bloc « Mise à jour de l'extension » reste, toujours affiché : il indique la version installée

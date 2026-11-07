@@ -629,8 +629,8 @@ function insertAvisoImportIcon(container, dispoCell, article) {
 // c'est le cas courant : on rédige une fois la disposition, puis on la capitalise en snippet.
 // Ouvre la fenêtre d'édition pour relire avant d'enregistrer. N'apparaît que sur les lignes sans
 // snippet local : deux snippets locaux au même déclencheur rendraient l'expansion imprévisible.
-// Plus aucune écriture dans le Google Sheets depuis Aviso (createSnippetRow, dans
-// background.js, est conservé mais n'est plus appelé).
+// Aucune écriture dans le Google Sheets depuis Aviso : l'ajout public de ligne a été retiré du
+// script (API v6), il permettait à n'importe qui d'injecter un snippet chez tous.
 function insertAvisoAddIcon(container, dispoCell, refCode) {
   if (container.querySelector('.' + AVISO_ADD_CLASS)) return;
 
