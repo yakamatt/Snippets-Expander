@@ -88,8 +88,9 @@
     <section class="etape" data-titre="Les icônes Aviso">
       <div class="texte">
         <p class="sur-titre">Étape 3 · Sur Aviso</p>
-        <h1>Des icônes dans « Dispositions réalisées »</h1>
-        <p>Elles apparaissent quand le code du Référentiel (par exemple <code>GN 4</code>) correspond à un snippet. Survolez une icône pour lire le texte avant de l'insérer : il s'ajoute toujours <strong>à la suite</strong> de ce qui est déjà écrit.</p>
+        <h1>Un clic pour remplir « Dispositions réalisées »</h1>
+        <p>Sur chaque ligne dont le Référentiel porte un code (<code>GN 4</code>, <code>CO 24</code>…), des icônes apparaissent au-dessus du champ.</p>
+        <p>Un clic ajoute le texte <strong>à la suite</strong> de ce qui est déjà écrit : rien n'est remplacé. Survolez une icône pour relire le texte avant de l'insérer.</p>
       </div>
       <div class="visuel">
         <div class="maquette aviso">
@@ -100,38 +101,37 @@
                 <td class="ref">GN 4 - Procédure d'adaptation</td>
                 <td class="dispo">
                   <div class="icones">
-                    <span class="ico" data-n="1"><img src="icons/local16.svg" alt="" /></span>
-                    <span class="ico" data-n="2"><img src="icons/edit16.svg" alt="" /></span>
-                    <span class="ico" data-n="3"><img src="icons/icon16.png" alt="" /></span>
-                    <span class="ico" data-n="4"><img src="icons/sitesecurite32.png" alt="" /></span>
-                    <span class="ico" data-n="5"><img src="icons/imported16.svg" alt="" /></span>
-                    <span class="ico corbeille" data-n="6"><svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 4.5h11M6.5 4.5V3a1 1 0 0 1 1-1h1a1 1 0 0 1 1 1v1.5M4 4.5l.7 8.6a1 1 0 0 0 1 .9h4.6a1 1 0 0 0 1-.9l.7-8.6M6.75 7v4.5M9.25 7v4.5"/></svg></span>
+                    <span class="ico" data-ico="perso"><img src="icons/local16.svg" alt="" /></span>
+                    <span class="ico" data-ico="crayon"><img src="icons/edit16.svg" alt="" /></span>
+                    <span class="ico" data-ico="commun"><img src="icons/icon16.png" alt="" /></span>
+                    <span class="ico" data-ico="loi"><img src="icons/sitesecurite32.png" alt="" /></span>
+                    <span class="ico" data-ico="dataviso"><img src="icons/imported16.svg" alt="" /></span>
+                    <span class="ico corbeille" data-ico="corbeille"><svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 4.5h11M6.5 4.5V3a1 1 0 0 1 1-1h1a1 1 0 0 1 1 1v1.5M4 4.5l.7 8.6a1 1 0 0 0 1 .9h4.6a1 1 0 0 0 1-.9l.7-8.6M6.75 7v4.5M9.25 7v4.5"/></svg></span>
                   </div>
                   <div class="zone">Les dispositions prévues ont été vérifiées…</div>
-                </td>
-              </tr>
-              <tr>
-                <td class="ref">CO 24 - Isolement</td>
-                <td class="dispo">
-                  <div class="icones">
-                    <span class="ico" data-n="7"><img src="icons/add16.svg" alt="" /></span>
-                    <span class="ico"><img src="icons/icon16.png" alt="" /></span>
-                  </div>
-                  <div class="zone vide"></div>
                 </td>
               </tr>
             </tbody>
           </table>
         </div>
-        <ol class="legende">
-          <li><b>1</b> Votre snippet personnel</li>
-          <li><b>2</b> Le modifier sans quitter Aviso</li>
-          <li><b>3</b> Le snippet du Clausier Commun</li>
-          <li><b>4</b> Le texte réglementaire sur sitesecurite.com</li>
-          <li><b>5</b> Vos données DatAviso AI</li>
-          <li><b>6</b> Effacer le champ (s'annule d'un clic)</li>
-          <li><b>7</b> Créer un snippet personnel pour ce code</li>
-        </ol>
+        <div class="legende-icones">
+          <p class="groupe">Insérer un texte</p>
+          <ul>
+            <li data-ico="perso"><span class="tuile"><img src="icons/local16.svg" alt="" /></span><span><strong>Votre snippet</strong> celui de votre Clausier Personnel pour ce code</span></li>
+            <li data-ico="commun"><span class="tuile"><img src="icons/icon16.png" alt="" /></span><span><strong>Clausier Commun</strong> le texte partagé par l'équipe</span></li>
+            <li data-ico="dataviso"><span class="tuile"><img src="icons/imported16.svg" alt="" /></span><span><strong>DatAviso AI</strong> les données du dossier que vous avez importées</span></li>
+          </ul>
+          <p class="groupe">Gérer vos snippets</p>
+          <ul>
+            <li data-ico="crayon"><span class="tuile"><img src="icons/edit16.svg" alt="" /></span><span><strong>Modifier</strong> votre snippet, sans quitter Aviso</span></li>
+            <li><span class="tuile"><img src="icons/add16.svg" alt="" /></span><span><strong>Créer</strong> un snippet à partir du texte de la cellule. Il remplace l'icône jaune tant que vous n'avez pas de snippet pour ce code</span></li>
+          </ul>
+          <p class="groupe">Et aussi</p>
+          <ul>
+            <li data-ico="loi"><span class="tuile"><img src="icons/sitesecurite32.png" alt="" /></span><span><strong>Réglementation</strong> l'article sur sitesecurite.com</span></li>
+            <li data-ico="corbeille"><span class="tuile corbeille"><svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 4.5h11M6.5 4.5V3a1 1 0 0 1 1-1h1a1 1 0 0 1 1 1v1.5M4 4.5l.7 8.6a1 1 0 0 0 1 .9h4.6a1 1 0 0 0 1-.9l.7-8.6M6.75 7v4.5M9.25 7v4.5"/></svg></span><span><strong>Effacer</strong> le champ. Un second clic annule</span></li>
+          </ul>
+        </div>
       </div>
     </section>
 
@@ -198,7 +198,6 @@
         <h1>Le popup, votre point de départ</h1>
         <p>Cliquez sur l'icône de l'extension pour modifier votre Clausier Personnel, consulter le Clausier Commun, importer DatAviso AI, ou ouvrir les Paramètres.</p>
         <p>Une idée, un bug ? Le bouton <strong>Donner mon avis</strong> nous l'envoie directement. Et ce tutoriel reste accessible par le lien <strong>🎓 Tutoriel</strong>.</p>
-        <p>📊 Pour savoir quelles fonctions servent vraiment, l'extension envoie des statistiques d'utilisation anonymes : combien de fois chaque fonction a servi, jamais ce que vous tapez ni les pages visitées. Désactivable dans Paramètres avancés.</p>
       </div>
       <div class="visuel">
         <div class="maquette mini-popup grand">

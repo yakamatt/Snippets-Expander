@@ -89,6 +89,14 @@ function lancerDemoFrappe() {
   demoMinuteur = setTimeout(taper, 600);
 }
 
+// Étape des icônes Aviso : survoler une ligne de la légende, ou une icône de la maquette, met en
+// évidence les deux à la fois.
+document.querySelectorAll('[data-ico]').forEach(el => {
+  const paire = () => document.querySelectorAll(`[data-ico="${el.dataset.ico}"]`);
+  el.addEventListener('mouseenter', () => paire().forEach(x => x.classList.add('actif')));
+  el.addEventListener('mouseleave', () => paire().forEach(x => x.classList.remove('actif')));
+});
+
 brancherPartage(
   document.getElementById('share-copy'),
   document.getElementById('share-mail'),

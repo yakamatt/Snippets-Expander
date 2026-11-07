@@ -286,19 +286,9 @@ code {
 }
 .ico img { width: 16px; height: 16px; display: block; }
 .ico.corbeille { margin-left: auto; color: #8a8f99; }
-.ico[data-n]::after {
-  content: attr(data-n);
-  position: absolute;
-  top: -9px;
-  right: -7px;
-  min-width: 15px;
-  height: 15px;
-  border-radius: 999px;
-  background: var(--aviso-bleu);
-  color: #fff;
-  font: 700 9.5px/15px var(--font-sans);
-  text-align: center;
-}
+.icones .ico { width: 26px; height: 26px; border-radius: 6px; transition: background .15s, box-shadow .15s; }
+.icones .ico img, .icones .ico svg { width: 20px; height: 20px; }
+.icones .ico.actif { background: var(--accent-wash); box-shadow: 0 0 0 2px var(--accent); }
 .aviso .zone {
   border: 1px solid #ccc;
   border-radius: 3px;
@@ -308,29 +298,35 @@ code {
   font-size: 12.5px;
 }
 
-.legende {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 6px 16px;
-  width: 100%;
-  max-width: 520px;
-  font-size: 13.5px;
+/* Légende des icônes Aviso, rangée par usage ; survoler une ligne désigne l'icône dans la maquette. */
+.legende-icones { width: 100%; max-width: 520px; font-size: 13.5px; line-height: 1.4; }
+.legende-icones .groupe {
+  margin: 10px 0 4px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
 }
-.legende b {
-  display: inline-block;
-  width: 18px;
-  height: 18px;
-  border-radius: 999px;
-  background: var(--aviso-bleu);
-  color: #fff;
-  font-size: 10.5px;
-  line-height: 18px;
-  text-align: center;
-  margin-right: 6px;
+.legende-icones .groupe:first-child { margin-top: 0; }
+.legende-icones ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.legende-icones li { display: flex; align-items: flex-start; gap: 10px; padding: 3px 6px; border-radius: 6px; color: var(--ink-muted); }
+.legende-icones li[data-ico] { cursor: default; }
+.legende-icones li.actif { background: var(--accent-wash); }
+.legende-icones strong { color: var(--ink); margin-right: 4px; }
+.tuile {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  background: #fff;
+  border: 1px solid var(--border);
 }
+.tuile img, .tuile svg { width: 16px; height: 16px; display: block; }
+.tuile.corbeille { color: #8a8f99; }
 
 /* DatAviso AI */
 .flux { flex-direction: row; justify-content: center; gap: 18px; }
@@ -482,7 +478,6 @@ code {
   .etape { grid-template-columns: 1fr; gap: 24px; }
   .deux-cartes, .flux { flex-direction: column; align-items: center; }
   .carte-clausier.personnel { transform: none; }
-  .legende { grid-template-columns: 1fr; }
   .barre, .scene, .navigation { padding-left: 16px; padding-right: 16px; }
   .nav-btn { min-width: 0; }
 }
