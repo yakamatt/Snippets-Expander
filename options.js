@@ -1,5 +1,4 @@
-const BUILD_DATE = '2026-11-07'; // v2.22.0
-const DEFAULT_GITHUB_URL = 'https://raw.githubusercontent.com/yakamatt/Snippets-Expander/main';
+const BUILD_DATE = '2026-11-07'; // v2.23.0
 const DEFAULT_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1H2rBzMQzZk74Bk2Z_Mo8lXAdYea7Mi7WfzVruBahd_I/edit';
 
 // Clausier Commun (Google Sheets) : plus affiché sur cette page depuis la v2.18.0, mais
@@ -11,14 +10,13 @@ let localSnippets = [];
 // ouverture : true au premier chargement de la page seulement. Le bouton d'actualisation recharge
 // aussi les données, et ne doit pas faire défiler la page.
 function load(ouverture = false) {
-  chrome.storage.local.get(['snippets', 'localSnippets', 'lastSync', 'updateCheck', 'pinBannerDismissed', 'syncWarning'], (res) => {
+  chrome.storage.local.get(['snippets', 'localSnippets', 'lastSync', 'pinBannerDismissed', 'syncWarning'], (res) => {
     snippets = res.snippets || [];
     localSnippets = res.localSnippets || [];
     renderLocal();
     // Lien "Modifier le Clausier Personnel" du popup : la page s'ouvre sur options.html#clausier.
     if (ouverture && location.hash === '#clausier') document.getElementById('clausier').scrollIntoView({ block: 'start' });
     renderVersionFooter(res.lastSync);
-    renderUpdateBanner(res.updateCheck);
     renderSyncWarning(res.syncWarning);
     document.getElementById('pin-banner').hidden = !!res.pinBannerDismissed;
   });
@@ -31,13 +29,12 @@ function load(ouverture = false) {
     document.getElementById('lien-explorateur').checked = s.lienExplorateur !== false;
     document.getElementById('sauvegarde-clausier').checked = s.sauvegardeClausier !== false;
     document.getElementById('statistiques-utilisation').checked = s.statistiquesUtilisation !== false;
-    document.getElementById('local-folder-path').value = s.localFolderPath || '';
-    document.getElementById('auto-check-updates').checked = !!s.autoCheckUpdates;
     document.getElementById('sheet-url').value = s.sheetUrl || '';
     document.getElementById('webapp-url').value = s.webAppUrl || '';
     document.getElementById('open-sheet-link').href = s.sheetUrl || DEFAULT_SHEET_URL;
   });
-  renderUpdateMode();
+  document.getElementById('update-status-store').textContent =
+    `Version installée : v${chrome.runtime.getManifest().version}`;
   loadImported();
 }
 
@@ -56,27 +53,6 @@ document.getElementById('pin-banner-dismiss').addEventListener('click', () => {
   document.getElementById('pin-banner').hidden = true;
   chrome.storage.local.set({ pinBannerDismissed: true });
 });
-
-// Le flux de mise à jour manuel (URL GitHub raw + téléchargement zip) n'a de sens qu'en mode
-// développeur ("non empaquetée") : une fois publiée sur le Chrome Web Store, Chrome met à jour
-// l'extension tout seul, silencieusement.
-function renderUpdateMode() {
-  const devBlock = document.getElementById('update-block-dev');
-  const storeBlock = document.getElementById('update-block-store');
-  if (!chrome.management || !chrome.management.getSelf) {
-    devBlock.hidden = false; // API indisponible (contexte de test) : on affiche le mode dev par défaut
-    return;
-  }
-  chrome.management.getSelf((info) => {
-    const isDev = info.installType === 'development';
-    devBlock.hidden = !isDev;
-    storeBlock.hidden = isDev;
-    if (!isDev) {
-      document.getElementById('update-status-store').textContent =
-        `Version installée : v${chrome.runtime.getManifest().version}`;
-    }
-  });
-}
 
 // ---------- Mise à jour des données depuis Google Sheets (bouton principal, en haut de page) ----------
 
@@ -614,90 +590,6 @@ brancherChampUrl('sheet-url', 'sheetUrl', '/spreadsheets/', (v) => {
 });
 brancherChampUrl('webapp-url', 'webAppUrl', '/exec');
 
-document.getElementById('local-folder-path').addEventListener('change', (e) => {
-  updateSyncSettings({ localFolderPath: e.target.value.trim() });
-});
-
-document.getElementById('auto-check-updates').addEventListener('change', (e) => {
-  updateSyncSettings({ autoCheckUpdates: e.target.checked });
-});
-
-document.getElementById('check-update-btn').addEventListener('click', () => {
-  document.getElementById('update-status').textContent = '⏳ Vérification en cours...';
-  chrome.runtime.sendMessage({ type: 'CHECK_FOR_UPDATES' }, (resp) => {
-    if (resp && resp.ok) {
-      document.getElementById('update-status').textContent = resp.isNewer
-        ? `⬆️ Nouvelle version disponible : ${resp.remoteVersion} (actuelle : ${resp.localVersion})`
-        : `✅ Vous êtes à jour (v${resp.localVersion}).`;
-      if (resp.isNewer) populateUpdateSteps(resp.remoteVersion); else hideUpdateSteps();
-      chrome.storage.local.get(['updateCheck'], (r) => renderUpdateBanner(r.updateCheck));
-    } else {
-      hideUpdateSteps();
-      document.getElementById('update-status').textContent = '❌ Erreur : ' + (resp && resp.error);
-    }
-  });
-});
-
-// Construit l'URL de téléchargement du zip à partir du dépôt GitHub fixé dans le code
-// (https://raw.githubusercontent.com/USER/REPO/BRANCH -> zip via codeload.github.com)
-function getRepoZipUrl() {
-  const m = DEFAULT_GITHUB_URL.match(/raw\.githubusercontent\.com\/([^/]+)\/([^/]+)\/([^/]+)/);
-  if (!m) return null;
-  const [, user, repo, branch] = m;
-  return `https://codeload.github.com/${user}/${repo}/zip/refs/heads/${branch}`;
-}
-
-// Convertit un chemin local (Unix ou Windows) en URL file:// cliquable. Chrome ouvre ce type de
-// lien en listant le contenu du dossier, ce qui permet de le retrouver en un clic plutôt que de
-// se souvenir de son emplacement exact.
-function pathToFileUrl(path) {
-  const normalized = path.trim().replace(/\\/g, '/');
-  const withLeadingSlash = normalized.startsWith('/') ? normalized : '/' + normalized;
-  return 'file://' + encodeURI(withLeadingSlash);
-}
-
-// Affiche la marche à suivre détaillée pour mettre à jour manuellement l'extension (mode
-// développeur uniquement, voir renderUpdateMode) : lien de téléchargement direct du zip,
-// puis les étapes pour le remplacer et recharger l'extension.
-function populateUpdateSteps(remoteVersion) {
-  const zipUrl = getRepoZipUrl();
-  const downloadLink = document.getElementById('update-download-link');
-  if (zipUrl) {
-    downloadLink.href = zipUrl;
-    downloadLink.textContent = `⬇️ Télécharger le zip de la version ${remoteVersion}`;
-  } else {
-    downloadLink.removeAttribute('href');
-    downloadLink.textContent = '⬇️ URL du dépôt GitHub invalide, téléchargement indisponible';
-  }
-
-  const folderStep = document.getElementById('update-folder-step');
-  chrome.storage.sync.get(['syncSettings'], (res) => {
-    const path = ((res.syncSettings || {}).localFolderPath || '').trim();
-    folderStep.innerHTML = path
-      ? `Remplacez les fichiers dans <a href="${escapeHtml(pathToFileUrl(path))}" target="_blank" rel="noopener noreferrer">le dossier de l'extension</a> (ne créez pas un nouveau dossier)`
-      : `Remplacez les fichiers dans le <strong>même dossier</strong> que celui actuellement chargé dans Chrome (ne créez pas un nouveau dossier). <em>Astuce : renseignez son chemin ci-dessus pour obtenir un lien direct ici la prochaine fois.</em>`;
-  });
-
-  document.getElementById('update-steps').hidden = false;
-}
-
-function hideUpdateSteps() {
-  document.getElementById('update-steps').hidden = true;
-}
-
-// Chrome bloque la navigation directe vers chrome:// depuis un lien classique (<a href>) ;
-// chrome.tabs.create() y est en revanche autorisé depuis le script d'une page d'extension.
-document.getElementById('open-extensions-link').addEventListener('click', (e) => {
-  e.preventDefault();
-  chrome.tabs.create({ url: 'chrome://extensions/' });
-});
-
-document.getElementById('update-banner-btn').addEventListener('click', () => {
-  document.getElementById('advanced-panel').hidden = false;
-  document.getElementById('toggle-advanced').textContent = '⚙️ Paramètres avancés ▴';
-  document.getElementById('update-block-dev').scrollIntoView({ behavior: 'smooth', block: 'start' });
-});
-
 function updateSyncSettings(patch, cb) {
   chrome.storage.sync.get(['syncSettings'], (res) => {
     const merged = { ...(res.syncSettings || {}), ...patch };
@@ -706,18 +598,6 @@ function updateSyncSettings(patch, cb) {
       if (cb) cb();
     });
   });
-}
-
-function renderUpdateBanner(updateCheck) {
-  const banner = document.getElementById('update-banner');
-  if (updateCheck && updateCheck.isNewer) {
-    banner.hidden = false;
-    document.getElementById('update-banner-text').innerHTML =
-      `⬆️ Nouvelle version disponible : <strong>${escapeHtml(updateCheck.remoteVersion)}</strong> (actuelle : ${escapeHtml(updateCheck.localVersion)})`;
-    populateUpdateSteps(updateCheck.remoteVersion);
-  } else {
-    banner.hidden = true;
-  }
 }
 
 // Signale qu'une synchro a été refusée parce que le tableau distant était vide : les snippets

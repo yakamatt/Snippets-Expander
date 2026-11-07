@@ -1,5 +1,11 @@
 # Changelog — Snippet Expander
 
+## v2.23.0 — 2026-11-07
+- **Retrait de la mise à jour en mode développeur.** Le bloc « Mise à jour de l'extension (mode développeur) » des Paramètres avancés (vérification de la version publiée sur GitHub, deux fois par jour ou à la demande, lien de téléchargement du zip, dossier local), le bandeau « Nouvelle version disponible » et le badge « ⬆ » de l'icône disparaissent. Ils ne servaient qu'à une extension chargée non empaquetée : depuis le Chrome Web Store, Chrome installe les mises à jour tout seul
+  - Le bloc « Mise à jour de l'extension » reste, toujours affiché : il indique la version installée
+  - **Une permission de moins** : `raw.githubusercontent.com` quitte `host_permissions`, l'extension ne contacte plus que le script Google Sheets. Réduire des permissions ne demande rien aux utilisateurs
+  - À la mise à jour, l'alarme de vérification, le badge et les réglages devenus inutiles sont effacés
+
 ## Script Google Sheets — 2026-11-07 (synthèses)
 *`Code.gs` seul, sans nouvelle version de l'extension : à recoller dans l'éditeur Apps Script.*
 - **Synthèse des statistiques hebdomadaire et mensuelle.** Le menu « Clausier » propose deux entrées au lieu d'une : *Synthèse hebdomadaire* (onglet `Synthèse_Hebdo`, semaines ISO du lundi au dimanche, par exemple « 2026 S45 (02/11 au 08/11) ») et *Synthèse mensuelle* (onglet `Synthèse_Mensuelle`)
