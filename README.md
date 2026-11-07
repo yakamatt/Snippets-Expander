@@ -142,7 +142,7 @@ Le menu **Clausier** du Google Sheets (ajouté par `Code.gs`, visible des édite
 
 **Clausier > Synthèse hebdomadaire des statistiques** (onglet `Synthèse_Hebdo`, une semaine du lundi au dimanche par ligne) et **Synthèse mensuelle** (onglet `Synthèse_Mensuelle`, un mois par ligne) donnent, de la période la plus récente à la plus ancienne :
 - les installations actives (extension ouverte au moins un jour) et les utilisateurs actifs (au moins une fonction utilisée) ;
-- trois totaux, en jaune : **Clausier Personnel** (expansions au clavier + icône jaune), **Clausier Commun** (expansions au clavier + icône bleue) et **Sites externes** (SGO, SharePoint, sitesecurite ; le lien Explorateur, qui ouvre un dossier du poste et non un site, a sa colonne à part) ;
+- trois totaux, en jaune : **Clausier Personnel** (expansions au clavier + icône jaune), **Clausier Commun** (expansions au clavier + icône bleue) et **Liens externes** (SGO, SharePoint, sitesecurite et Explorateur) ;
 - le détail de chaque usage, puis les versions en service.
 
  Les lignes de plus de 24 mois sont supprimées de l'onglet `Statistiques` au fil des envois.

@@ -626,7 +626,8 @@ const STATS_SYNTHESE_MOIS_SHEET_NAME = 'Synthèse_Mensuelle';
 const STATS_REGROUPEMENTS = [
   ['Clausier Personnel (clavier + icône jaune)', ['clavier_perso', 'aviso_perso']],
   ['Clausier Commun (clavier + icône bleue)', ['clavier_commun', 'aviso_commun']],
-  ['Sites externes (SGO, SharePoint, sitesecurite)', ['lien_sgo', 'lien_sharepoint', 'aviso_sitesecurite']]
+  ['Liens externes (SGO, SharePoint, sitesecurite, Explorateur)',
+    ['lien_sgo', 'lien_sharepoint', 'aviso_sitesecurite', 'lien_explorateur']]
 ];
 const STATS_COLONNES_FIXES = ['Ref_User', 'Date', 'Version', 'Snippets personnels', 'Articles DatAviso'];
 const STATS_CONSERVATION_MOIS = 24;
