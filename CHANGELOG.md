@@ -1,5 +1,8 @@
 # Changelog — Snippet Expander
 
+## v2.21.1 — 2026-11-07
+- **Paramètres : la page ne saute plus à la fin de « 🔄 Forcer l'actualisation du Clausier Commun ».** Ouverte depuis le lien « Modifier le Clausier Personnel » du popup (`options.html#clausier`), elle redescendait jusqu'au Clausier Personnel à chaque actualisation : le rechargement des données refaisait le défilement prévu pour l'ouverture. Il n'a plus lieu qu'à l'ouverture de la page, et l'on reste en haut, sur le résultat de l'actualisation
+
 ## Script Google Sheets — 2026-11-07
 *`Code.gs` seul, sans nouvelle version de l'extension : à recoller dans l'éditeur Apps Script.*
 - **Plus de colonne « folder » dans l'onglet `Snippets`.** L'extension ne s'en servait plus depuis la v2.18.0 (plus d'affichage par dossier dans les Paramètres). Le script ne la lit plus, ne l'écrit plus, et un tableau neuf ne la crée plus ; elle peut être supprimée du tableau sans effet. La colonne « Dossier » de l'onglet `Revue` disparaît aussi

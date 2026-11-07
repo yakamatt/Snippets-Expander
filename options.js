@@ -1,4 +1,4 @@
-const BUILD_DATE = '2026-11-06'; // v2.21.0
+const BUILD_DATE = '2026-11-07'; // v2.21.1
 const DEFAULT_GITHUB_URL = 'https://raw.githubusercontent.com/yakamatt/Snippets-Expander/main';
 const DEFAULT_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1H2rBzMQzZk74Bk2Z_Mo8lXAdYea7Mi7WfzVruBahd_I/edit';
 
@@ -8,13 +8,15 @@ let snippets = [];
 // Clausier Personnel (snippets locaux).
 let localSnippets = [];
 
-function load() {
+// ouverture : true au premier chargement de la page seulement. Le bouton d'actualisation recharge
+// aussi les données, et ne doit pas faire défiler la page.
+function load(ouverture = false) {
   chrome.storage.local.get(['snippets', 'localSnippets', 'lastSync', 'updateCheck', 'pinBannerDismissed', 'syncWarning'], (res) => {
     snippets = res.snippets || [];
     localSnippets = res.localSnippets || [];
     renderLocal();
     // Lien "Modifier le Clausier Personnel" du popup : la page s'ouvre sur options.html#clausier.
-    if (location.hash === '#clausier') document.getElementById('clausier').scrollIntoView({ block: 'start' });
+    if (ouverture && location.hash === '#clausier') document.getElementById('clausier').scrollIntoView({ block: 'start' });
     renderVersionFooter(res.lastSync);
     renderUpdateBanner(res.updateCheck);
     renderSyncWarning(res.syncWarning);
@@ -792,4 +794,4 @@ document.getElementById('test-area').addEventListener('input', (e) => {
   });
 });
 
-load();
+load(true);
