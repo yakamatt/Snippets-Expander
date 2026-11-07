@@ -290,6 +290,9 @@ const REVUE_HEADER = ['Type', 'Déclencheur', 'Texte commun actuel', 'Propositio
   'Utilisateurs', 'Autres variantes', 'Décision', 'Texte final', 'Clé', 'Variantes (JSON)'];
 const DECISION_ADOPTER = 'Adopter';
 const DECISION_IGNORER = 'Ignorer';
+// Ajoutées à la colonne Type quand « Préparer la revue » reporte le travail de la revue précédente.
+const MARQUE_RETOUCHE = '✍️ retouche conservée';
+const MARQUE_CHANGEE = '🔄 proposition changée';
 
 function onOpen() {
   SpreadsheetApp.getUi()
@@ -363,22 +366,52 @@ function lireSnippetsCommuns_() {
   return communs;
 }
 
+// Ce que le garant a déjà fait dans l'onglet "Revue" (décisions non appliquées, Texte final
+// retouché), par clé, pour le reporter dans la revue suivante. Les colonnes sont cherchées par
+// nom : un onglet d'un format inconnu n'est pas reporté, ses lignes sont seulement comptées.
+function lireRevueEnCours_(revue) {
+  const resultat = { lignes: {}, illisibles: 0 };
+  if (revue.getLastRow() < 2) return resultat;
+  const valeurs = revue.getRange(1, 1, revue.getLastRow(), revue.getLastColumn()).getValues();
+  const col = nom => valeurs[0].indexOf(nom);
+  const c = { type: col('Type'), trigger: col('Déclencheur'), proposition: col('Proposition'), decision: col('Décision'),
+    texteFinal: col('Texte final'), cle: col('Clé') };
+  if (Object.values(c).some(i => i < 0)) {
+    resultat.illisibles = valeurs.slice(1).filter(r => r.some(v => String(v).trim())).length;
+    return resultat;
+  }
+  valeurs.slice(1).forEach(r => {
+    const cle = String(r[c.cle]);
+    if (!cle) return;
+    const decision = String(r[c.decision]).trim();
+    const texteFinal = String(r[c.texteFinal] || '');
+    resultat.lignes[cle] = {
+      trigger: String(r[c.trigger]).trim(),
+      // Déjà signalée « proposition changée » : son Texte final diffère de la proposition sans
+      // être une retouche, la marque doit rester.
+      changee: String(r[c.type]).indexOf(MARQUE_CHANGEE) >= 0,
+      proposition: String(r[c.proposition] || ''),
+      decision: decision === DECISION_ADOPTER || decision === DECISION_IGNORER ? decision : '',
+      texteFinal,
+      // Un Texte final vidé n'est pas une retouche : la nouvelle proposition le remplit.
+      retouche: !!texteNormalise_(texteFinal) &&
+        texteNormalise_(texteFinal) !== texteNormalise_(r[c.proposition])
+    };
+  });
+  return resultat;
+}
+
 function preparerRevue() {
   const ui = SpreadsheetApp.getUi();
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const revue = feuille_(REVUE_SHEET_NAME, REVUE_HEADER);
-
-  // Régénérer efface l'onglet : on ne perd pas sans prévenir des décisions pas encore appliquées.
-  const enCours = revue.getLastRow() > 1
-    ? revue.getRange(2, 7, revue.getLastRow() - 1, 1).getValues().filter(r => String(r[0]).trim()).length
-    : 0;
-  if (enCours && ui.alert('Revue en cours',
-    `${enCours} décision(s) de l'onglet « Revue » n'ont pas encore été appliquées. Les effacer en préparant une nouvelle revue ?`,
-    ui.ButtonSet.YES_NO) !== ui.Button.YES) return;
+  const precedent = lireRevueEnCours_(revue);
 
   const communs = lireSnippetsCommuns_();
   const traites = lireTraites_();
   const sauvegardes = getBackupSheet_().getDataRange().getValues().slice(1);
+
+  const bilan = { retouches: 0, decisions: 0, changees: 0 };
 
   // cle -> { trigger, variantes: { texteNormalise -> { texte, users:Set, date } } }
   const groupes = {};
@@ -406,19 +439,47 @@ function preparerRevue() {
     const nbTotal = Object.keys(total).length;
     const autres = variantes.slice(1)
       .map(v => `(${v.nb} utilisateur${v.nb > 1 ? 's' : ''})\n${v.texte}`).join('\n\n———\n\n');
+    let type = commun ? '✏️ Variante' : '🆕 Nouveau';
+    let decision = '';
+    let texteFinal = variantes[0].texte;
+    // Ligne déjà travaillée dans la revue précédente : sa décision et son Texte final sont repris
+    // tels quels, même si la proposition a changé depuis (le garant les a écrits, pas la revue).
+    const avant = precedent.lignes[cle];
+    if (avant) {
+      delete precedent.lignes[cle];
+      decision = avant.decision;
+      if (avant.retouche || avant.decision) texteFinal = avant.texteFinal;
+      const changee = (avant.retouche || avant.decision) &&
+        (avant.changee || texteNormalise_(avant.proposition) !== texteNormalise_(variantes[0].texte));
+      if (avant.retouche && !avant.changee) { type += '\n' + MARQUE_RETOUCHE; bilan.retouches++; }
+      if (changee) { type += '\n' + MARQUE_CHANGEE; bilan.changees++; }
+      if (avant.decision) bilan.decisions++;
+    }
     return [
-      commun ? '✏️ Variante' : '🆕 Nouveau',
+      type,
       commun ? commun.trigger : (g.trigger.charAt(0) === '/' ? g.trigger : '/' + g.trigger),
       commun ? commun.content : '',
       variantes[0].texte,
       variantes.length > 1 ? `${variantes[0].nb} sur ${nbTotal}` : String(nbTotal),
       autres,
-      '',
-      variantes[0].texte,
+      decision,
+      texteFinal,
       cle,
       JSON.stringify(variantes.map(v => v.texte))
     ];
   }).sort((a, b) => parseInt(b[4], 10) - parseInt(a[4], 10) || String(a[1]).localeCompare(String(b[1])));
+
+  // Ce qui ne se reporte pas serait perdu en silence : une ligne travaillée qui n'est plus à revoir
+  // (texte commun modifié à la main, variante supprimée…), ou une revue d'un format inconnu.
+  const perdues = Object.values(precedent.lignes).filter(l => l.retouche || l.decision);
+  if (perdues.length || precedent.illisibles) {
+    const detail = perdues.length
+      ? `${perdues.length} ligne(s) retouchée(s) ou décidée(s) ne sont plus à revoir et seront effacées :\n- ` +
+        perdues.map(l => l.trigger).join('\n- ')
+      : `L'onglet « Revue » a été préparé par une version précédente du script : ses ${precedent.illisibles} ligne(s) ne peuvent pas être reportées.`;
+    if (ui.alert('Revue en cours', `${detail}\n\nPréparer quand même la nouvelle revue ?`,
+      ui.ButtonSet.YES_NO) !== ui.Button.YES) return;
+  }
 
   revue.clear();
   // clear() garde les validations et les colonnes masquées : une revue préparée avec un autre
@@ -444,6 +505,11 @@ function preparerRevue() {
   ui.alert('Revue prête',
     lignes.length
       ? `${lignes.length} proposition(s), les plus partagées en premier.\n\n` +
+        (bilan.retouches || bilan.decisions || bilan.changees
+          ? `Reprises de la revue précédente : ${bilan.retouches} retouche(s) du Texte final, ${bilan.decisions} décision(s).` +
+            (bilan.changees ? ` ${bilan.changees} ligne(s) marquée(s) « ${MARQUE_CHANGEE} » : la proposition n'est plus celle sur laquelle vous aviez travaillé, relisez-les.` : '') +
+            '\n\n'
+          : '') +
         `Pour chacune, choisissez « ${DECISION_ADOPTER} » ou « ${DECISION_IGNORER} » dans la colonne Décision. ` +
         `« ${DECISION_ADOPTER} » enregistre la colonne Texte final, pré-remplie avec la proposition : retouchez-la si besoin.\n\nPuis : Clausier > Appliquer les décisions.`
       : 'Aucune nouvelle proposition dans les sauvegardes.',

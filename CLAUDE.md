@@ -137,6 +137,8 @@ Le menu **Clausier** (`onOpen`, `preparerRevue`, `appliquerDecisions`) s'exécut
 avec le code enregistré, sans redéploiement. Il rapproche les déclencheurs par `cleDeclencheur_`
 (casse, espaces et préfixe ignorés) ; les onglets du garant (`Local_Snippets_Backup`,
 `Statistiques`, `Historique`, `Revue_Traités`) restent masqués — masquer n'est pas protéger.
+Régénérer la revue reporte décisions et « Texte final » retouchés (`lireRevueEnCours_`, colonnes
+lues par nom) : le travail du garant ne se perd jamais sans confirmation.
 « Synthèse des statistiques » lit `Statistiques`, dont les lignes de plus de 24 mois sont
 purgées au plus une fois par jour, au fil des envois (`purgerStatistiques_`).
 

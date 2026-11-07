@@ -7,6 +7,7 @@
   - Activées par défaut, désactivables dans Paramètres avancés > Statistiques d'utilisation anonymes (les compteurs pas encore envoyés sont alors effacés). Le tutoriel (étape « Le popup ») et la politique de confidentialité le mentionnent
   - Côté Google Sheets : **menu « Clausier > Synthèse des statistiques »**, un mois par ligne (installations actives, utilisateurs actifs, versions en service, total de chaque usage), dans l'onglet `Statistiques_Synthèse`
   - ⚠️ **Le script Apps Script doit être redéployé** (API v5) : tant qu'il ne l'est pas, rien n'est envoyé (sonde `?probe=stats`) et les compteurs attendent dans le navigateur
+- **Côté Google Sheets : relancer « Préparer la revue » garde le travail en cours.** Les décisions pas encore appliquées et les « Texte final » retouchés à la main étaient effacés : la revue repartait de la proposition, et l'avertissement ne comptait que les décisions, si bien qu'une retouche sans décision se perdait sans prévenir. Ils sont désormais repris par déclencheur, même si la proposition a changé, avec une marque dans la colonne Type (« ✍️ retouche conservée », « 🔄 proposition changée » à relire). Une ligne travaillée qui ne revient pas dans la nouvelle revue est listée avant d'être effacée, sur confirmation
 - Aucune permission ajoutée : le tableau du Clausier Commun était déjà autorisé. À déclarer dans l'onglet « Privacy practices » du Store comme « activité de l'utilisateur » (README, section 6 d)
 
 ## v2.21.1 — 2026-11-07
