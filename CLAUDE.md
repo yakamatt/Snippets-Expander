@@ -161,7 +161,21 @@ Quand tu touches au contrat du POST, prévois toujours le script resté en versi
 
 ## Conventions de travail
 
-- **Demander avant d'ouvrir une PR.** Toujours. Pas d'auto-push.
+- **Deux ordres, exécutés sans redemander.** Sans l'un d'eux, ne rien pousser.
+  - **« push gh »** : commit, push, PR vers `main`, fusion (`gh pr merge --merge --delete-branch`).
+    Fusionner seulement ce qui a été vérifié, et dire ce qui ne l'a pas été. Si `Code.gs` a
+    changé, rappeler le redéploiement « Nouvelle version » (section Apps Script).
+  - **« push store »** : d'abord « push gh » si le travail n'est pas sur `main`, puis, depuis
+    `main`, le zip du paquet seul (`zip -r … manifest.json *.js *.html *.css icons -x '*.DS_Store'`,
+    soit les 26 fichiers habituels) dans `dist/` et le dossier `../Chrome store/`, nommé
+    `snippet-expander-vX.Y.Z.zip`. Puis, par **Claude in Chrome** dans le Chrome de l'utilisateur
+    (déjà connecté au Developer Dashboard) : fiche de l'extension > Package > envoi du zip,
+    contrôle que la version affichée est la nouvelle, **Submit for review**. Avant : vérifier que
+    cette version n'est pas déjà en ligne ou en revue (sinon le dire, ne rien envoyer) et que le
+    tutoriel est à jour (section Tutoriel). Si le sélecteur de fichier ne se remplit pas par
+    l'extension, ou si Google redemande mot de passe ou code, s'arrêter et laisser l'utilisateur
+    faire ce geste. Les textes de la fiche et les « Privacy practices » ne changent que sur sa
+    demande.
 - Branches : `feature/...` ou `fix/...`, en français, kebab-case.
 - Messages de commit **en français**, sujet à l'impératif, corps qui explique *pourquoi* et quel
   problème observé est corrigé — pas la liste des lignes changées.
