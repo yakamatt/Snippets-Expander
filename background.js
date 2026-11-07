@@ -200,7 +200,8 @@ async function sauvegarderClausierPersonnel() {
     return { statut: liste.length ? 'a-jour' : 'vide', envoyes: 0 };
   }
 
-  // Même garde-fou que le "+" : rien n'est posté à un script qui ne se déclare pas compatible.
+  // Rien n'est posté à un script qui ne se déclare pas compatible : une version ancienne de
+  // Code.gs vidait tout le tableau sur n'importe quel POST.
   const sonde = settings.webAppUrl + (settings.webAppUrl.includes('?') ? '&' : '?') + 'probe=backup';
   let signature;
   try {
@@ -362,78 +363,6 @@ chrome.storage.onChanged.addListener((changes, area) => {
   }
 });
 
-// ---------- Création d'un snippet dans le Google Sheets ----------
-// Depuis la v2.18.0, le bouton "+" d'Aviso crée un snippet dans le Clausier Personnel (local) :
-// ce chemin n'est plus appelé, mais il est conservé, garde-fous compris, pour pouvoir être
-// rebranché sans réécrire la poignée de main avec Code.gs.
-//
-// Ajoute une ligne au tableau (déclencheur + le texte déjà saisi dans la cellule Aviso, s'il y en
-// a), récupère les données mises à jour, puis ouvre le tableau positionné sur la cellule
-// "content" pour la compléter ou la relire.
-//
-// La requête part du service worker et non du script de contenu : les permissions d'hôte de
-// l'extension s'y appliquent, la requête n'est donc pas soumise au CORS de la page Aviso.
-// Content-Type en text/plain — Apps Script lit e.postData.contents tel quel, et ce type évite
-// la requête de pré-vérification CORS.
-
-// Vérifie que le script déployé expose bien l'ajout de ligne, AVANT de lui envoyer quoi que ce
-// soit. Indispensable : une version antérieure de Code.gs réécrivait le tableau entier sur
-// n'importe quel POST (clearContents puis réécriture), si bien qu'un POST vers un script pas
-// encore redéployé effaçait tous les snippets. Le script récent répond ici un objet signé ;
-// l'ancien, qui ignore le paramètre, renvoie le tableau des snippets — ce qui suffit à le
-// reconnaître et à ne rien lui envoyer.
-async function verifierApiAjout(webAppUrl) {
-  const url = webAppUrl + (webAppUrl.includes('?') ? '&' : '?') + 'probe=append';
-  let data;
-  try {
-    const res = await fetch(url, { cache: 'no-store' });
-    data = await res.json();
-  } catch {
-    throw new Error('Script Google Sheets injoignable ou réponse illisible');
-  }
-  if (Array.isArray(data) || !data || data.api !== 'append') {
-    throw new Error(
-      'Script Google Sheets obsolète : redéployez-le en "Nouvelle version" avant de créer un snippet ' +
-      '(Déployer > Gérer les déploiements > crayon > Nouvelle version).'
-    );
-  }
-}
-
-async function createSnippetRow(trigger, content) {
-  const { syncSettings } = await chrome.storage.sync.get(['syncSettings']);
-  const settings = syncSettings || {};
-  if (!settings.webAppUrl) throw new Error('URL du Web App non configurée (Paramètres avancés)');
-
-  await verifierApiAjout(settings.webAppUrl);
-
-  const res = await fetch(settings.webAppUrl, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    // content : texte déjà saisi dans la cellule Aviso. Un script déployé en version 2 ignore ce
-    // champ et crée la ligne vide — dégradé mais sans perte, le tableau s'ouvrant de toute façon
-    // sur la cellule à saisir.
-    body: JSON.stringify({ action: 'append', trigger, content: content || '' })
-  });
-  if (!res.ok) throw new Error(`Le tableau a répondu ${res.status}`);
-
-  const data = await res.json().catch(() => null);
-  if (!data) throw new Error('Réponse illisible du tableau');
-  if (!data.ok) throw new Error(data.error || 'Ajout refusé par le tableau');
-  // Le script déployé peut être une version antérieure, qui ignore l'action "append" : sans
-  // numéro de ligne en retour, rien n'a été créé — mieux vaut le dire que d'ouvrir le tableau
-  // au hasard en laissant croire que c'est fait.
-  if (!data.row) throw new Error('Script Apps Script obsolète : redéployez-le en nouvelle version');
-
-  await pullFromSheet().catch(e => console.error('[Snippet Expander] Synchro après ajout :', e.message));
-
-  const base = (data.sheetUrl || settings.sheetUrl || DEFAULT_SHEET_URL).split('#')[0];
-  // Colonne B = "content" : l'utilisateur arrive directement sur la cellule à saisir.
-  const url = `${base}#gid=${data.gid || 0}&range=B${data.row}`;
-  chrome.tabs.create({ url });
-
-  return { created: data.created !== false, row: data.row };
-}
-
 // ---------- Messages des pages de l'extension et du script de contenu ----------
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
@@ -472,12 +401,6 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg.type === 'RESCHEDULE_ALARM') {
     scheduleAlarms();
     sendResponse({ ok: true });
-    return true;
-  }
-  if (msg.type === 'CREATE_SNIPPET_ROW') {
-    createSnippetRow(msg.trigger, msg.content)
-      .then(r => sendResponse({ ok: true, ...r }))
-      .catch(e => sendResponse({ ok: false, error: e.message }));
     return true;
   }
 });

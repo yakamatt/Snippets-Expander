@@ -1,4 +1,4 @@
-const BUILD_DATE = '2026-11-07'; // v2.23.0
+const BUILD_DATE = '2026-11-07'; // v2.23.1
 const DEFAULT_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1H2rBzMQzZk74Bk2Z_Mo8lXAdYea7Mi7WfzVruBahd_I/edit';
 
 // Clausier Commun (Google Sheets) : plus affiché sur cette page depuis la v2.18.0, mais
